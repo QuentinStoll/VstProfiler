@@ -20,7 +20,7 @@ Fonctionnalités prévues / en cours :
 - Émulations de haut-parleurs et de baffles
 - Oversampling jusqu’à 16× pour zéro aliasing
 - Interface moderne et skinnable réalisée avec JUCE
-- Support Windows (M1/M2/Apple Silicon + Linux (objectif))
+- Support M1/M2/Apple Silicon + Windows + Linux (objectif)
 
 ## Équipe
 
@@ -39,15 +39,43 @@ Fonctionnalités prévues / en cours :
 
 ## Pré-requis
 
-- CMake 3.22 ou supérieur
-- Compilateur supportant C++20 (MSVC 2022, clang 14+, GCC 11+)
-- JUCE 7 (téléchargeable via le Projucer ou en submodule)
+- **Projucer** (inclus avec JUCE) → [Télécharger JUCE](https://juce.com/get-juce)
+- **Visual Studio 2022** (Community ou supérieur) avec :
+  - Charge de travail **Développement Desktop en C++**
+  - Support **v143** (ou supérieur)
+- **Git** (pour cloner + submodules)
+- (Optionnel) **Reaper** (Celui qu'on utilise)
 
-## Build
+## Collaboration — Comment contribuer efficacement
 
-```bash
-git clone --recursive https://github.com/QuentinStoll/Profiler.git
-cd Profiler
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . --config Release --target Profiler_Standalone Profiler_VST3
+Vous voulez aider ? Super ! Voici les fichiers clés à modifier selon votre contribution :
+
+| Type de contribution | Fichiers à modifier | Outils |
+|----------------------|---------------------|--------|
+| **DSP / Audio** (nouveaux modèles d’amplis, oversampling, IR, etc.) | `Source/PluginProcessor.cpp`, `Source/DSP/*.cpp/h` | Visual Studio, Projucer |
+| **Interface graphique** (nouveaux knobs, skins, layout) | `Source/PluginEditor.cpp`, `Resources/*.png`, `Source/GUI/*.cpp` | Projucer (GUI Editor), Visual Studio |
+| **Nouvelles émulations** (Marshall, Fender, etc.) | Ajouter dans `Source/DSP/Amps/`, référencer dans `PluginProcessor` | Visual Studio |
+| **Tests unitaires** | `Tests/` (GoogleTest) | Visual Studio |
+| **Documentation / README** | `README.md`, `docs/` | Markdown |
+| **Scripts Python** (capture IR, entraînement NN) | `Scripts/` | Python 3.10+ |
+
+### Étapes pour contribuer
+
+1. **Ouvrez le projet avec le Projucer**  
+   → `Profiler.jucer` (fichier central du projet)
+
+2. **Ne modifiez JAMAIS le `.jucer` sans accord d’équipe**  
+   → Il génère les projets VS, Xcode, etc. → **risque de conflits**
+
+3. **Travaillez dans Visual Studio**  
+   → Ouvrez la solution générée : `Builds/VisualStudio2022/Profiler.sln`
+
+4. **Ajoutez vos fichiers via le Projucer**  
+   → Cliquez droit → *Add New File* → sauvegardez → commit
+
+5. **Testez en Standalone avant VST3**  
+   → Plus rapide à lancer
+
+6. **Commit clair** (exemple) :
+   ```bash
+   git commit -m "feat: ajout modèle Fender Twin Reverb avec 12AX7"
