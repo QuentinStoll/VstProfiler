@@ -3,14 +3,34 @@
 <JUCERPROJECT id="A8TGeP" name="Profiler" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
   <MAINGROUP id="np7PK7" name="Profiler">
-    <GROUP id="{3842B737-32C2-E9C6-BA17-6825D882BBB8}" name="Source">
-      <FILE id="MBImqJ" name="PluginProcessor.cpp" compile="1" resource="0"
-            file="Source/PluginProcessor.cpp"/>
+    <GROUP id="{008EAF89-8325-0CC2-E0EB-0C4D8EFBEC65}" name="Include">
+      <GROUP id="{E9B179C5-F125-86D1-7D30-275C5B11F8BA}" name="Enums">
+        <FILE id="GcxOQ1" name="ScreenID.h" compile="0" resource="0" file="Source/ScreenID.h"/>
+      </GROUP>
+      <GROUP id="{0CEC4764-A2B5-A82F-E11B-B5E34B156C41}" name="Screens">
+        <FILE id="XxaZ7z" name="CloningScreen.h" compile="0" resource="0" file="Source/CloningScreen.h"/>
+        <FILE id="xLENtC" name="UsingScreen.h" compile="0" resource="0" file="Source/UsingScreen.h"/>
+        <FILE id="wdVMyS" name="SelectionScreen.h" compile="0" resource="0"
+              file="Source/SelectionScreen.h"/>
+      </GROUP>
+      <FILE id="YxFIPj" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
       <FILE id="lkON4L" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/PluginProcessor.h"/>
+      <FILE id="JtVCwW" name="ViewManager.h" compile="0" resource="0" file="Source/ViewManager.h"/>
+    </GROUP>
+    <GROUP id="{3842B737-32C2-E9C6-BA17-6825D882BBB8}" name="Source">
+      <GROUP id="{7CF86D2E-BE8B-FF92-6D52-20DF05A13758}" name="Screens">
+        <FILE id="LZDkXf" name="CloningScreen.cpp" compile="1" resource="0"
+              file="Source/CloningScreen.cpp"/>
+        <FILE id="R5vYPR" name="UsingScreen.cpp" compile="1" resource="0" file="Source/UsingScreen.cpp"/>
+        <FILE id="QJTBvA" name="SelectionScreen.cpp" compile="1" resource="0"
+              file="Source/SelectionScreen.cpp"/>
+      </GROUP>
       <FILE id="laIhTn" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
-      <FILE id="YxFIPj" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="MBImqJ" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="WkwAWX" name="ViewManager.cpp" compile="1" resource="0" file="Source/ViewManager.cpp"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
