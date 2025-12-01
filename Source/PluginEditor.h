@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "ViewManager.h"
 
 //==============================================================================
 /**
@@ -28,8 +29,9 @@ private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     ProfilerAudioProcessor& audioProcessor;
-
-	juce::TextButton testButton{ "Test Button" };
+	
+	// Init ViewManager
+	std::unique_ptr<ViewManager> viewManager;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessorEditor)
 };
