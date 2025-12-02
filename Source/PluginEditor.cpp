@@ -19,6 +19,11 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor (ProfilerAudioProcess
     
 	testButton.setButtonText("Click Me");
 	addAndMakeVisible(testButton);
+    testButton.onClick = [this]()
+    {
+        audioProcessor.startSweep();
+    };
+
 }
 
 ProfilerAudioProcessorEditor::~ProfilerAudioProcessorEditor()

@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "SweepGenerator.h"
 
 //==============================================================================
 /**
@@ -53,7 +54,20 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    //===================================== Our func ===============================
+    void startSweep();
+
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessor)
+    // Buffer qui contiendra le sweep
+    juce::AudioBuffer<float> sweepBuffer;
+
+    // Position actuelle dans le sweep
+    int sweepPos = 0;
+
+    // Booléen qui dit si le sweep est en train de tourner
+    bool sweepRunning = false;
+
+
 };
