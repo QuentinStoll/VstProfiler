@@ -20,4 +20,6 @@ ipch/*
 Icon?
 .DS_Stor*
 build
+JuceLibraryCode
 .vscode
+Libs/JUCE
