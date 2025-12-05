@@ -1,4 +1,4 @@
-/*
+﻿/*
   ==============================================================================
 
     This file contains the basic framework code for a JUCE plugin processor.
@@ -91,11 +91,11 @@ void ProfilerAudioProcessor::changeProgramName (int index, const juce::String& n
 }
 
 //==============================================================================
-void ProfilerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    SweepGenerator::generateLogSweep(sweepBuffer, sampleRate, 15.0f);
 }
+
 
 void ProfilerAudioProcessor::releaseResources()
 {
@@ -156,6 +156,31 @@ void ProfilerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 
         // ..do something to the data...
     }
+
+    if (sweepRunning)
+    {
+        int numSamples = buffer.getNumSamples();
+        int sweepSamples = sweepBuffer.getNumSamples();
+
+        for (int i = 0; i < numSamples; ++i)
+        {
+            float s = 0.0f;
+
+            if (sweepPos < sweepSamples)
+            {
+                s = sweepBuffer.getSample(0, sweepPos);
+                sweepPos++;
+            }
+            else
+            {
+                sweepRunning = false; // sweep terminé
+            }
+
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+                buffer.setSample(ch, i, s);
+        }
+    }
+
 }
 
 //==============================================================================
@@ -188,4 +213,14 @@ void ProfilerAudioProcessor::setStateInformation (const void* data, int sizeInBy
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new ProfilerAudioProcessor();
+}
+
+void ProfilerAudioProcessor::startSweep()
+{
+    // Génère un sweep log de 15 secondes de 20Hz à 20kHz avec fade
+    SweepGenerator::generateLogSweep(sweepBuffer, getSampleRate(), 15.0f);
+
+    // Réinitialise la position et lance le sweep
+    sweepPos = 0;
+    sweepRunning = true;
 }
