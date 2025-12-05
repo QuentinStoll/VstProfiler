@@ -94,6 +94,13 @@ void ProfilerAudioProcessor::changeProgramName (int index, const juce::String& n
 void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     SweepGenerator::generateLogSweep(sweepBuffer, sampleRate, 15.0f);
+
+    juce::dsp::ProcessSpec spec;
+    spec.sampleRate = sampleRate;
+    spec.maximumBlockSize = samplesPerBlock;
+    spec.numChannels = getTotalNumOutputChannels();
+
+    convolver.prepare(spec);
 }
 
 
@@ -135,12 +142,7 @@ void ProfilerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
+
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
@@ -157,6 +159,15 @@ void ProfilerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         // ..do something to the data...
     }
 
+
+    if (irLoaded)
+    {
+        juce::dsp::AudioBlock<float> block(buffer);
+        juce::dsp::ProcessContextReplacing<float> context(block);
+        convolver.process(context);
+    }
+
+    // start the sweep if button pressed
     if (sweepRunning)
     {
         int numSamples = buffer.getNumSamples();
@@ -223,4 +234,24 @@ void ProfilerAudioProcessor::startSweep()
     // Réinitialise la position et lance le sweep
     sweepPos = 0;
     sweepRunning = true;
+}
+
+void ProfilerAudioProcessor::loadIRFile()
+{
+    auto chooser = new juce::FileChooser("Select an IR file", {}, "*.wav");
+    chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        [this, chooser](const juce::FileChooser& fc)
+        {
+            auto file = fc.getResult();
+            if (file.existsAsFile())
+            {
+                convolver.loadImpulseResponse(file,
+                    juce::dsp::Convolution::Stereo::yes,
+                    juce::dsp::Convolution::Trim::no,
+                    0);
+                irLoaded = true;
+            }
+            delete chooser; // libère la mémoire après usage
+        });
+
 }

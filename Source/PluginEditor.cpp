@@ -17,11 +17,18 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor (ProfilerAudioProcess
     // editor's size to whatever you need it to be.
     setSize (400, 300);
     
-	testButton.setButtonText("Click Me");
-	addAndMakeVisible(testButton);
-    testButton.onClick = [this]()
+	SweepButton.setButtonText("Start Sweep");
+	addAndMakeVisible(SweepButton);
+    SweepButton.onClick = [this]()
     {
         audioProcessor.startSweep();
+    };
+
+    CaptureButton.setButtonText("Start Capture");
+    addAndMakeVisible(CaptureButton);
+    CaptureButton.onClick = [this]()
+    {
+        audioProcessor.loadIRFile();
     };
 
 }
@@ -38,7 +45,8 @@ void ProfilerAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour (juce::Colours::white);
     g.setFont (juce::FontOptions (15.0f));
-    g.drawFittedText ("Neg!", getLocalBounds(), juce::Justification::centred, 1);
+    //g.drawFittedText ("Neg!", getLocalBounds(), juce::Justi
+    // fication::centred, 1);
 }
 
 void ProfilerAudioProcessorEditor::resized()
@@ -46,5 +54,7 @@ void ProfilerAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
 
-	testButton.setBounds(10, 10, getWidth() - 20, 30);
+	SweepButton.setBounds(10, 10, getWidth() - 20, 30);
+    CaptureButton.setBounds(10, 50, getWidth() - 20, 30);
 }
+

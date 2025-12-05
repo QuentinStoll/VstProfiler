@@ -57,17 +57,33 @@ public:
     //===================================== Our func ===============================
     void startSweep();
 
+    void ProfilerAudioProcessor::loadIRFile();
+
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessor)
-    // Buffer qui contiendra le sweep
+
+    //================================= Sweep generation =====================================
+
+    // Buffer to contain the sweep
     juce::AudioBuffer<float> sweepBuffer;
 
-    // Position actuelle dans le sweep
+    // Actual pos in the sweep
     int sweepPos = 0;
 
-    // Booléen qui dit si le sweep est en train de tourner
+    // Is sweep running bool
     bool sweepRunning = false;
+
+    //================================= Ir load =====================================
+
+    // Buffer that contain the ir
+    juce::AudioBuffer<float> irBuffer;
+
+	// Is ir loaded bool
+    bool irLoaded = false;
+
+	// Convolver object
+    juce::dsp::Convolution convolver;
 
 
 };

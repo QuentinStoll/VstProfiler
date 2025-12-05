@@ -29,7 +29,10 @@ private:
     // access the processor object that created it.
     ProfilerAudioProcessor& audioProcessor;
 
-	juce::TextButton testButton{ "Test Button" };
+	juce::TextButton SweepButton{ "Start sweep"};
+    juce::TextButton CaptureButton{ "Start capture" };
+    juce::TextButton loadIRButton{ "Start load ir" };
+    
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessorEditor)
 };
