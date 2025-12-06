@@ -25,10 +25,10 @@ public:
 	void resized() override;
 
 private:
-	juce::TextButton cloneButton{ "Clone" };
-	juce::TextButton useButton{ "Use" };
+	juce::TextButton _cloneButton{ "Clone" };
+	juce::TextButton _useButton{ "Use" };
 
-	ScreenSelectedCallback screenSelectedCallback;
+	ScreenSelectedCallback _screenSelectedCallback;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SelectionScreen)
 };

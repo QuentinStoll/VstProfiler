@@ -12,6 +12,12 @@
 
 CloningScreen::CloningScreen()
 {
+	addAndMakeVisible(_startCloneButton);
+
+    _startCloneButton.onClick = [this] {
+        // Cloning logic here
+	};
+
 	setSize(600, 400);
 }
 
@@ -24,11 +30,14 @@ void CloningScreen::paint(juce::Graphics& g)
     g.fillAll(juce::Colours::darkgrey);
     g.setColour(juce::Colours::white);
     g.setFont(juce::FontOptions(20.0f));
-	g.drawFittedText("Entering Cloning mode", getLocalBounds(), juce::Justification::centred, 1);
+	g.drawFittedText("Entering Cloning mode", getLocalBounds(), juce::Justification::centredTop, 1);
 }
 
 void CloningScreen::resized()
 {
-    // This method is where you should set the bounds of any child
-    // components that your component contains..
+    auto bounds = getLocalBounds();
+    auto buttonWidth = bounds.getWidth() / 2 - 20;
+    auto buttonHeight = 40;
+
+    _startCloneButton.setBounds(bounds.getCentreX() - (buttonWidth / 2), bounds.getCentreY(), buttonWidth, buttonHeight);
 }

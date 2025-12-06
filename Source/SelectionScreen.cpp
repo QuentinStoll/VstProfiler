@@ -11,18 +11,18 @@
 #include "SelectionScreen.h"
 #include <cstdio>
 
-SelectionScreen::SelectionScreen(ScreenSelectedCallback callback) : screenSelectedCallback(callback)
+SelectionScreen::SelectionScreen(ScreenSelectedCallback callback) : _screenSelectedCallback(callback)
 {
-	addAndMakeVisible(cloneButton);
-	addAndMakeVisible(useButton);
+	addAndMakeVisible(_cloneButton);
+	addAndMakeVisible(_useButton);
 
-    cloneButton.onClick = [this] {
+    _cloneButton.onClick = [this] {
 		printf("Clone button clicked\n");
-        screenSelectedCallback(ScreenID::Cloning);
+        _screenSelectedCallback(ScreenID::Cloning);
 	};
 
-    useButton.onClick = [this] {
-        screenSelectedCallback(ScreenID::Using);
+    _useButton.onClick = [this] {
+        _screenSelectedCallback(ScreenID::Using);
 	};
 
     setSize(600, 400);
@@ -39,13 +39,10 @@ void SelectionScreen::paint(juce::Graphics& g)
 
 void SelectionScreen::resized()
 {
-    // This method is where you should set the bounds of any child
-    // components that your component contains..
-
     auto bounds = getLocalBounds();
     auto buttonWidth = bounds.getWidth() / 2 - 20;
     auto buttonHeight = 40;
 
-    cloneButton.setBounds(10, bounds.getCentreY() - 20, buttonWidth, buttonHeight);
-    useButton.setBounds(bounds.getCentreX() + 10, bounds.getCentreY() - 20, buttonWidth, buttonHeight);
+    _cloneButton.setBounds(10, bounds.getCentreY() - 20, buttonWidth, buttonHeight);
+    _useButton.setBounds(bounds.getCentreX() + 10, bounds.getCentreY() - 20, buttonWidth, buttonHeight);
 }

@@ -22,5 +22,7 @@ public:
 
 private:
 
+	juce::TextButton _startCloneButton{ "Start Cloning" };
+
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CloningScreen)
 };
