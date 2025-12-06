@@ -10,6 +10,9 @@
 
 #pragma once
 #include <JuceHeader.h>
+#include "MainSettingsSection.h"
+#include "EqNormalizeSection.h"
+#include "AmpLoaderSection.h"
 
 class UsingScreen : public juce::Component
 {
@@ -21,6 +24,14 @@ public:
 	void resized() override;
 
 private:
+	// Main Settings section
+	std::unique_ptr<MainSettingsSection> _mainSettingsSection;
+	
+	// EQ and Normalize section
+	std::unique_ptr<EqNormalizeSection> _eqNormalizeSection;
+	
+	// Amp Loader section
+	std::unique_ptr<AmpLoaderSection> _ampLoaderSection;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UsingScreen)
 };
