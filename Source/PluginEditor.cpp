@@ -11,13 +11,13 @@
 
 //==============================================================================
 ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor (ProfilerAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : AudioProcessorEditor (&p), _audioProcessor (p)
 {
-	viewManager = std::make_unique<ViewManager>();
-	addAndMakeVisible(viewManager.get());
+	_viewManager = std::make_unique<ViewManager>();
+	addAndMakeVisible(_viewManager.get());
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (viewManager->getWidth(), viewManager->getHeight());
+    setSize (_viewManager->getWidth(), _viewManager->getHeight());
 }
 
 ProfilerAudioProcessorEditor::~ProfilerAudioProcessorEditor()
@@ -40,5 +40,5 @@ void ProfilerAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
 
-    viewManager->setBounds(getLocalBounds());
+    _viewManager->setBounds(getLocalBounds());
 }
