@@ -18,6 +18,29 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor (ProfilerAudioProcess
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize (_viewManager->getWidth(), _viewManager->getHeight());
+    
+// 	SweepButton.setButtonText("Start Sweep");
+// 	addAndMakeVisible(SweepButton);
+//     SweepButton.onClick = [this]()
+//     {
+//         audioProcessor.startSweep();
+//     };
+
+//     IrButton.setButtonText("Load Ir");
+//     addAndMakeVisible(IrButton);
+//     IrButton.onClick = [this]()
+//     {
+//         audioProcessor.loadIRFile();
+//     };
+
+//     AmpButton.setButtonText("Load Amp");
+//     addAndMakeVisible(AmpButton);
+//     AmpButton.onClick = [this]()
+//     {
+//         audioProcessor.loadAmpProfile();
+//     };
+
+
 }
 
 ProfilerAudioProcessorEditor::~ProfilerAudioProcessorEditor()
@@ -41,4 +64,8 @@ void ProfilerAudioProcessorEditor::resized()
     // subcomponents in your editor..
 
     _viewManager->setBounds(getLocalBounds());
+// 	  SweepButton.setBounds(10, 10, getWidth() - 20, 30);
+//     IrButton.setBounds(10, 50, getWidth() - 20, 30);
+//     AmpButton.setBounds(10, 90, getWidth() - 20, 30);
 }
+

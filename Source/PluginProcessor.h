@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "SweepGenerator.h"
 
 //==============================================================================
 /**
@@ -58,6 +59,15 @@ public:
 
 	//==============================================================================
 	void updateFilterCoefficients();
+  
+    //===================================== Our func ===============================
+    void startSweep();
+
+    void ProfilerAudioProcessor::loadIRFile();
+
+    void ProfilerAudioProcessor::loadAmpProfile();
+
+    void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce::File& ampFile);
 
 private:
     juce::dsp::ProcessorChain <
@@ -73,4 +83,32 @@ private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessor)
+
+    //================================= Sweep generation =====================================
+
+    // Buffer to contain the sweep
+    juce::AudioBuffer<float> sweepBuffer;
+
+    // Actual pos in the sweep
+    int sweepPos = 0;
+
+    // Is sweep running bool
+    bool sweepRunning = false;
+
+    //================================= Ir load =====================================
+
+    // Buffer that contain the ir
+    juce::AudioBuffer<float> irBuffer;
+
+	// Is ir loaded bool
+    bool irLoaded = false;
+
+	// Convolver object
+    juce::dsp::Convolution convolver;
+
+
+    //================================= Amp load ====================================
+    std::vector<float> ampLUT;
+    bool ampLoaded = false;
+
 };

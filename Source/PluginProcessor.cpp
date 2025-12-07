@@ -1,4 +1,4 @@
-/*
+﻿/*
   ==============================================================================
 
     This file contains the basic framework code for a JUCE plugin processor.
@@ -91,10 +91,12 @@ void ProfilerAudioProcessor::changeProgramName (int index, const juce::String& n
 }
 
 //==============================================================================
-void ProfilerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+    SweepGenerator::generateLogSweep(sweepBuffer, sampleRate, 15.0f);
+  
 
 	// Prepare the main processor chain
     juce::dsp::ProcessSpec spec;
@@ -102,9 +104,16 @@ void ProfilerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     spec.maximumBlockSize = (juce::uint32)samplesPerBlock;
     spec.numChannels = (juce::uint32)getTotalNumOutputChannels();
 
+    convolver.prepare(spec);
     _mainProcessor.prepare(spec);
     _mainProcessor.reset();
+
+//     spec.maximumBlockSize = samplesPerBlock;
+//     spec.numChannels = getTotalNumOutputChannels();
+
+    
 }
+
 
 void ProfilerAudioProcessor::releaseResources()
 {
@@ -138,18 +147,13 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 }
 #endif
 
-void ProfilerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
+    auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
+
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
     
@@ -183,10 +187,63 @@ void ProfilerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // interleaved by keeping the same state.
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        auto* channelData = buffer.getWritePointer (channel);
+        auto* channelData = buffer.getWritePointer(channel);
 
         // ..do something to the data...
     }
+    if (ampLoaded)
+    {
+        for (int channel = 0; channel < totalNumInputChannels; ++channel)
+        {
+            auto* channelData = buffer.getWritePointer(channel);
+
+            for (int i = 0; i < buffer.getNumSamples(); ++i)
+            {
+                float x = juce::jlimit(-1.0f, 1.0f, channelData[i]);
+                float pos = (x + 1.0f) * 0.5f * (ampLUT.size() - 1);
+                int idx = (int)pos;
+                float frac = pos - idx;
+                float y = ampLUT[idx];
+                if (idx + 1 < ampLUT.size())
+                    y = y * (1.0f - frac) + ampLUT[idx + 1] * frac;
+
+                channelData[i] = y;
+            }
+        }
+    }
+
+    if (irLoaded)
+    {
+        juce::dsp::AudioBlock<float> block(buffer);
+        juce::dsp::ProcessContextReplacing<float> context(block);
+        convolver.process(context);
+    }
+
+    // start the sweep if button pressed
+    if (sweepRunning)
+    {
+        int numSamples = buffer.getNumSamples();
+        int sweepSamples = sweepBuffer.getNumSamples();
+
+        for (int i = 0; i < numSamples; ++i)
+        {
+            float s = 0.0f;
+
+            if (sweepPos < sweepSamples)
+            {
+                s = sweepBuffer.getSample(0, sweepPos);
+                sweepPos++;
+            }
+            else
+            {
+                sweepRunning = false; // sweep terminé
+            }
+
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+                buffer.setSample(ch, i, s);
+        }
+    }
+
 }
 
 //==============================================================================
@@ -322,4 +379,102 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new ProfilerAudioProcessor();
+}
+
+void ProfilerAudioProcessor::startSweep()
+{
+    // Génère un sweep log de 15 secondes de 20Hz à 20kHz avec fade
+    SweepGenerator::generateLogSweep(sweepBuffer, getSampleRate(), 15.0f);
+
+    // Réinitialise la position et lance le sweep
+    sweepPos = 0;
+    sweepRunning = true;
+}
+
+void ProfilerAudioProcessor::loadIRFile()
+{
+    auto chooser = new juce::FileChooser("Select an IR file", {}, "*.wav");
+    chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        [this, chooser](const juce::FileChooser& fc)
+        {
+            auto file = fc.getResult();
+            if (file.existsAsFile())
+            {
+                convolver.loadImpulseResponse(file,
+                    juce::dsp::Convolution::Stereo::yes,
+                    juce::dsp::Convolution::Trim::no,
+                    0);
+                irLoaded = true;
+            }
+            delete chooser; // libère la mémoire après usage
+        });
+
+}
+
+// Fonction pour charger deux WAV et construire la LUT
+void ProfilerAudioProcessor::loadAmpProfile()
+{
+    auto chooserDI = new juce::FileChooser("Select DI guitar file", {}, "*.wav");
+    chooserDI->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        [this, chooserDI](const juce::FileChooser& fcDI)
+        {
+            auto diFile = fcDI.getResult();
+            if (diFile.existsAsFile())
+            {
+                // Ensuite on choisit le fichier ampli
+                auto chooserAmp = new juce::FileChooser("Select Amp output file", {}, "*.wav");
+                chooserAmp->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                    [this, chooserAmp, diFile](const juce::FileChooser& fcAmp)
+                    {
+                        auto ampFile = fcAmp.getResult();
+                        if (ampFile.existsAsFile())
+                        {
+                            // Maintenant on peut générer la LUT
+                            generateAmpLUT(diFile, ampFile);
+                        }
+                        delete chooserAmp;
+                    });
+            }
+            delete chooserDI;
+        });
+}
+
+// Fonction qui construit la LUT à partir de deux WAV
+void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce::File& ampFile)
+{
+    juce::AudioFormatManager fm;
+    fm.registerBasicFormats();
+
+    std::unique_ptr<juce::AudioFormatReader> readerDI(fm.createReaderFor(diFile));
+    std::unique_ptr<juce::AudioFormatReader> readerAmp(fm.createReaderFor(ampFile));
+
+    if (!readerDI || !readerAmp) return;
+
+    int numSamples = (int)std::min(readerDI->lengthInSamples, readerAmp->lengthInSamples);
+
+    juce::AudioBuffer<float> diBuf(1, numSamples);
+    juce::AudioBuffer<float> ampBuf(1, numSamples);
+
+    readerDI->read(&diBuf, 0, numSamples, 0, true, false);
+    readerAmp->read(&ampBuf, 0, numSamples, 0, true, false);
+
+    int lutSize = 4096;
+    ampLUT.resize(lutSize, 0.0f);
+    std::vector<int> counts(lutSize, 0);
+
+    for (int i = 0; i < numSamples; ++i)
+    {
+        float x = juce::jlimit(-1.0f, 1.0f, diBuf.getSample(0, i));
+        float y = ampBuf.getSample(0, i);
+        int idx = int((x + 1.0f) * 0.5f * (lutSize - 1));
+        ampLUT[idx] += y;
+        counts[idx]++;
+    }
+
+    for (int i = 0; i < lutSize; ++i)
+    {
+        if (counts[i] > 0) ampLUT[i] /= counts[i];
+    }
+
+    ampLoaded = true;
 }

@@ -32,6 +32,10 @@ private:
 	
 	// Init ViewManager
 	std::unique_ptr<ViewManager> _viewManager;
+
+	juce::TextButton SweepButton{ "Start sweep"};
+    juce::TextButton IrButton{ "load ir" };
+    juce::TextButton AmpButton{ "load amp" };
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessorEditor)
 };
