@@ -30,9 +30,8 @@ private:
     ProfilerAudioProcessor& audioProcessor;
 
 	juce::TextButton SweepButton{ "Start sweep"};
-    juce::TextButton CaptureButton{ "Start capture" };
-    juce::TextButton loadIRButton{ "Start load ir" };
-    
+    juce::TextButton IrButton{ "load ir" };
+    juce::TextButton AmpButton{ "load amp" };
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessorEditor)
 };
