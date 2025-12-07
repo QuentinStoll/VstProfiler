@@ -13,7 +13,7 @@
 #include "CloningScreen.h"
 #include "UsingScreen.h"
 
-ViewManager::ViewManager(juce::AudioProcessorValueTreeState& apvts) : _apvts(apvts)
+ViewManager::ViewManager(ProfilerAudioProcessor& p) : _audioProcessor(p)
 {
     _backButton.onClick = [this]() {
         changeView(ScreenID::Selection);
@@ -55,11 +55,11 @@ void ViewManager::changeView(ScreenID screenID)
 			_backButton.setVisible(false);
 			break;
 		case ScreenID::Cloning:
-            _currentView = std::make_unique<CloningScreen>();
+            _currentView = std::make_unique<CloningScreen>(_audioProcessor);
 			_backButton.setVisible(true);
 			break;
         case ScreenID::Using:
-			_currentView = std::make_unique<UsingScreen>(_apvts);
+			_currentView = std::make_unique<UsingScreen>(_audioProcessor._apvts);
 			_backButton.setVisible(true);
             break;
 		default:

@@ -10,13 +10,25 @@
 
 #include "CloningScreen.h"
 
-CloningScreen::CloningScreen()
+CloningScreen::CloningScreen(ProfilerAudioProcessor& p) : _audioProcessor(p)
 {
-	addAndMakeVisible(_startCloneButton);
+    addAndMakeVisible(_sweepButton);
+    _sweepButton.onClick = [this]()
+    {
+        _audioProcessor.startSweep();
+    };
 
-    _startCloneButton.onClick = [this] {
-        // Cloning logic here
-	};
+    addAndMakeVisible(_irButton);
+    _irButton.onClick = [this]()
+    {
+        _audioProcessor.loadIRFile();
+    };
+
+    addAndMakeVisible(_ampButton);
+    _ampButton.onClick = [this]()
+    {
+        _audioProcessor.loadAmpProfile();
+    };
 
 	setSize(600, 400);
 }
@@ -35,9 +47,12 @@ void CloningScreen::paint(juce::Graphics& g)
 
 void CloningScreen::resized()
 {
-    auto bounds = getLocalBounds();
+    auto bounds = getLocalBounds().reduced(10);
     auto buttonWidth = bounds.getWidth() / 2 - 20;
     auto buttonHeight = 40;
 
-    _startCloneButton.setBounds(bounds.getCentreX() - (buttonWidth / 2), bounds.getCentreY(), buttonWidth, buttonHeight);
+    _sweepButton.setBounds(bounds.getX(), 100, getWidth() - 20, 30);
+    _irButton.setBounds(bounds.getX(), 150, getWidth() - 20, 30);
+    _ampButton.setBounds(bounds.getX(), 190, getWidth() - 20, 30);
+    //_startCloneButton.setBounds(bounds.getCentreX() - (buttonWidth / 2), bounds.getCentreY(), buttonWidth, buttonHeight);
 }

@@ -62,11 +62,8 @@ public:
   
     //===================================== Our func ===============================
     void startSweep();
-
     void ProfilerAudioProcessor::loadIRFile();
-
     void ProfilerAudioProcessor::loadAmpProfile();
-
     void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce::File& ampFile);
 
 private:
