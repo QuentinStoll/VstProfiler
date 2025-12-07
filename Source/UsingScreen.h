@@ -17,7 +17,7 @@
 class UsingScreen : public juce::Component
 {
 public:
-	UsingScreen();
+	UsingScreen(juce::AudioProcessorValueTreeState& apvts);
 	~UsingScreen();
 
 	void paint(juce::Graphics& g) override;

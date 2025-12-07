@@ -13,7 +13,7 @@
 ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor (ProfilerAudioProcessor& p)
     : AudioProcessorEditor (&p), _audioProcessor (p)
 {
-	_viewManager = std::make_unique<ViewManager>();
+	_viewManager = std::make_unique<ViewManager>(p._apvts);
 	addAndMakeVisible(_viewManager.get());
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.

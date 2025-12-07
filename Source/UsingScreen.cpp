@@ -11,9 +11,9 @@
 #include "UsingScreen.h"
 
 // This class is for the Use mode of the plugin
-UsingScreen::UsingScreen()
+UsingScreen::UsingScreen(juce::AudioProcessorValueTreeState& apvts)
 {
-	_mainSettingsSection = std::make_unique<MainSettingsSection>();
+	_mainSettingsSection = std::make_unique<MainSettingsSection>(apvts);
 	_eqNormalizeSection = std::make_unique<EqNormalizeSection>();
 	_ampLoaderSection = std::make_unique<AmpLoaderSection>();
 
@@ -42,7 +42,7 @@ void UsingScreen::resized()
 
     bounds.removeFromTop(50);
 
-	auto mainSettingsArea = bounds.removeFromTop(bounds.getHeight() * 0.4);
+	auto mainSettingsArea = bounds.removeFromTop((int)(bounds.getHeight() * 0.4));
 	_mainSettingsSection->setBounds(mainSettingsArea);
 
 	auto eqNormalizeArea = bounds.removeFromTop(65);

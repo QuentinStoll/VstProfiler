@@ -20,6 +20,8 @@ public:
 	
 	void resized() override;
 
+	juce::Slider& getSlider() { return _slider; };
+
 private:
     juce::Slider _slider;
 	juce::Label _name;

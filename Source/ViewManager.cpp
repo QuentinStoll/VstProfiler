@@ -13,12 +13,12 @@
 #include "CloningScreen.h"
 #include "UsingScreen.h"
 
-ViewManager::ViewManager()
+ViewManager::ViewManager(juce::AudioProcessorValueTreeState& apvts) : _apvts(apvts)
 {
-    backButton.onClick = [this]() {
+    _backButton.onClick = [this]() {
         changeView(ScreenID::Selection);
 	};
-    addAndMakeVisible(backButton);
+    addAndMakeVisible(_backButton);
 
     changeView(ScreenID::Selection);
 
@@ -33,40 +33,40 @@ void ViewManager::resized()
 {
     // This method is where you should set the bounds of any child
     // components that your component contains..
-    if (currentView) {
-        currentView->setBounds(getLocalBounds());
+    if (_currentView) {
+        _currentView->setBounds(getLocalBounds());
     }
     
-    backButton.setBounds(10, 10, 80, 30);
+    _backButton.setBounds(10, 10, 80, 30);
 }
 
 void ViewManager::changeView(ScreenID screenID)
 {
-    if (currentView) {
-        removeChildComponent(currentView.get());
-		currentView.reset();
+    if (_currentView) {
+        removeChildComponent(_currentView.get());
+		_currentView.reset();
     }
 
     switch (screenID) {
     case ScreenID::Selection:
-            currentView = std::make_unique<SelectionScreen>([this](ScreenID id) {
+            _currentView = std::make_unique<SelectionScreen>([this](ScreenID id) {
                 this->changeView(id);
             });
-			backButton.setVisible(false);
+			_backButton.setVisible(false);
 			break;
 		case ScreenID::Cloning:
-            currentView = std::make_unique<CloningScreen>();
-			backButton.setVisible(true);
+            _currentView = std::make_unique<CloningScreen>();
+			_backButton.setVisible(true);
 			break;
         case ScreenID::Using:
-			currentView = std::make_unique<UsingScreen>();
-			backButton.setVisible(true);
+			_currentView = std::make_unique<UsingScreen>(_apvts);
+			_backButton.setVisible(true);
             break;
 		default:
 			break;
     }   
 
-	addAndMakeVisible(currentView.get());
-	backButton.toFront(true);
+	addAndMakeVisible(_currentView.get());
+	_backButton.toFront(true);
     resized();
 }

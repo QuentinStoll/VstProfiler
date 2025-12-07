@@ -15,16 +15,17 @@
 class ViewManager : public juce::Component
 {
 public:
-    ViewManager();
+    ViewManager(juce::AudioProcessorValueTreeState& apvts);
     ~ViewManager();
 
 	void resized() override;
 	void changeView(ScreenID screenID);
 
 private:
-	std::unique_ptr<juce::Component> currentView;
+	std::unique_ptr<juce::Component> _currentView;
+    juce::TextButton _backButton{ "Back" };
 
-    juce::TextButton backButton{ "Back" };
+    juce::AudioProcessorValueTreeState& _apvts;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ViewManager)
 };

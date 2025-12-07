@@ -23,7 +23,6 @@ RotarySlider::RotarySlider(const RotarySliderParameter& param)
 	addAndMakeVisible(_name);
 	_name.setText(param.name, juce::dontSendNotification);
 	_name.setJustificationType(juce::Justification::centred);
-	_name.setFont(16.0f);
 }
 
 RotarySlider::~RotarySlider()

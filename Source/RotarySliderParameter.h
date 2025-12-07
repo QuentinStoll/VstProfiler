@@ -13,6 +13,7 @@
 
 struct RotarySliderParameter
 {
+	juce::String paramID;
 	juce::String name;
 	juce::String suffix;
 	float minValue;
