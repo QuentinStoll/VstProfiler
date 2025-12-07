@@ -24,12 +24,20 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor (ProfilerAudioProcess
         audioProcessor.startSweep();
     };
 
-    CaptureButton.setButtonText("Start Capture");
-    addAndMakeVisible(CaptureButton);
-    CaptureButton.onClick = [this]()
+    IrButton.setButtonText("Load Ir");
+    addAndMakeVisible(IrButton);
+    IrButton.onClick = [this]()
     {
         audioProcessor.loadIRFile();
     };
+
+    AmpButton.setButtonText("Load Amp");
+    addAndMakeVisible(AmpButton);
+    AmpButton.onClick = [this]()
+    {
+        audioProcessor.loadAmpProfile();
+    };
+
 
 }
 
@@ -55,6 +63,7 @@ void ProfilerAudioProcessorEditor::resized()
     // subcomponents in your editor..
 
 	SweepButton.setBounds(10, 10, getWidth() - 20, 30);
-    CaptureButton.setBounds(10, 50, getWidth() - 20, 30);
+    IrButton.setBounds(10, 50, getWidth() - 20, 30);
+    AmpButton.setBounds(10, 90, getWidth() - 20, 30);
 }
 

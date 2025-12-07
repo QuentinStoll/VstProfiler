@@ -59,6 +59,10 @@ public:
 
     void ProfilerAudioProcessor::loadIRFile();
 
+    void ProfilerAudioProcessor::loadAmpProfile();
+
+    void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce::File& ampFile);
+
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessor)
@@ -85,5 +89,9 @@ private:
 	// Convolver object
     juce::dsp::Convolution convolver;
 
+
+    //================================= Amp load ====================================
+    std::vector<float> ampLUT;
+    bool ampLoaded = false;
 
 };

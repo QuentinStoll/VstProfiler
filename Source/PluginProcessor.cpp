@@ -136,15 +136,15 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 }
 #endif
 
-void ProfilerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
+    auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
+        buffer.clear(i, 0, buffer.getNumSamples());
 
     // This is the place where you'd normally do the guts of your plugin's
     // audio processing...
@@ -154,11 +154,30 @@ void ProfilerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // interleaved by keeping the same state.
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        auto* channelData = buffer.getWritePointer (channel);
+        auto* channelData = buffer.getWritePointer(channel);
 
         // ..do something to the data...
     }
+    if (ampLoaded)
+    {
+        for (int channel = 0; channel < totalNumInputChannels; ++channel)
+        {
+            auto* channelData = buffer.getWritePointer(channel);
 
+            for (int i = 0; i < buffer.getNumSamples(); ++i)
+            {
+                float x = juce::jlimit(-1.0f, 1.0f, channelData[i]);
+                float pos = (x + 1.0f) * 0.5f * (ampLUT.size() - 1);
+                int idx = (int)pos;
+                float frac = pos - idx;
+                float y = ampLUT[idx];
+                if (idx + 1 < ampLUT.size())
+                    y = y * (1.0f - frac) + ampLUT[idx + 1] * frac;
+
+                channelData[i] = y;
+            }
+        }
+    }
 
     if (irLoaded)
     {
@@ -254,4 +273,72 @@ void ProfilerAudioProcessor::loadIRFile()
             delete chooser; // libère la mémoire après usage
         });
 
+}
+
+// Fonction pour charger deux WAV et construire la LUT
+void ProfilerAudioProcessor::loadAmpProfile()
+{
+    auto chooserDI = new juce::FileChooser("Select DI guitar file", {}, "*.wav");
+    chooserDI->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        [this, chooserDI](const juce::FileChooser& fcDI)
+        {
+            auto diFile = fcDI.getResult();
+            if (diFile.existsAsFile())
+            {
+                // Ensuite on choisit le fichier ampli
+                auto chooserAmp = new juce::FileChooser("Select Amp output file", {}, "*.wav");
+                chooserAmp->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                    [this, chooserAmp, diFile](const juce::FileChooser& fcAmp)
+                    {
+                        auto ampFile = fcAmp.getResult();
+                        if (ampFile.existsAsFile())
+                        {
+                            // Maintenant on peut générer la LUT
+                            generateAmpLUT(diFile, ampFile);
+                        }
+                        delete chooserAmp;
+                    });
+            }
+            delete chooserDI;
+        });
+}
+
+// Fonction qui construit la LUT à partir de deux WAV
+void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce::File& ampFile)
+{
+    juce::AudioFormatManager fm;
+    fm.registerBasicFormats();
+
+    std::unique_ptr<juce::AudioFormatReader> readerDI(fm.createReaderFor(diFile));
+    std::unique_ptr<juce::AudioFormatReader> readerAmp(fm.createReaderFor(ampFile));
+
+    if (!readerDI || !readerAmp) return;
+
+    int numSamples = (int)std::min(readerDI->lengthInSamples, readerAmp->lengthInSamples);
+
+    juce::AudioBuffer<float> diBuf(1, numSamples);
+    juce::AudioBuffer<float> ampBuf(1, numSamples);
+
+    readerDI->read(&diBuf, 0, numSamples, 0, true, false);
+    readerAmp->read(&ampBuf, 0, numSamples, 0, true, false);
+
+    int lutSize = 4096;
+    ampLUT.resize(lutSize, 0.0f);
+    std::vector<int> counts(lutSize, 0);
+
+    for (int i = 0; i < numSamples; ++i)
+    {
+        float x = juce::jlimit(-1.0f, 1.0f, diBuf.getSample(0, i));
+        float y = ampBuf.getSample(0, i);
+        int idx = int((x + 1.0f) * 0.5f * (lutSize - 1));
+        ampLUT[idx] += y;
+        counts[idx]++;
+    }
+
+    for (int i = 0; i < lutSize; ++i)
+    {
+        if (counts[i] > 0) ampLUT[i] /= counts[i];
+    }
+
+    ampLoaded = true;
 }
