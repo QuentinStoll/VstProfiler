@@ -54,17 +54,31 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+	//==============================================================================
+    juce::AudioProcessorValueTreeState _apvts{ *this, nullptr, "Parameters", createParameterLayout() };
+
+	//==============================================================================
+	void updateFilterCoefficients();
+  
     //===================================== Our func ===============================
     void startSweep();
-
     void ProfilerAudioProcessor::loadIRFile();
-
     void ProfilerAudioProcessor::loadAmpProfile();
-
     void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce::File& ampFile);
 
 private:
+    juce::dsp::ProcessorChain <
+		juce::dsp::Gain<float>,             // Input Gain
+		juce::dsp::NoiseGate<float>,        // Noise Gate
+		juce::dsp::IIR::Filter<float>,      // Bass - Low Shelf
+		juce::dsp::IIR::Filter<float>,      // Mid - Peak Filter
+		juce::dsp::IIR::Filter<float>,      // Treble - High Shelf
+		juce::dsp::Gain<float>              // Output Gain
+    > _mainProcessor;
+
     //==============================================================================
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessor)
 
     //================================= Sweep generation =====================================

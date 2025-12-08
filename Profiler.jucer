@@ -3,14 +3,45 @@
 <JUCERPROJECT id="A8TGeP" name="Profiler" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
   <MAINGROUP id="np7PK7" name="Profiler">
-    <GROUP id="{3842B737-32C2-E9C6-BA17-6825D882BBB8}" name="Source">
-      <FILE id="MBImqJ" name="PluginProcessor.cpp" compile="1" resource="0"
-            file="Source/PluginProcessor.cpp"/>
+    <GROUP id="{008EAF89-8325-0CC2-E0EB-0C4D8EFBEC65}" name="Include">
+      <FILE id="CmffLj" name="RotarySliderParameter.h" compile="0" resource="0"
+            file="Source/RotarySliderParameter.h"/>
+      <FILE id="bDvz3Y" name="AmpLoaderSection.h" compile="0" resource="0"
+            file="Source/AmpLoaderSection.h"/>
+      <FILE id="mKWck8" name="EqNormalizeSection.h" compile="0" resource="0"
+            file="Source/EqNormalizeSection.h"/>
+      <FILE id="PdN7XT" name="RotarySlider.h" compile="0" resource="0" file="Source/RotarySlider.h"/>
+      <FILE id="jRdUDu" name="MainSettingsSection.h" compile="0" resource="0"
+            file="Source/MainSettingsSection.h"/>
+      <FILE id="XxaZ7z" name="CloningScreen.h" compile="0" resource="0" file="Source/CloningScreen.h"/>
+      <FILE id="GcxOQ1" name="ScreenID.h" compile="0" resource="0" file="Source/ScreenID.h"/>
+      <FILE id="xLENtC" name="UsingScreen.h" compile="0" resource="0" file="Source/UsingScreen.h"/>
+      <FILE id="wdVMyS" name="SelectionScreen.h" compile="0" resource="0"
+            file="Source/SelectionScreen.h"/>
+      <FILE id="YxFIPj" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
       <FILE id="lkON4L" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/PluginProcessor.h"/>
+      <FILE id="JtVCwW" name="ViewManager.h" compile="0" resource="0" file="Source/ViewManager.h"/>
+    </GROUP>
+    <GROUP id="{3842B737-32C2-E9C6-BA17-6825D882BBB8}" name="Source">
+      <FILE id="yxg2mg" name="AmpLoaderSection.cpp" compile="1" resource="0"
+            file="Source/AmpLoaderSection.cpp"/>
+      <FILE id="rl8HU6" name="EqNormalizeSection.cpp" compile="1" resource="0"
+            file="Source/EqNormalizeSection.cpp"/>
+      <FILE id="b1KTIL" name="RotarySlider.cpp" compile="1" resource="0"
+            file="Source/RotarySlider.cpp"/>
+      <FILE id="J4IO3A" name="MainSettingsSection.cpp" compile="1" resource="0"
+            file="Source/MainSettingsSection.cpp"/>
+      <FILE id="LZDkXf" name="CloningScreen.cpp" compile="1" resource="0"
+            file="Source/CloningScreen.cpp"/>
+      <FILE id="QJTBvA" name="SelectionScreen.cpp" compile="1" resource="0"
+            file="Source/SelectionScreen.cpp"/>
+      <FILE id="R5vYPR" name="UsingScreen.cpp" compile="1" resource="0" file="Source/UsingScreen.cpp"/>
       <FILE id="laIhTn" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
-      <FILE id="YxFIPj" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="MBImqJ" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="WkwAWX" name="ViewManager.cpp" compile="1" resource="0" file="Source/ViewManager.cpp"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
@@ -49,7 +80,7 @@
         <MODULEPATH id="juce_graphics" path="../../JUCE/modules"/>
         <MODULEPATH id="juce_gui_basics" path="../../JUCE/modules"/>
         <MODULEPATH id="juce_gui_extra" path="../../JUCE/modules"/>
-        <MODULEPATH id="juce_dsp" path="../../../Downloads/JUCE/JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="../../JUCE/modules"/>
       </MODULEPATHS>
     </VS2022>
   </EXPORTFORMATS>

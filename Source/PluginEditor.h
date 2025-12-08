@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "ViewManager.h"
 
 //==============================================================================
 /**
@@ -27,7 +28,10 @@ public:
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
-    ProfilerAudioProcessor& audioProcessor;
+    ProfilerAudioProcessor& _audioProcessor;
+	
+	// Init ViewManager
+	std::unique_ptr<ViewManager> _viewManager;
 
 	juce::TextButton SweepButton{ "Start sweep"};
     juce::TextButton IrButton{ "load ir" };
