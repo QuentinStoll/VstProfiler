@@ -1,0 +1,51 @@
+﻿name: CI/CD VST3 Windows Build
+
+on:
+  push:
+    branches: [ Main ]
+  pull_request:
+    branches: [ Main ]
+
+jobs:
+  code_style_check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: ⬇️ Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔨 Install Clang-Format
+      run: sudo apt-get install clang-format -y
+
+    - name: 🔎 Run Clang-Format Check
+      run: |
+        find Source/ -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --Werror --dry-run --ferror-limit=1 -style=file
+
+  build_windows:
+    runs-on: windows-latest
+    needs: code_style_check
+
+    steps:
+    - name: ⬇️ Checkout Code
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: ⚙️ Setup MSVC Dev Environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+        toolset: 14.28
+
+    - name: 🔨 Build VST3 (Windows - MSBuild)
+      run: |
+        msbuild Builds\VisualStudio2019\Profiler.sln /p:Configuration=Release /p:Platform=x64
+
+    # - name: 🧪 Run Unit Tests
+    #   run: echo "Exécution des tests de l'ampli..."
+      
+    - name: 📦 Upload Artifact (VST3 Windows)
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v4
+      with:
+        name: Profiler-Windows
+        path: Builds\VisualStudio2019\x64\Release\Profiler.vst3
