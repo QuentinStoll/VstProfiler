@@ -1,4 +1,3 @@
----
 Checks: >
   -*,
   modernize-use-override,
@@ -18,4 +17,3 @@ Checks: >
 
 # Traite les avertissements comme des erreurs : le pipeline CI échouera si un problème est détecté.
 WarningsAsErrors: '*'
----
