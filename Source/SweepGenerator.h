@@ -7,6 +7,7 @@ class SweepGenerator
 public:
     SweepGenerator() = default;
 
+    // Generate log sweep of 15 seconds 20Hz to 20kHz with fade
     static void generateLogSweep(juce::AudioBuffer<float>& buffer,
         double sampleRate,
         float durationSeconds = 15.0f,

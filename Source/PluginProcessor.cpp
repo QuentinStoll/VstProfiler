@@ -95,7 +95,7 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-    SweepGenerator::generateLogSweep(sweepBuffer, sampleRate, 15.0f);
+    SweepGenerator::generateLogSweep(_sweepBuffer, sampleRate, 15.0f);
   
 
 	// Prepare the main processor chain
@@ -104,7 +104,7 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     spec.maximumBlockSize = (juce::uint32)samplesPerBlock;
     spec.numChannels = (juce::uint32)getTotalNumOutputChannels();
 
-    convolver.prepare(spec);
+    _convolver.prepare(spec);
     _mainProcessor.prepare(spec);
     _mainProcessor.reset();
 
@@ -191,7 +191,7 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
         // ..do something to the data...
     }
-    if (ampLoaded)
+    if (_ampLoaded)
     {
         for (int channel = 0; channel < totalNumInputChannels; ++channel)
         {
@@ -200,43 +200,43 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
             for (int i = 0; i < buffer.getNumSamples(); ++i)
             {
                 float x = juce::jlimit(-1.0f, 1.0f, channelData[i]);
-                float pos = (x + 1.0f) * 0.5f * (ampLUT.size() - 1);
+                float pos = (x + 1.0f) * 0.5f * (_ampLUT.size() - 1);
                 int idx = (int)pos;
                 float frac = pos - idx;
-                float y = ampLUT[idx];
-                if (idx + 1 < ampLUT.size())
-                    y = y * (1.0f - frac) + ampLUT[idx + 1] * frac;
+                float y = _ampLUT[idx];
+                if (idx + 1 < _ampLUT.size())
+                    y = y * (1.0f - frac) + _ampLUT[idx + 1] * frac;
 
                 channelData[i] = y;
             }
         }
     }
 
-    if (irLoaded)
+    if (_irLoaded)
     {
         juce::dsp::AudioBlock<float> block(buffer);
         juce::dsp::ProcessContextReplacing<float> context(block);
-        convolver.process(context);
+        _convolver.process(context);
     }
 
     // start the sweep if button pressed
-    if (sweepRunning)
+    if (_sweepRunning)
     {
         int numSamples = buffer.getNumSamples();
-        int sweepSamples = sweepBuffer.getNumSamples();
+        int sweepSamples = _sweepBuffer.getNumSamples();
 
         for (int i = 0; i < numSamples; ++i)
         {
             float s = 0.0f;
 
-            if (sweepPos < sweepSamples)
+            if (_sweepPos < sweepSamples)
             {
-                s = sweepBuffer.getSample(0, sweepPos);
-                sweepPos++;
+                s = _sweepBuffer.getSample(0, _sweepPos);
+                _sweepPos++;
             }
             else
             {
-                sweepRunning = false; // sweep terminé
+                _sweepRunning = false; // sweep terminé
             }
 
             for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
@@ -383,12 +383,11 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 
 void ProfilerAudioProcessor::startSweep()
 {
-    // Génère un sweep log de 15 secondes de 20Hz à 20kHz avec fade
-    SweepGenerator::generateLogSweep(sweepBuffer, getSampleRate(), 15.0f);
+    SweepGenerator::generateLogSweep(_sweepBuffer, getSampleRate(), 15.0f);
 
-    // Réinitialise la position et lance le sweep
-    sweepPos = 0;
-    sweepRunning = true;
+	// Initialise sweep pos
+    _sweepPos = 0;
+    _sweepRunning = true;
 }
 
 void ProfilerAudioProcessor::loadIRFile()
@@ -400,13 +399,13 @@ void ProfilerAudioProcessor::loadIRFile()
             auto file = fc.getResult();
             if (file.existsAsFile())
             {
-                convolver.loadImpulseResponse(file,
+                _convolver.loadImpulseResponse(file,
                     juce::dsp::Convolution::Stereo::yes,
                     juce::dsp::Convolution::Trim::no,
                     0);
-                irLoaded = true;
+                _irLoaded = true;
             }
-            delete chooser; // libère la mémoire après usage
+			delete chooser; // clean up memory
         });
 
 }
@@ -459,7 +458,7 @@ void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce
     readerAmp->read(&ampBuf, 0, numSamples, 0, true, false);
 
     int lutSize = 4096;
-    ampLUT.resize(lutSize, 0.0f);
+    _ampLUT.resize(lutSize, 0.0f);
     std::vector<int> counts(lutSize, 0);
 
     for (int i = 0; i < numSamples; ++i)
@@ -467,14 +466,14 @@ void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce
         float x = juce::jlimit(-1.0f, 1.0f, diBuf.getSample(0, i));
         float y = ampBuf.getSample(0, i);
         int idx = int((x + 1.0f) * 0.5f * (lutSize - 1));
-        ampLUT[idx] += y;
+        _ampLUT[idx] += y;
         counts[idx]++;
     }
 
     for (int i = 0; i < lutSize; ++i)
     {
-        if (counts[i] > 0) ampLUT[i] /= counts[i];
+        if (counts[i] > 0) _ampLUT[i] /= counts[i];
     }
 
-    ampLoaded = true;
+    _ampLoaded = true;
 }

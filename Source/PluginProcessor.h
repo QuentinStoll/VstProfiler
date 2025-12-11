@@ -61,9 +61,17 @@ public:
 	void updateFilterCoefficients();
   
     //===================================== Our func ===============================
+
+	//starting the sweep and initializing pos
     void startSweep();
+
+	// Loading the Impulse responce file
     void ProfilerAudioProcessor::loadIRFile();
+
+	// Loading the Amplitude profile file
     void ProfilerAudioProcessor::loadAmpProfile();
+
+	// Generating the Amplitude LUT from DI file and Amp file
     void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce::File& ampFile);
 
 private:
@@ -84,28 +92,28 @@ private:
     //================================= Sweep generation =====================================
 
     // Buffer to contain the sweep
-    juce::AudioBuffer<float> sweepBuffer;
+    juce::AudioBuffer<float> _sweepBuffer;
 
     // Actual pos in the sweep
-    int sweepPos = 0;
+    int _sweepPos = 0;
 
     // Is sweep running bool
-    bool sweepRunning = false;
+    bool _sweepRunning = false;
 
     //================================= Ir load =====================================
 
     // Buffer that contain the ir
-    juce::AudioBuffer<float> irBuffer;
+    juce::AudioBuffer<float> _irBuffer;
 
 	// Is ir loaded bool
-    bool irLoaded = false;
+    bool _irLoaded = false;
 
 	// Convolver object
-    juce::dsp::Convolution convolver;
+    juce::dsp::Convolution _convolver;
 
 
     //================================= Amp load ====================================
-    std::vector<float> ampLUT;
-    bool ampLoaded = false;
+    std::vector<float> _ampLUT;
+    bool _ampLoaded = false;
 
 };
