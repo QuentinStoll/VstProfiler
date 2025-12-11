@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "SweepGenerator.h"
 
 //==============================================================================
 /**
@@ -53,7 +54,66 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+	//==============================================================================
+    juce::AudioProcessorValueTreeState _apvts{ *this, nullptr, "Parameters", createParameterLayout() };
+
+	//==============================================================================
+	void updateFilterCoefficients();
+  
+    //===================================== Our func ===============================
+
+	//starting the sweep and initializing pos
+    void startSweep();
+
+	// Loading the Impulse responce file
+    void ProfilerAudioProcessor::loadIRFile();
+
+	// Loading the Amplitude profile file
+    void ProfilerAudioProcessor::loadAmpProfile();
+
+	// Generating the Amplitude LUT from DI file and Amp file
+    void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce::File& ampFile);
+
 private:
+    juce::dsp::ProcessorChain <
+		juce::dsp::Gain<float>,             // Input Gain
+		juce::dsp::NoiseGate<float>,        // Noise Gate
+		juce::dsp::IIR::Filter<float>,      // Bass - Low Shelf
+		juce::dsp::IIR::Filter<float>,      // Mid - Peak Filter
+		juce::dsp::IIR::Filter<float>,      // Treble - High Shelf
+		juce::dsp::Gain<float>              // Output Gain
+    > _mainProcessor;
+
     //==============================================================================
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessor)
+
+    //================================= Sweep generation =====================================
+
+    // Buffer to contain the sweep
+    juce::AudioBuffer<float> _sweepBuffer;
+
+    // Actual pos in the sweep
+    int _sweepPos = 0;
+
+    // Is sweep running bool
+    bool _sweepRunning = false;
+
+    //================================= Ir load =====================================
+
+    // Buffer that contain the ir
+    juce::AudioBuffer<float> _irBuffer;
+
+	// Is ir loaded bool
+    bool _irLoaded = false;
+
+	// Convolver object
+    juce::dsp::Convolution _convolver;
+
+
+    //================================= Amp load ====================================
+    std::vector<float> _ampLUT;
+    bool _ampLoaded = false;
+
 };
