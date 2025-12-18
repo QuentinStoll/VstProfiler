@@ -21,7 +21,7 @@ public:
 
         const double K = durationSeconds / std::log(fEnd / fStart);
 
-        // Paramètres du fade (en secondes)
+        // Paramï¿½tres du fade (en secondes)
         float fadeTime = 0.05f; // 50 ms
         int fadeSamples = int(fadeTime * sampleRate);
 
