@@ -22,7 +22,7 @@ jobs:
 
   build_windows:
     runs-on: windows-latest
-    needs: code_style_check
+    # needs: code_style_check
     steps:
     - name: ⬇️ Checkout Code
       uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
 
   build_linux:
     runs-on: ubuntu-latest
-    needs: code_style_check
+    # needs: code_style_check
     steps:
     - name: ⬇️ Checkout Code
       uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
 
   build_macos:
     runs-on: macos-latest
-    needs: code_style_check
+    # needs: code_style_check
     steps:
     - name: ⬇️ Checkout Code
       uses: actions/checkout@v4
