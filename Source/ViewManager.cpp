@@ -48,7 +48,7 @@ void ViewManager::changeView(ScreenID screenID)
     }
 
     switch (screenID) {
-    case ScreenID::Selection:
+        case ScreenID::Selection:
             _currentView = std::make_unique<SelectionScreen>([this](ScreenID id) {
                 this->changeView(id);
             });
