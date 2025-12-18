@@ -14,7 +14,10 @@ juce_add_plugin(Profiler
     PLUGIN_CODE "Prof"
     PLUGIN_MANUFACTURER_CODE "abcd"
     FORMATS VST3
-    PRODUCT_NAME "Profiler")
+    PRODUCT_NAME "Profiler"
+    JUCE_VST3_CAN_REPLACE_VST2 TRUE)
+	
+juce_generate_juce_header(Profiler)
 
 target_sources(Profiler PRIVATE
     Source/AmpLoaderSection.cpp
@@ -49,10 +52,16 @@ target_link_libraries(Profiler PRIVATE
     juce::juce_events
     juce::juce_core
     juce::juce_data_structures
-    PUBLIC_INHERIT_AS_PIE)
+    juce::juce_dsp
+    juce::juce_audio_formats
+)
 
 target_compile_features(Profiler PRIVATE cxx_std_17)
 
 if(MSVC)
     target_compile_options(Profiler PRIVATE /W4)
 endif()
+
+target_compile_definitions(Profiler PRIVATE 
+    JUCE_IGNORE_VST3_MISMATCHED_PARAMETER_ID_WARNING=1
+)
