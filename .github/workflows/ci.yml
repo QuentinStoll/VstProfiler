@@ -36,7 +36,7 @@ jobs:
 
     - name: 🔨 Build VST3 (Windows - MSBuild)
       run: |
-        msbuild Builds\VisualStudio2019\Profiler.sln /p:Configuration=Release /p:Platform=x64
+        msbuild Builds\VisualStudio2022\Profiler.sln /p:Configuration=Release /p:Platform=x64
 
     # - name: 🧪 Run Unit Tests
     #   run: echo "Exécution des tests de l'ampli..."
@@ -46,7 +46,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Profiler-Windows
-        path: Builds\VisualStudio2019\x64\Release\Profiler.vst3
+        path: Builds\VisualStudio2022\x64\Release\Profiler.vst3
 
   build_macos:
     runs-on: macos-latest
