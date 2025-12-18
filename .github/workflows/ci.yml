@@ -32,16 +32,12 @@ jobs:
       run: |
         Write-Host "Downloading JUCE 8.0.12..."
         Invoke-WebRequest -Uri 'https://github.com/juce-framework/JUCE/releases/download/8.0.12/juce-8.0.12-windows.zip' -OutFile 'juce.zip'
-        Expand-Archive -Force 'juce.zip' 'Libs'
-        $extracted = Get-ChildItem -Path "Libs" -Directory | Where-Object { $_.Name -like "JUCE-*" } | Select-Object -First 1
-        if ($extracted) {
-          Rename-Item $extracted.FullName "Libs\JUCE"
-          Write-Host "Renamed to Libs\JUCE"
-        } else {
-          Write-Error "No JUCE folder found!"
-          exit 1
-        }
+        
+        New-Item -ItemType Directory -Force -Path "Libs\JUCE" | Out-Null
+        Expand-Archive -Force 'juce.zip' -DestinationPath "Libs\JUCE"
+        
         Remove-Item 'juce.zip'
+        Write-Host "JUCE extracted directly to Libs\JUCE"
 
     - name: Regenerate Project with Projucer
       run: Libs\JUCE\extras\Projucer\Builds\VisualStudio2022\Release\Projucer.exe --resave Profiler.jucer
@@ -77,16 +73,12 @@ jobs:
       run: |
         echo "Downloading JUCE 8.0.12..."
         curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.12/juce-8.0.12-linux.zip -o juce.zip
-        unzip juce.zip -d Libs
-        extracted=$(ls -d Libs/JUCE-* | head -n1)
-        if [ -n "$extracted" ]; then
-          mv "$extracted" Libs/JUCE
-          echo "Renamed to Libs/JUCE"
-        else
-          echo "Error: No JUCE folder found!"
-          exit 1
-        fi
+        
+        mkdir -p Libs/JUCE
+        unzip -o juce.zip -d Libs/JUCE
+        
         rm juce.zip
+        echo "JUCE extracted directly to Libs/JUCE"
 
     - name: Build Projucer (Linux)
       run: |
@@ -119,16 +111,12 @@ jobs:
       run: |
         echo "Downloading JUCE 8.0.12..."
         curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.12/juce-8.0.12-osx.zip -o juce.zip
-        unzip juce.zip -d Libs
-        extracted=$(ls -d Libs/JUCE-* | head -n1)
-        if [ -n "$extracted" ]; then
-          mv "$extracted" Libs/JUCE
-          echo "Renamed to Libs/JUCE"
-        else
-          echo "Error: No JUCE folder found!"
-          exit 1
-        fi
+        
+        mkdir -p Libs/JUCE
+        unzip -o juce.zip -d Libs/JUCE
+        
         rm juce.zip
+        echo "JUCE extracted directly to Libs/JUCE"
 
     - name: Build Projucer (macOS)
       run: |
