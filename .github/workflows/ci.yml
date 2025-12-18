@@ -33,7 +33,6 @@ jobs:
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: x64
-        toolset: 14.28
 
     - name: 🔨 Build VST3 (Windows - MSBuild)
       run: |
