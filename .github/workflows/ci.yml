@@ -1,4 +1,4 @@
-﻿name: CI/CD Profiler - Multiplatform Build (JUCE Projucer)
+﻿name: CI/CD Profiler - Multiplatform VST3 Build
 
 on:
   push:
@@ -27,18 +27,21 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Download JUCE if missing
+    - name: Download JUCE
       shell: pwsh
       run: |
-        if (-Not (Test-Path "Libs\JUCE")) {
-          Write-Host "Downloading JUCE 8.0.11..."
-          Invoke-WebRequest -Uri 'https://github.com/juce-framework/JUCE/releases/download/8.0.11/juce-8.0.11-windows.zip' -OutFile 'juce.zip'
-          Expand-Archive -Force 'juce.zip' 'Libs'
-          Rename-Item "Libs\JUCE-8.0.11" "Libs\JUCE"
-          Remove-Item 'juce.zip'
+        Write-Host "Downloading JUCE 8.0.12..."
+        Invoke-WebRequest -Uri 'https://github.com/juce-framework/JUCE/releases/download/8.0.12/juce-8.0.12-windows.zip' -OutFile 'juce.zip'
+        Expand-Archive -Force 'juce.zip' 'Libs'
+        $extracted = Get-ChildItem -Path "Libs" -Directory | Where-Object { $_.Name -like "JUCE-*" } | Select-Object -First 1
+        if ($extracted) {
+          Rename-Item $extracted.FullName "Libs\JUCE"
+          Write-Host "Renamed to Libs\JUCE"
         } else {
-          Write-Host "JUCE already present."
+          Write-Error "No JUCE folder found!"
+          exit 1
         }
+        Remove-Item 'juce.zip'
 
     - name: Regenerate Project with Projucer
       run: Libs\JUCE\extras\Projucer\Builds\VisualStudio2022\Release\Projucer.exe --resave Profiler.jucer
@@ -49,7 +52,7 @@ jobs:
         arch: x64
 
     - name: Build VST3 (Windows)
-      run: msbuild "Builds\VisualStudio2022\Profiler.sln" /p:Configuration=Release /p:Platform=x64
+      run: msbuild "Builds\VisualStudio2022\Profiler.sln" /p:Configuration=Release /p:Platform=x64 /p:PreferredToolArchitecture=x64
 
     - name: Upload Artifact (Windows)
       if: github.event_name == 'push'
@@ -65,27 +68,30 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Install Dependencies
+    - name: Install Linux Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libcurl4-openssl-dev libasound2-dev libjack-jackd2-dev libfreetype6-dev libx11-dev libxext-dev libxinerama-dev libxrandr-dev libxcursor-dev
 
-    - name: Download JUCE if missing
+    - name: Download JUCE
       run: |
-        if [ ! -d "Libs/JUCE" ]; then
-          echo "Downloading JUCE 8.0.11..."
-          curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.11/juce-8.0.11-linux.zip -o juce.zip
-          unzip juce.zip -d Libs
-          mv Libs/JUCE-8.0.11 Libs/JUCE
-          rm juce.zip
+        echo "Downloading JUCE 8.0.12..."
+        curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.12/juce-8.0.12-linux.zip -o juce.zip
+        unzip juce.zip -d Libs
+        extracted=$(ls -d Libs/JUCE-* | head -n1)
+        if [ -n "$extracted" ]; then
+          mv "$extracted" Libs/JUCE
+          echo "Renamed to Libs/JUCE"
         else
-          echo "JUCE already present."
+          echo "Error: No JUCE folder found!"
+          exit 1
         fi
+        rm juce.zip
 
     - name: Build Projucer (Linux)
       run: |
         cd Libs/JUCE/extras/Projucer/Builds/LinuxMakefile
-        make -j$(nproc)
+        make -j$(nproc) CONFIG=Release
 
     - name: Regenerate Project with Projucer
       run: Libs/JUCE/extras/Projucer/Builds/LinuxMakefile/build/Projucer --resave Profiler.jucer
@@ -109,17 +115,20 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Download JUCE if missing
+    - name: Download JUCE
       run: |
-        if [ ! -d "Libs/JUCE" ]; then
-          echo "Downloading JUCE 8.0.11..."
-          curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.11/juce-8.0.11-osx.zip -o juce.zip
-          unzip juce.zip -d Libs
-          mv Libs/JUCE-8.0.11 Libs/JUCE
-          rm juce.zip
+        echo "Downloading JUCE 8.0.12..."
+        curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.12/juce-8.0.12-osx.zip -o juce.zip
+        unzip juce.zip -d Libs
+        extracted=$(ls -d Libs/JUCE-* | head -n1)
+        if [ -n "$extracted" ]; then
+          mv "$extracted" Libs/JUCE
+          echo "Renamed to Libs/JUCE"
         else
-          echo "JUCE already present."
+          echo "Error: No JUCE folder found!"
+          exit 1
         fi
+        rm juce.zip
 
     - name: Build Projucer (macOS)
       run: |
