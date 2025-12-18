@@ -20,7 +20,7 @@ jobs:
       run: |
         find Source/ -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --Werror --dry-run --ferror-limit=1 -style=file
 
-build_windows:
+  build_windows:
     runs-on: windows-latest
     steps:
     - name: Checkout Code
