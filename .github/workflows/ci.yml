@@ -37,7 +37,7 @@ jobs:
         Write-Host "Downloading JUCE 8.0.12..."
         Invoke-WebRequest -Uri 'https://github.com/juce-framework/JUCE/releases/download/8.0.12/juce-8.0.12-windows.zip' -OutFile 'juce.zip'
         New-Item -ItemType Directory -Force -Path "Libs\JUCE" | Out-Null
-        Expand-Archive -Force 'juce.zip' -DestinationPath "Libs\JUCE"
+        Expand-Archive -Force 'juce.zip' -DestinationPath "Libs"
         Remove-Item 'juce.zip'
 
     - name: Build Projucer (Windows)
