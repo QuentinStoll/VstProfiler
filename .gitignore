@@ -22,4 +22,5 @@ Icon?
 build
 JuceLibraryCode
 .vscode
-Libs/JUCE
+.out
+out
