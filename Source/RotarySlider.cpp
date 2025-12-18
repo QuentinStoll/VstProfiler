@@ -17,7 +17,7 @@ RotarySlider::RotarySlider(const RotarySliderParameter& param)
 
 	_slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
 	_slider.setTextValueSuffix(param.suffix);
-	_slider.setRange(param.minValue, param.maxValue, 0.01);
+	_slider.setRange(param.minValue, param.maxValue, 0.01f);
 	_slider.setValue(param.defaultValue);
 
 	addAndMakeVisible(_name);

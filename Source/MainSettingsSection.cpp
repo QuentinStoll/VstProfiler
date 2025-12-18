@@ -14,12 +14,12 @@ MainSettingsSection::MainSettingsSection(juce::AudioProcessorValueTreeState& apv
 {
 	// Define the parameters for each rotary slider
 	std::vector<RotarySliderParameter> sliderParams = {
-		{"input", "Input", " dB", -12.0f, 12.0f, 0.0f },
-		{"gate", "Gate" , " dB", -60.0f, 0.0f, -40.0f },
-		{"bass", "Bass", "", -15.0f, 15.0f, 0.0f },
-		{"mid", "Mid", "", -15.0f, 15.0f, 0.0f },
-		{"treble", "Treble", "", -15.0f, 15.0f, 0.0f },
-		{"output", "Output", " dB", -48.0f, 12.0f, -6.0f }
+		{"gain", "Gain", " dB", -24.0f, 24.0f, 0.0f },
+		{"gate", "Gate" , "", 0.0f, 10.0f, 0.0f },
+		{"bass", "Bass", " dB", -24.0f, 24.0f, 0.0f },
+		{"mid", "Mid", " dB", -12.0f, 12.0f, 0.0f },
+		{"treble", "Treble", " dB", -24.0f, 24.0f, 0.0f },
+		{"volume", "Volume", " %", 0.0f, 1.0f, 1.0f }
 	};
 
 	// Create and add the rotary sliders based on the defined parameters

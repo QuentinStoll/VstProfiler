@@ -1,4 +1,4 @@
-﻿/*
+/*
   ==============================================================================
 
     This file contains the basic framework code for a JUCE plugin processor.
@@ -96,7 +96,6 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     SweepGenerator::generateLogSweep(_sweepBuffer, sampleRate, 15.0f);
-  
 
 	// Prepare the main processor chain
     juce::dsp::ProcessSpec spec;
@@ -153,24 +152,19 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
     
+    float gainDb = _apvts.getRawParameterValue("gain")->load();
+    const float gain = juce::Decibels::decibelsToGain(gainDb);
+    float volume = _apvts.getRawParameterValue("volume")->load();
+
 	// Update filter coefficients based on current parameter values
 	updateFilterCoefficients();
 
-	// Retrieve gain parameters
-	float inputGain = _apvts.getRawParameterValue("input")->load();
-	float outputGain = _apvts.getRawParameterValue("output")->load();
-
-	// Convert dB to linear gain
-    float inputFactor = juce::Decibels::decibelsToGain(inputGain);
-	float outputFactor = juce::Decibels::decibelsToGain(outputGain);
-
-	// Set gain values in the main processor chain
-    _mainProcessor.get<0>().setGainLinear(inputFactor);
-	_mainProcessor.get<5>().setGainLinear(outputFactor);
+    // Set gain values in the main processor chain
+    _mainProcessor.get<0>().setGainLinear(gain);
+    _mainProcessor.get<5>().setGainLinear(volume);
 
 	// Create audio block and process context
     juce::dsp::AudioBlock<float> block(buffer);
@@ -179,18 +173,19 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 	// Process the audio through the main processor chain
     _mainProcessor.process(context);
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
     {
         auto* channelData = buffer.getWritePointer(channel);
-
-        // ..do something to the data...
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+        {
+            auto currentSample = channelData[sample];
+            currentSample = _mainProcessor.get<2>().processSample(currentSample);
+            currentSample = _mainProcessor.get<3>().processSample(currentSample);
+            currentSample = _mainProcessor.get<4>().processSample(currentSample);
+            channelData[sample] = currentSample;
+        }
     }
+
     if (_ampLoaded)
     {
         for (int channel = 0; channel < totalNumInputChannels; ++channel)
@@ -275,43 +270,36 @@ void ProfilerAudioProcessor::setStateInformation (const void* data, int sizeInBy
 void ProfilerAudioProcessor::updateFilterCoefficients()
 {
 	// Retrieve parameter values
-	float gateThreshold = _apvts.getRawParameterValue("gate")->load();
+	//float gateThreshold = _apvts.getRawParameterValue("gate")->load();
 	float bassGain = _apvts.getRawParameterValue("bass")->load();
-	float midGain = _apvts.getRawParameterValue("middle")->load();
+	float midGain = _apvts.getRawParameterValue("mid")->load();
     float trebleGain = _apvts.getRawParameterValue("treble")->load();
 
 	// Get the current sample rate
 	double sampleRate = getSampleRate();
 
-	// Update gate settings
-	auto& gate = _mainProcessor.get<1>();
-	gate.setThreshold(gateThreshold);
-	gate.setAttack(10.0f);
-	gate.setRelease(50.0f);
-	gate.setRatio(4.0f);
-
 	// Update EQ filter coefficients
-	// Bass - Low Shelf
+	// Bass
 	_mainProcessor.get<2>().coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf(
         sampleRate,
         100.0f,
-        0.707f,
+        0.7f,
         juce::Decibels::decibelsToGain(bassGain)
 	);
 
-	// Mid - Peak Filter
+	// Mid
     _mainProcessor.get<3>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
         sampleRate,
-        1000.0f,
-        1.0f,
+        500.0f,
+        0.7f,
         juce::Decibels::decibelsToGain(midGain)
     );
 
-	// Treble - High Shelf
+	// Treble
     _mainProcessor.get<4>().coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf(
         sampleRate,
         5000.0f,
-        0.707f,
+        0.7f,
         juce::Decibels::decibelsToGain(trebleGain)
 	);
 }
@@ -324,9 +312,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
     
 	// Add input gain parameter
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "input", 1 },
-        "Input", 
-        juce::NormalisableRange<float>(-12.0f, 12.0f, 0.1f),
+        juce::ParameterID{ "gain", 1 },
+        "Gain", 
+        juce::NormalisableRange<float>(-24.0f, 24.0f, 0.01f),
         0.0f
     ));
 
@@ -334,8 +322,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ "gate", 1 },
         "Gate",
-        juce::NormalisableRange<float>(-60.0f, 10.0f, 0.1f),
-        -40.0f
+        juce::NormalisableRange<float>(0.0f, 10.0f, 0.01f),
+        0.0f
     ));
 
 	// Add EQ parameters
@@ -343,15 +331,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ "bass", 1 },
         "Bass",
-        juce::NormalisableRange<float>(-15.0f, 15.0f, 0.1f),
+        juce::NormalisableRange<float>(-24.0f, 24.0f, 0.01f),
         0.0f
     ));
 
 	// Middle
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "middle", 1 },
-        "Middle",
-        juce::NormalisableRange<float>(-15.0f, 15.0f, 0.1f),
+        juce::ParameterID{ "mid", 1 },
+        "Mid",
+        juce::NormalisableRange<float>(-12.0f, 12.0f, 0.01f),
         0.0f
     ));
 
@@ -359,16 +347,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ "treble", 1 },
         "Treble",
-        juce::NormalisableRange<float>(-15.0f, 15.0f, 0.1f),
+        juce::NormalisableRange<float>(-24.0f, 24.0f, 0.01f),
         0.0f
     ));
 
 	// Add output gain parameter
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "output", 1 },
-        "Output",
-        juce::NormalisableRange<float>(-48.0f, 12.0f, 0.1f),
-        -6.0f
+        juce::ParameterID{ "volume", 1 },
+        "Volume",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f),
+        1.0f
     ));
     
     return layout;
