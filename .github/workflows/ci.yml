@@ -2,9 +2,9 @@
 
 on:
   push:
-    branches: [ Main ]
+    branches: [ Main, Dev ]
   pull_request:
-    branches: [ Main ]
+    branches: [ Main, Dev ]
 
 jobs:
   code_style_check:
@@ -22,7 +22,6 @@ jobs:
 
   build_windows:
     runs-on: windows-latest
-    needs: code_style_check
 
     steps:
     - name: ⬇️ Checkout Code
@@ -49,3 +48,55 @@ jobs:
       with:
         name: Profiler-Windows
         path: Builds\VisualStudio2019\x64\Release\Profiler.vst3
+
+  build_macos:
+    runs-on: macos-latest
+
+    steps:
+    - name: ⬇️ Checkout Code
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: 🔨 Build VST3 (macOS - xcodebuild)
+      run: |
+        cd Builds/MacOSX
+        xcodebuild -project Profiler.xcodeproj -configuration Release -arch x86_64 -arch arm64
+
+    - name: 📦 Upload Artifact (VST3 macOS)
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v4
+      with:
+        name: Profiler-macOS
+        path: Builds/MacOSX/build/Release/Profiler.vst3
+
+  build_linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: ⬇️ Checkout Code
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: 📦 Install Build Tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libx11-dev libxcb-cursor-dev libxcb-keysyms1-dev libxcb-util-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libcairo2-dev libgtkmm-3.0-dev libfontconfig1-dev pkg-config
+
+    - name: 🔨 Generate Makefiles (VST3 SDK)
+      run: |
+        cd Builds/Linux
+        make config=release
+
+    - name: 🔨 Build VST3 (Linux - Make)
+      run: |
+        cd Builds/Linux
+        make -j$(nproc)
+
+    - name: 📦 Upload Artifact (VST3 Linux)
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v4
+      with:
+        name: Profiler-Linux
+        path: Builds/Linux/build/VST3/Release/Profiler.vst3
