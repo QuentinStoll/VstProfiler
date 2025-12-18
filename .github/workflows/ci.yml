@@ -1,22 +1,22 @@
-﻿name: CI/CD VST3 Builds (JUCE - Projucer)
+﻿name: CI/CD Profiler - Multiplatform Build (JUCE Projucer)
 
 on:
   push:
-    branches: [ Main, Dev ]
+    branches: [ Dev, Main ]
   pull_request:
-    branches: [ Main, Dev ]
+    branches: [ Dev, Main ]
 
 jobs:
   code_style_check:
     runs-on: ubuntu-latest
     steps:
-    - name: ⬇️ Checkout Code
+    - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: 🔨 Install Clang-Format
+    - name: Install Clang-Format
       run: sudo apt-get install -y clang-format
 
-    - name: 🔎 Run Clang-Format Check
+    - name: Run Clang-Format Check
       run: |
         find Source/ -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --Werror --dry-run --ferror-limit=1 -style=file
 
@@ -24,28 +24,34 @@ jobs:
     runs-on: windows-latest
     # needs: code_style_check
     steps:
-    - name: ⬇️ Checkout Code
+    - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: 📥 Download Projucer (Windows)
+    - name: Download JUCE if missing
       shell: pwsh
       run: |
-        Invoke-WebRequest -Uri https://github.com/juce-framework/JUCE/releases/download/8.0.10/juce-8.0.10-windows.zip -OutFile juce.zip
-        Expand-Archive juce.zip -DestinationPath .
+        if (-Not (Test-Path "Libs\JUCE")) {
+          Write-Host "Downloading JUCE 8.0.11..."
+          Invoke-WebRequest -Uri 'https://github.com/juce-framework/JUCE/releases/download/8.0.11/juce-8.0.11-windows.zip' -OutFile 'juce.zip'
+          Expand-Archive -Force 'juce.zip' 'Libs'
+          Rename-Item "Libs\JUCE-8.0.11" "Libs\JUCE"
+          Remove-Item 'juce.zip'
+        } else {
+          Write-Host "JUCE already present."
+        }
 
-    - name: 🔄 Regenerate Project with Projucer
-      run: JUCE/Projucer.exe --resave Profiler.jucer
+    - name: Regenerate Project with Projucer
+      run: Libs\JUCE\extras\Projucer\Builds\VisualStudio2022\Release\Projucer.exe --resave Profiler.jucer
 
-    - name: ⚙️ Setup MSVC
+    - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: x64
 
-    - name: 🔨 Build VST3 (Windows)
-      run: |
-        msbuild "Builds\VisualStudio2022\Profiler.sln" /p:Configuration=Release /p:Platform=x64 /p:PreferredToolArchitecture=x64
+    - name: Build VST3 (Windows)
+      run: msbuild "Builds\VisualStudio2022\Profiler.sln" /p:Configuration=Release /p:Platform=x64
 
-    - name: 📦 Upload Artifact (Windows)
+    - name: Upload Artifact (Windows)
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v4
       with:
@@ -56,29 +62,40 @@ jobs:
     runs-on: ubuntu-latest
     # needs: code_style_check
     steps:
-    - name: ⬇️ Checkout Code
+    - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: 📦 Install Dependencies
+    - name: Install Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libcurl4-openssl-dev libasound2-dev libjack-jackd2-dev libfreetype6-dev libx11-dev libxext-dev libxinerama-dev libxrandr-dev libxcursor-dev
 
-    - name: 📥 Download Projucer (Linux)
+    - name: Download JUCE if missing
       run: |
-        curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.10/juce-8.0.10-linux.zip -o juce.zip
-        unzip juce.zip
-        chmod +x JUCE/Projucer
+        if [ ! -d "Libs/JUCE" ]; then
+          echo "Downloading JUCE 8.0.11..."
+          curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.11/juce-8.0.11-linux.zip -o juce.zip
+          unzip juce.zip -d Libs
+          mv Libs/JUCE-8.0.11 Libs/JUCE
+          rm juce.zip
+        else
+          echo "JUCE already present."
+        fi
 
-    - name: 🔄 Regenerate Project with Projucer
-      run: ./JUCE/Projucer --resave Profiler.jucer
+    - name: Build Projucer (Linux)
+      run: |
+        cd Libs/JUCE/extras/Projucer/Builds/LinuxMakefile
+        make -j$(nproc)
 
-    - name: 🔨 Build VST3 (Linux)
+    - name: Regenerate Project with Projucer
+      run: Libs/JUCE/extras/Projucer/Builds/LinuxMakefile/build/Projucer --resave Profiler.jucer
+
+    - name: Build VST3 (Linux)
       run: |
         cd Builds/Linux
         make -j$(nproc) CONFIG=Release
 
-    - name: 📦 Upload Artifact (Linux)
+    - name: Upload Artifact (Linux)
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v4
       with:
@@ -89,24 +106,35 @@ jobs:
     runs-on: macos-latest
     # needs: code_style_check
     steps:
-    - name: ⬇️ Checkout Code
+    - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: 📥 Download Projucer (macOS)
+    - name: Download JUCE if missing
       run: |
-        curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.10/juce-8.0.10-osx.zip -o juce.zip
-        unzip juce.zip
-        chmod +x JUCE/Projucer.app/Contents/MacOS/Projucer
+        if [ ! -d "Libs/JUCE" ]; then
+          echo "Downloading JUCE 8.0.11..."
+          curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.11/juce-8.0.11-osx.zip -o juce.zip
+          unzip juce.zip -d Libs
+          mv Libs/JUCE-8.0.11 Libs/JUCE
+          rm juce.zip
+        else
+          echo "JUCE already present."
+        fi
 
-    - name: 🔄 Regenerate Project with Projucer
-      run: JUCE/Projucer.app/Contents/MacOS/Projucer --resave Profiler.jucer
+    - name: Build Projucer (macOS)
+      run: |
+        cd Libs/JUCE/extras/Projucer/Builds/MacOSX
+        xcodebuild -project Projucer.xcodeproj -configuration Release
 
-    - name: 🔨 Build VST3 (macOS - Universal)
+    - name: Regenerate Project with Projucer
+      run: Libs/JUCE/extras/Projucer/Builds/MacOSX/build/Release/Projucer --resave Profiler.jucer
+
+    - name: Build VST3 (macOS - Universal)
       run: |
         cd Builds/MacOSX
         xcodebuild -project Profiler.xcodeproj -configuration Release -arch arm64 -arch x86_64
 
-    - name: 📦 Upload Artifact (macOS)
+    - name: Upload Artifact (macOS)
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v4
       with:
