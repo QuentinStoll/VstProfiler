@@ -32,15 +32,18 @@ jobs:
       run: |
         Write-Host "Downloading JUCE 8.0.12..."
         Invoke-WebRequest -Uri 'https://github.com/juce-framework/JUCE/releases/download/8.0.12/juce-8.0.12-windows.zip' -OutFile 'juce.zip'
-        
         New-Item -ItemType Directory -Force -Path "Libs\JUCE" | Out-Null
         Expand-Archive -Force 'juce.zip' -DestinationPath "Libs\JUCE"
-        
         Remove-Item 'juce.zip'
-        Write-Host "JUCE extracted directly to Libs\JUCE"
+        Write-Host "JUCE ready in Libs\JUCE"
+
+    - name: Build Projucer (Windows)
+      run: msbuild "Libs\JUCE\extras\Projucer\Builds\VisualStudio2022\Projucer.sln" /p:Configuration=Release /p:Platform=x64
 
     - name: Regenerate Project with Projucer
-      run: Libs\JUCE\extras\Projucer\Builds\VisualStudio2022\Release\Projucer.exe --resave Profiler.jucer
+      shell: pwsh
+      run: |
+        & "Libs\JUCE\extras\Projucer\Builds\VisualStudio2022\x64\Release\App\Projucer.exe" --resave Profiler.jucer
 
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
@@ -67,18 +70,28 @@ jobs:
     - name: Install Linux Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libcurl4-openssl-dev libasound2-dev libjack-jackd2-dev libfreetype6-dev libx11-dev libxext-dev libxinerama-dev libxrandr-dev libxcursor-dev
+        sudo apt-get install -y \
+          g++ \
+          libgtk-3-dev \
+          libwebkit2gtk-4.1-dev \
+          libcurl4-openssl-dev \
+          libasound2-dev \
+          libjack-jackd2-dev \
+          libfreetype6-dev \
+          libx11-dev \
+          libxext-dev \
+          libxinerama-dev \
+          libxrandr-dev \
+          libxcursor-dev
 
     - name: Download JUCE
       run: |
         echo "Downloading JUCE 8.0.12..."
         curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.12/juce-8.0.12-linux.zip -o juce.zip
-        
         mkdir -p Libs/JUCE
         unzip -o juce.zip -d Libs/JUCE
-        
         rm juce.zip
-        echo "JUCE extracted directly to Libs/JUCE"
+        echo "JUCE ready in Libs/JUCE"
 
     - name: Build Projucer (Linux)
       run: |
@@ -111,25 +124,23 @@ jobs:
       run: |
         echo "Downloading JUCE 8.0.12..."
         curl -L https://github.com/juce-framework/JUCE/releases/download/8.0.12/juce-8.0.12-osx.zip -o juce.zip
-        
         mkdir -p Libs/JUCE
         unzip -o juce.zip -d Libs/JUCE
-        
         rm juce.zip
-        echo "JUCE extracted directly to Libs/JUCE"
+        echo "JUCE ready in Libs/JUCE"
 
     - name: Build Projucer (macOS)
       run: |
-        cd Libs/JUCE/extras/Projucer/Builds/MacOSX
-        xcodebuild -project Projucer.xcodeproj -configuration Release
+        cd Libs/JUCE/extras/Projucer/Builds/MacOS
+        xcodebuild -project Projucer.xcodeproj -configuration Release -quiet
 
     - name: Regenerate Project with Projucer
-      run: Libs/JUCE/extras/Projucer/Builds/MacOSX/build/Release/Projucer --resave Profiler.jucer
+      run: Libs/JUCE/extras/Projucer/Builds/MacOS/build/Release/Projucer --resave Profiler.jucer
 
     - name: Build VST3 (macOS - Universal)
       run: |
         cd Builds/MacOSX
-        xcodebuild -project Profiler.xcodeproj -configuration Release -arch arm64 -arch x86_64
+        xcodebuild -project Profiler.xcodeproj -configuration Release -arch arm64 -arch x86_64 -quiet
 
     - name: Upload Artifact (macOS)
       if: github.event_name == 'push'
