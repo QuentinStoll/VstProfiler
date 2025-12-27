@@ -15,6 +15,18 @@ juce_add_plugin(${PLUGIN_NAME}
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
 )
 
+set_target_properties(${PLUGIN_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_SOURCE_DIR}/bin/Debug
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin/Release
+)
+
+set_target_properties(${PLUGIN_NAME}  PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/arc"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/lib"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+
 # Collect source files
 target_sources(${PLUGIN_NAME} PRIVATE
     AmpLoaderSection.cpp
@@ -31,9 +43,10 @@ target_sources(${PLUGIN_NAME} PRIVATE
 
 # Create plugin library
 # add_library(${PLUGIN_NAME} STATIC ${SOURCES})
+add_compile_definitions(JUCE_VST3_CAN_REPLACE_VST2=0)
 
 # Link JUCE modules from juce_setup.cmake
-target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE})
+target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} curl)
 
 # Include directories
 target_include_directories(${PLUGIN_NAME} PRIVATE
@@ -46,9 +59,9 @@ apply_compiler_options(${PLUGIN_NAME})
 
 # Add plugin formats based on presets
 if(APPLE)
-  set(FORMATS AU VST3 Standalone)
+    set(FORMATS AU VST3 Standalone)
 elseif(UNIX)
-  set(FORMATS VST3)
+    set(FORMATS VST3)
 else()
-  set(FORMATS VST3 Standalone)
+    set(FORMATS VST3 Standalone)
 endif()
