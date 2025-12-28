@@ -27,6 +27,7 @@ private:
 	juce::TextButton _sweepButton{ "Start sweep" };
 	juce::TextButton _irButton{ "load ir" };
 	juce::TextButton _ampButton{ "load amp" };
+    juce::TextButton _deconvolveButton{"generate ir"};
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CloningScreen)
 };

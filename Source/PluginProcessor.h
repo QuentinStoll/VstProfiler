@@ -62,6 +62,8 @@ public:
   
     //===================================== Our func ===============================
 
+    void ProfilerAudioProcessor::startConvolution();
+
 	//starting the sweep and initializing pos
     void startSweep();
 

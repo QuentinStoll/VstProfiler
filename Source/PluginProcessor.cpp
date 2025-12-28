@@ -8,6 +8,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "IRGenerator.h"
 
 //==============================================================================
 ProfilerAudioProcessor::ProfilerAudioProcessor()
@@ -436,6 +437,84 @@ void ProfilerAudioProcessor::loadAmpProfile()
             }
             delete chooserDI;
         });
+}
+
+void ProfilerAudioProcessor::startConvolution() {
+
+  auto chooser = new juce::FileChooser("Sélectionner le sweep enregistré (après ampli/cab)", juce::File{}, "*.wav");
+
+  chooser->launchAsync(
+      juce::FileBrowserComponent::openMode |
+          juce::FileBrowserComponent::canSelectFiles,
+      [this, chooser](const juce::FileChooser &fc) {
+        auto recordedSweepFile = fc.getResult();
+
+        if (!recordedSweepFile.existsAsFile()) {
+          delete chooser;
+          return;
+        }
+
+        juce::AudioFormatManager formatManager;
+        formatManager.registerBasicFormats();
+
+        std::unique_ptr<juce::AudioFormatReader> recReader(
+            formatManager.createReaderFor(recordedSweepFile));
+
+        if (!recReader) {
+          juce::AlertWindow::showMessageBoxAsync(
+              juce::AlertWindow::WarningIcon, "Erreur de chargement",
+              "Le fichier WAV enregistré n'a pas pu être lu.");
+          delete chooser;
+          return;
+        }
+
+        if (_sweepBuffer.getNumSamples() <= 0) {
+          juce::AlertWindow::showMessageBoxAsync(
+              juce::AlertWindow::WarningIcon, "Sweep de référence manquant",
+              "Le sweep interne n'a pas été généré. Relancez le plugin ou "
+              "vérifiez prepareToPlay().");
+          delete chooser;
+          return;
+        }
+
+        int numSamples =
+            (int)juce::jmin((juce::int64)_sweepBuffer.getNumSamples(),
+                            recReader->lengthInSamples);
+
+        if (numSamples <= 0) {
+          juce::AlertWindow::showMessageBoxAsync(
+              juce::AlertWindow::WarningIcon, "Fichier trop court",
+              "Le fichier enregistré est trop court ou vide.");
+          delete chooser;
+          return;
+        }
+
+        juce::AudioBuffer<float> recordedBuffer(1, numSamples);
+        recReader->read(&recordedBuffer, 0, numSamples, 0, true, false);
+
+        double sampleRate = recReader->sampleRate;
+
+        float duration = 15.0f;
+        float fStart = 20.0f;
+        float fEnd = 20000.0f;
+
+        juce::AudioBuffer<float> irBuffer(1, static_cast<int>(sampleRate * 0.6));
+
+        IRGenerator::deconvolve(_sweepBuffer, recordedBuffer, irBuffer, sampleRate, duration, fStart, fEnd);
+
+        _convolver.loadImpulseResponse(
+            std::move(irBuffer),
+            sampleRate,
+            juce::dsp::Convolution::Stereo::no,
+            juce::dsp::Convolution::Trim::yes,
+            juce::dsp::Convolution::Normalise::yes);
+
+        _irLoaded = true;
+
+        juce::Logger::writeToLog("IR générée et chargée avec succès à partir du fichier WAV sélectionné.");
+
+        delete chooser;
+      });
 }
 
 // Fonction qui construit la LUT à partir de deux WAV

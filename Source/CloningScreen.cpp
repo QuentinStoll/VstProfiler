@@ -29,6 +29,11 @@ CloningScreen::CloningScreen(ProfilerAudioProcessor& p) : _audioProcessor(p)
     {
         _audioProcessor.loadAmpProfile();
     };
+    addAndMakeVisible(_deconvolveButton);
+    _deconvolveButton.onClick = [this]()
+    {
+        _audioProcessor.startConvolution();
+    };
 
 	setSize(600, 400);
 }
@@ -54,5 +59,5 @@ void CloningScreen::resized()
     _sweepButton.setBounds(bounds.getX(), 100, getWidth() - 20, 30);
     _irButton.setBounds(bounds.getX(), 150, getWidth() - 20, 30);
     _ampButton.setBounds(bounds.getX(), 190, getWidth() - 20, 30);
-    //_startCloneButton.setBounds(bounds.getCentreX() - (buttonWidth / 2), bounds.getCentreY(), buttonWidth, buttonHeight);
+    _deconvolveButton.setBounds(bounds.getX(), 230, getWidth() - 20, 30);
 }
