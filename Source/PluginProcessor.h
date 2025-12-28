@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "SweepGenerator.h"
+#include "DynamicWaveshaper.h"
 
 //==============================================================================
 /**
@@ -115,5 +116,8 @@ private:
     //================================= Amp load ====================================
     std::vector<float> _ampLUT;
     bool _ampLoaded = false;
+
+    DynamicWaveshaper _ampStage;
+
 
 };

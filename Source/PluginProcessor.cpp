@@ -108,6 +108,9 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     _mainProcessor.prepare(spec);
     _mainProcessor.reset();
 
+    _ampStage.prepare(sampleRate);
+
+
 //     spec.maximumBlockSize = samplesPerBlock;
 //     spec.numChannels = getTotalNumOutputChannels();
 
@@ -191,25 +194,17 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
         // ..do something to the data...
     }
+
     if (_ampLoaded)
     {
-        for (int channel = 0; channel < totalNumInputChannels; ++channel)
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
         {
-            auto* channelData = buffer.getWritePointer(channel);
+            auto* data = buffer.getWritePointer(ch);
 
             for (int i = 0; i < buffer.getNumSamples(); ++i)
-            {
-                float x = juce::jlimit(-1.0f, 1.0f, channelData[i]);
-                float pos = (x + 1.0f) * 0.5f * (_ampLUT.size() - 1);
-                int idx = (int)pos;
-                float frac = pos - idx;
-                float y = _ampLUT[idx];
-                if (idx + 1 < _ampLUT.size())
-                    y = y * (1.0f - frac) + _ampLUT[idx + 1] * frac;
-
-                channelData[i] = y;
-            }
+                data[i] = _ampStage.processSample(data[i]);
         }
+
     }
 
     if (_irLoaded)
