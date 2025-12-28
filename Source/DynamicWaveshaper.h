@@ -1,9 +1,16 @@
 #pragma once
 
+#include <JuceHeader.h>
 #include <cmath>
 
-struct DynamicWaveshaper
+class AmpProcessor : public juce::Component
 {
+public:
+    void prepare(float sr);
+
+    float processSample(float x);
+
+private:
     float env = 0.0f;
     float sampleRate = 44100.0f;
 
@@ -17,28 +24,4 @@ struct DynamicWaveshaper
 
     float attackCoef = 0.0f;
     float releaseCoef = 0.0f;
-
-    void prepare(float sr)
-    {
-        sampleRate = sr;
-        attackCoef = std::exp(-1.0f / (0.001f * attackMs * sr));
-        releaseCoef = std::exp(-1.0f / (0.001f * releaseMs * sr));
-        env = 0.0f;
-    }
-
-    inline float processSample(float x)
-    {
-        float absx = std::abs(x);
-
-        // enveloppe avec attaque rapide / release lent
-        if (absx > env)
-            env = attackCoef * env + (1.0f - attackCoef) * absx;
-        else
-            env = releaseCoef * env + (1.0f - releaseCoef) * absx;
-
-        float drive = A + B * env;
-
-        // tube sat sim
-        return std::tanh(drive * x);
-    }
 };

@@ -117,7 +117,5 @@ private:
     std::vector<float> _ampLUT;
     bool _ampLoaded = false;
 
-    DynamicWaveshaper _ampStage;
-
-
+    AmpProcessor  _ampStage;
 };
