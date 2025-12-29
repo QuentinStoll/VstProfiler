@@ -1,81 +1,157 @@
-# VSTProfiler — Simulateur d’amplificateurs guitare
+<a id="readme-top"></a>
 
+<!-- PROJECT SHIELDS -->
 [![Epitech](https://img.shields.io/badge/Epitech-Paris-blue)](https://www.epitech.eu/fr/)
-[![JUCE](https://img.shields.io/badge/JUCE-7.0.9+-brightgreen)](https://juce.com/)
+[![JUCE](https://img.shields.io/badge/JUCE-8.0.12+-brightgreen)](https://juce.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![C++20](https://img.shields.io/badge/C++-20-blue)](https://en.cppreference.com/w/cpp/20)
 
-> **EIP 2025-2026 — Track Technique**  
-> Projet de 5ᵉ année (débuté en 4ᵉ année) réalisé par 4 étudiants d’Epitech Paris
 
-## Description
 
-VSTProfiler est un plug-in audio (format VST3 / AU / Standalone) qui permet de **modéliser et reproduire fidèlement le son d’amplificateurs guitare légendaires** à partir de techniques de capture d’impulsions, de modélisation de circuits et d’apprentissage machine léger.
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+<!--
+  <a href="https://github.com/QuentinStoll/Profiler">
+    <img src="images/logo.png" alt="Logo" width="80" height="80">
+  </a>
+-->
+<h3 align="center">VSTProfiler - Guitar Amplifier Simulator</h3>
+  <p align="center">
+    VSTProfiler is an open-source audio plugin (VST3 / AU / Standalone) designed to accurately model and reproduce the sound and dynamic behavior of legendary guitar amplifiers using impulse responses, circuit modeling, and lightweight machine learning.
+    <br />
+    <a href="https://github.com/QuentinStoll/Profiler/wiki"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="#getting-started">Getting Started</a>
+    &middot;
+    <a href="#contributing">Contributing</a>
+    &middot;
+    <a href="https://github.com/QuentinStoll/Profiler/issues/new?labels=enhancement">Request Feature</a>
+    &middot;
+    <a href="https://github.com/QuentinStoll/Profiler/issues/new?labels=bug">Report Bug</a>
+  </p>
+</div>
 
-L’objectif : offrir aux guitaristes un outil gratuit, open-source et hautement personnalisable capable de « copier » le timbre et la dynamique d’amplis réels avec une qualité comparable aux solutions commerciales.
 
-Fonctionnalités prévues / en cours :
-- Capture d’impulsions (IR Loader + outils de capture maison)
-- Modélisation non-linéaire de lampes (12AX7, EL34, etc.)
-- Émulations de haut-parleurs et de baffles
-- Oversampling jusqu’à 16× pour zéro aliasing
-- Interface moderne et skinnable réalisée avec JUCE
-- Support M1/M2/Apple Silicon + Windows + Linux (objectif)
 
-## Équipe
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+  </ol>
+</details>
 
-| Nom                  | Rôle principal                  |
-|----------------------|----------------------------------|
-| [QuentinStoll](https://github.com/QuentinStoll)          | Audio DSP / Architecture        |
-| [RychlewL](https://github.com/RychlewL)             | JUCE GUI / UX                   |
-| [LaurntZhang](https://github.com/LaurntZhang)              | Modélisation physique / IR      |
-| [LeCentenaire](https://github.com/LeCentenaire)              | Tests, CI/CD, documentation     |
 
-## Technologies
 
-- **JUCE 7.9+** (framework audio & GUI)
-- C++20
-- GitHub Actions pour CI
+<!-- ABOUT THE PROJECT -->
+## About The Project
 
-## Pré-requis
+**EIP 2025–2026 — Technical Track**
+Final-year engineering project (started in 4th year) developed by 4 students from **Epitech Paris**.
 
-- **Projucer** (inclus avec JUCE) → [Télécharger JUCE](https://juce.com/get-juce)
-- **Visual Studio 2022** (Community ou supérieur) avec :
-  - Charge de travail **Développement Desktop en C++**
-  - Support **v143** (ou supérieur)
-- **Git** (pour cloner + submodules)
-- (Optionnel) **Reaper** (Celui qu'on utilise)
+The goal of VSTProfiler is to provide guitarists with a **free, open-source, and highly customizable** tool capable of “copying” the tone and feel of real amplifiers, with audio quality comparable to commercial solutions.
 
-## Collaboration — Comment contribuer efficacement
+### Key Features
+- Impulse Response capture and loading (custom capture tools)
+- Non-linear tube modeling (12AX7, EL34, etc.)
+- Speaker cabinet and speaker emulation
+- Oversampling up to **16×** for zero aliasing
+- Modern, skinnable JUCE-based UI
+- Cross-platform support (Windows, macOS Apple Silicon, Linux — target)
 
-Vous voulez aider ? Super ! Voici les fichiers clés à modifier selon votre contribution :
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-| Type de contribution | Fichiers à modifier | Outils |
-|----------------------|---------------------|--------|
-| **DSP / Audio** (nouveaux modèles d’amplis, oversampling, IR, etc.) | `Source/PluginProcessor.cpp`, `Source/DSP/*.cpp/h` | Visual Studio, Projucer |
-| **Interface graphique** (nouveaux knobs, skins, layout) | `Source/PluginEditor.cpp`, `Resources/*.png`, `Source/GUI/*.cpp` | Projucer (GUI Editor), Visual Studio |
-| **Nouvelles émulations** (Marshall, Fender, etc.) | Ajouter dans `Source/DSP/Amps/`, référencer dans `PluginProcessor` | Visual Studio |
-| **Tests unitaires** | `Tests/` (GoogleTest) | Visual Studio |
-| **Documentation / README** | `README.md`, `docs/` | Markdown |
-| **Scripts Python** (capture IR, entraînement NN) | `Scripts/` | Python 3.10+ |
 
-### Étapes pour contribuer
 
-1. **Ouvrez le projet avec le Projucer**  
-   → `Profiler.jucer` (fichier central du projet)
+### Built With
 
-2. **Ne modifiez JAMAIS le `.jucer` sans accord d’équipe**  
-   → Il génère les projets VS, Xcode, etc. → **risque de conflits**
+* [**C++20**](https://en.cppreference.com/w/cpp/20)
+* [**JUCE 8.0+**](https://juce.com/)
+* [**spdlog**](https://github.com/gabime/spdlog)
 
-3. **Travaillez dans Visual Studio**  
-   → Ouvrez la solution générée : `Builds/VisualStudio2022/Profiler.sln`
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-4. **Ajoutez vos fichiers via le Projucer**  
-   → Cliquez droit → *Add New File* → sauvegardez → commit
 
-5. **Testez en Standalone avant VST3**  
-   → Plus rapide à lancer
 
-6. **Commit clair** (exemple) :
-   ```bash
-   git commit -m "feat: ajout modèle Fender Twin Reverb avec 12AX7"
+<!-- GETTING STARTED -->
+## Getting Started
+
+### Prerequisites
+
+**for windows:**
+```
+cmake
+...
+to be documented
+```
+
+**for linux**
+```
+cmake
+...
+to be documented
+```
+
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+### Installation
+
+1. Clone the repository
+  ```sh
+  git clone https://github.com/QuentinStoll/Profiler.git
+  ```
+2. use the install script
+  >windows:
+  ```batch
+  .\install.bat
+  ```
+
+  >linux:
+  ```sh
+  ./install.sh
+  ```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- USAGE -->
+## Usage
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- CONTRIBUTING -->
+## Contributing
+see [CONTRIBUTING.md](CONTRIBUTING.md)
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- LICENSE -->
+## License
+see [LICENSE.md](LICENSE.md)
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- ROADMAP -->
