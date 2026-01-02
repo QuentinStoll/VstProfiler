@@ -108,6 +108,8 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     _mainProcessor.prepare(spec);
     _mainProcessor.reset();
 
+    oversampler.initProcessing(samplesPerBlock);
+    
     _ampStage.prepare(sampleRate);
 
 
@@ -197,14 +199,22 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
     if (_ampLoaded)
     {
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-        {
-            auto* data = buffer.getWritePointer(ch);
+        // A. Passage à une fréquence plus haute (ex: 44.1kHz -> 176.4kHz)
+        juce::dsp::AudioBlock<float> oversampledBlock = oversampler.processSamplesUp(block);
 
-            for (int i = 0; i < buffer.getNumSamples(); ++i)
+        for (int ch = 0; ch < (int)oversampledBlock.getNumChannels(); ++ch)
+        {
+            auto* data = oversampledBlock.getChannelPointer(ch);
+
+            for (int i = 0; i < (int)oversampledBlock.getNumSamples(); ++i)
+            {
+                // On traite chaque échantillon à haute fréquence
                 data[i] = _ampStage.processSample(data[i]);
+            }
         }
 
+        // B. Retour à la fréquence d'origine (Filtre passe-bas + Downsampling)
+        oversampler.processSamplesDown(block);
     }
 
     if (_irLoaded)

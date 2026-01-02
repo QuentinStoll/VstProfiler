@@ -11,17 +11,16 @@ public:
     float processSample(float x);
 
 private:
+    // --- LUT ---
+    static const int lutSize = 2048;
+    float lut[lutSize];
+    void fillAsymmetricLUT();
+    float readLUT(float input);
+
+    // --- Dynamic ---
     float env = 0.0f;
     float sampleRate = 44100.0f;
-
-    // paramètres "profil"
-    float A = 6.0f;   // Default drive
-    float B = 15.0f;   // Drive augmentation with level
-
-    // time const
-    float attackMs = 1.0f;
-    float releaseMs = 80.0f;
-
-    float attackCoef = 0.0f;
-    float releaseCoef = 0.0f;
+    float A = 4.0f;   // Gain de base
+    float B = 10.0f;  // Réaction à l'enveloppe
+    float attackCoef, releaseCoef;
 };
