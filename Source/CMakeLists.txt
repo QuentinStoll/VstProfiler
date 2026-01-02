@@ -24,17 +24,17 @@ set_target_properties(${PLUGIN_NAME}  PROPERTIES
 
 # Collect source files
 target_sources(${PLUGIN_NAME} PRIVATE
-    AmpLoaderSection.cpp
-    CloningScreen.cpp
-    EqNormalizeSection.cpp
-    MainSettingsSection.cpp
-    PluginEditor.cpp
-    PluginProcessor.cpp
-    RotarySlider.cpp
-    SelectionScreen.cpp
-    UsingScreen.cpp
-    ViewManager.cpp
-    AmpEngine.cpp
+    Src/AmpLoaderSection.cpp
+    Src/CloningScreen.cpp
+    Src/EqNormalizeSection.cpp
+    Src/MainSettingsSection.cpp
+    Src/PluginEditor.cpp
+    Src/PluginProcessor.cpp
+    Src/RotarySlider.cpp
+    Src/SelectionScreen.cpp
+    Src/UsingScreen.cpp
+    Src/ViewManager.cpp
+    Src/AmpEngine.cpp
 )
 
 # Create plugin library
@@ -50,7 +50,7 @@ endif()
 
 # Include directories
 target_include_directories(${PLUGIN_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/../JuceLibraryCode
 )
 
