@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    EqNormalizeSection.cpp
-    Created: 2 Dec 2025 3:48:38pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #include "EqNormalizeSection.h"
 
 EqNormalizeSection::EqNormalizeSection()

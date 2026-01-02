@@ -1,15 +1,6 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #pragma once
 
 #include <JuceHeader.h>
-#include "SweepGenerator.h"
 #include "AmpEngine.h"
 
 //==============================================================================
@@ -63,17 +54,8 @@ public:
   
     //===================================== Our func ===============================
 
-	//starting the sweep and initializing pos
-    void startSweep();
-
 	// Loading the Impulse responce file
     void loadIRFile();
-
-	// Loading the Amplitude profile file
-    void loadAmpProfile();
-
-	// Generating the Amplitude LUT from DI file and Amp file
-    void generateAmpLUT(const juce::File& diFile, const juce::File& ampFile);
 
 private:
     juce::dsp::ProcessorChain <
@@ -89,17 +71,6 @@ private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessor)
-
-    //================================= Sweep generation =====================================
-
-    // Buffer to contain the sweep
-    juce::AudioBuffer<float> _sweepBuffer;
-
-    // Actual pos in the sweep
-    int _sweepPos = 0;
-
-    // Is sweep running bool
-    bool _sweepRunning = false;
 
     //================================= Ir load =====================================
 

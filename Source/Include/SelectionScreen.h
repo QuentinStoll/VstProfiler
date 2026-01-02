@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    SelectionScreen.h
-    Created: 30 Nov 2025 2:11:10pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #pragma once
 #include <JuceHeader.h>
 #include <functional>

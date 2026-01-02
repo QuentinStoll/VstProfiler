@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    MainSettingsSection.h
-    Created: 1 Dec 2025 11:40:09pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #pragma once
 #include <JuceHeader.h>
 #include "RotarySlider.h"

@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    MainSettingsSection.cpp
-    Created: 1 Dec 2025 11:39:55pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #include "MainSettingsSection.h"
 
 MainSettingsSection::MainSettingsSection(juce::AudioProcessorValueTreeState& apvts)

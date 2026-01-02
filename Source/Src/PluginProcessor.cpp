@@ -1,12 +1,4 @@
-﻿/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
-#include "PluginProcessor.h"
+﻿#include "PluginProcessor.h"
 #include "PluginEditor.h"
 
 //==============================================================================
@@ -95,7 +87,6 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-    SweepGenerator::generateLogSweep(_sweepBuffer, sampleRate, 15.0f);
   
 
 	// Prepare the main processor chain
@@ -222,31 +213,6 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         juce::dsp::AudioBlock<float> block(buffer);
         juce::dsp::ProcessContextReplacing<float> context(block);
         _convolver.process(context);
-    }
-
-    // start the sweep if button pressed
-    if (_sweepRunning)
-    {
-        int numSamples = buffer.getNumSamples();
-        int sweepSamples = _sweepBuffer.getNumSamples();
-
-        for (int i = 0; i < numSamples; ++i)
-        {
-            float s = 0.0f;
-
-            if (_sweepPos < sweepSamples)
-            {
-                s = _sweepBuffer.getSample(0, _sweepPos);
-                _sweepPos++;
-            }
-            else
-            {
-                _sweepRunning = false; // sweep terminé
-            }
-
-            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-                buffer.setSample(ch, i, s);
-        }
     }
 
 }
@@ -386,15 +352,6 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new ProfilerAudioProcessor();
 }
 
-void ProfilerAudioProcessor::startSweep()
-{
-    SweepGenerator::generateLogSweep(_sweepBuffer, getSampleRate(), 15.0f);
-
-	// Initialise sweep pos
-    _sweepPos = 0;
-    _sweepRunning = true;
-}
-
 void ProfilerAudioProcessor::loadIRFile()
 {
     auto chooser = new juce::FileChooser("Select an IR file", {}, "*.wav");
@@ -413,72 +370,4 @@ void ProfilerAudioProcessor::loadIRFile()
 			delete chooser; // clean up memory
         });
 
-}
-
-// Fonction pour charger deux WAV et construire la LUT
-void ProfilerAudioProcessor::loadAmpProfile()
-{
-    auto chooserDI = new juce::FileChooser("Select DI guitar file", {}, "*.wav");
-    chooserDI->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-        [this, chooserDI](const juce::FileChooser& fcDI)
-        {
-            auto diFile = fcDI.getResult();
-            if (diFile.existsAsFile())
-            {
-                // Ensuite on choisit le fichier ampli
-                auto chooserAmp = new juce::FileChooser("Select Amp output file", {}, "*.wav");
-                chooserAmp->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-                    [this, chooserAmp, diFile](const juce::FileChooser& fcAmp)
-                    {
-                        auto ampFile = fcAmp.getResult();
-                        if (ampFile.existsAsFile())
-                        {
-                            // Maintenant on peut générer la LUT
-                            generateAmpLUT(diFile, ampFile);
-                        }
-                        delete chooserAmp;
-                    });
-            }
-            delete chooserDI;
-        });
-}
-
-// Fonction qui construit la LUT à partir de deux WAV
-void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce::File& ampFile)
-{
-    juce::AudioFormatManager fm;
-    fm.registerBasicFormats();
-
-    std::unique_ptr<juce::AudioFormatReader> readerDI(fm.createReaderFor(diFile));
-    std::unique_ptr<juce::AudioFormatReader> readerAmp(fm.createReaderFor(ampFile));
-
-    if (!readerDI || !readerAmp) return;
-
-    int numSamples = (int)std::min(readerDI->lengthInSamples, readerAmp->lengthInSamples);
-
-    juce::AudioBuffer<float> diBuf(1, numSamples);
-    juce::AudioBuffer<float> ampBuf(1, numSamples);
-
-    readerDI->read(&diBuf, 0, numSamples, 0, true, false);
-    readerAmp->read(&ampBuf, 0, numSamples, 0, true, false);
-
-    int lutSize = 4096;
-    _ampLUT.resize(lutSize, 0.0f);
-    std::vector<int> counts(lutSize, 0);
-
-    for (int i = 0; i < numSamples; ++i)
-    {
-        float x = juce::jlimit(-1.0f, 1.0f, diBuf.getSample(0, i));
-        float y = ampBuf.getSample(0, i);
-        int idx = int((x + 1.0f) * 0.5f * (lutSize - 1));
-        _ampLUT[idx] += y;
-        counts[idx]++;
-    }
-
-    for (int i = 0; i < lutSize; ++i)
-    {
-        if (counts[i] > 0) _ampLUT[i] /= counts[i];
-    }
-
-    _ampLoaded = true;
 }
