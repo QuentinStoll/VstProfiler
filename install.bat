@@ -29,7 +29,7 @@ goto end
 
 :config
 echo [INFO] Configuring cmake
-cmake -S . -B build
+cmake -S "%~dp0." -B "%~dp0build"
 if errorlevel 1 (
     echo [ERROR] cmake configuration failed
     exit /b 1

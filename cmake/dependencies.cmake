@@ -49,7 +49,8 @@ if(NOT WIN32)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
     pkg_check_modules(WEBKIT2GTK REQUIRED webkit2gtk-4.0)
+    # pkg_check_modules(CURL REQUIRED libcurl)
+    include_directories(${GTK3_INCLUDE_DIRS} ${WEBKIT2GTK_INCLUDE_DIRS})
 endif()
 
-# pkg_check_modules(CURL REQUIRED libcurl)
-include_directories(${GTK3_INCLUDE_DIRS} ${WEBKIT2GTK_INCLUDE_DIRS})
+
