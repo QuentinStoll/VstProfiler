@@ -118,4 +118,6 @@ private:
     bool _ampLoaded = false;
 
     AmpProcessor  _ampStage;
+
+    juce::dsp::Oversampling<float> oversampler{ 2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true };
 };
