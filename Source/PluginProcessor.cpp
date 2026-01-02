@@ -159,12 +159,14 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     const float gain = juce::Decibels::decibelsToGain(gainDb);
     float volume = _apvts.getRawParameterValue("volume")->load();
 
+	// Set gain
+    _mainProcessor.get<0>().setGainLinear(gain);
+
+	// Update gate threshold
+	updateGateThreshold();
+
 	// Update filter coefficients based on current parameter values
 	updateFilterCoefficients();
-
-    // Set gain values in the main processor chain
-    _mainProcessor.get<0>().setGainLinear(gain);
-    _mainProcessor.get<5>().setGainLinear(volume);
 
 	// Create audio block and process context
     juce::dsp::AudioBlock<float> block(buffer);
@@ -239,6 +241,8 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         }
     }
 
+    // Set output volume
+    _mainProcessor.get<5>().setGainLinear(volume);
 }
 
 //==============================================================================
@@ -302,6 +306,25 @@ void ProfilerAudioProcessor::updateFilterCoefficients()
         0.7f,
         juce::Decibels::decibelsToGain(trebleGain)
 	);
+}
+
+//==============================================================================
+void ProfilerAudioProcessor::updateGateThreshold()
+{
+	// Retrieve gate parameter value
+    float gateValue = _apvts.getRawParameterValue("gate")->load();
+    
+	// Map gateValue (0.0 to 10.0) to threshold in dB (-100 dB to -10 dB)
+    float thresholdInDb = juce::jmap(gateValue, 0.0f, 10.0f, -100.0f, -10.0f);
+    auto& gate = _mainProcessor.get<1>();
+    
+	// Set the threshold
+	gate.setThreshold(thresholdInDb);
+
+	// Set other gate parameters as needed
+	gate.setAttack(5.0f);
+	gate.setRelease(100.0f);
+	gate.setRatio(10.0f);
 }
 
 //==============================================================================

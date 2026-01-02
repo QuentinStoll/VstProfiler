@@ -57,10 +57,13 @@ public:
 	//==============================================================================
     juce::AudioProcessorValueTreeState _apvts{ *this, nullptr, "Parameters", createParameterLayout() };
 
-	//==============================================================================
-	void updateFilterCoefficients();
-  
     //===================================== Our func ===============================
+
+	// update 3 band EQ coefficients
+    void updateFilterCoefficients();
+
+	// update noise gate threshold
+	void updateGateThreshold();
 
 	//starting the sweep and initializing pos
     void startSweep();
