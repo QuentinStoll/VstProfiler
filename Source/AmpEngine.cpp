@@ -1,4 +1,4 @@
-#include "DynamicWaveshaper.h"
+#include "AmpEngine.h"
 
 void AmpProcessor::prepare(float sr) {
     sampleRate = sr;
@@ -9,36 +9,36 @@ void AmpProcessor::prepare(float sr) {
 
 void AmpProcessor::fillAsymmetricLUT() {
     for (int i = 0; i < lutSize; ++i) {
-        // x va de -1.0 à 1.0
+        // x va de -1.0 ï¿½ 1.0
         float x = (2.0f * i / (float)(lutSize - 1)) - 1.0f;
 
-        // CLONAGE : On crée une saturation asymétrique
+        // CLONAGE : On crï¿½e une saturation asymï¿½trique
         if (x >= 0) {
             lut[i] = std::tanh(x * 1.5f); // Cycle positif : saturation franche
         }
         else {
-            lut[i] = std::tanh(x * 0.7f) * 0.9f; // Cycle négatif : plus doux, typique lampe
+            lut[i] = std::tanh(x * 0.7f) * 0.9f; // Cycle nï¿½gatif : plus doux, typique lampe
         }
     }
 }
 
 float AmpProcessor::readLUT(float input) {
-    // 1. On "clamp" pour éviter de sortir de l'index du tableau
+    // 1. On "clamp" pour ï¿½viter de sortir de l'index du tableau
     float val = std::clamp(input, -1.0f, 1.0f);
 
-    // 2. Conversion de l'entrée (-1 à 1) vers l'index (0 à 2047)
+    // 2. Conversion de l'entrï¿½e (-1 ï¿½ 1) vers l'index (0 ï¿½ 2047)
     float indexPos = (val + 1.0f) * 0.5f * (float)(lutSize - 1);
     int i = (int)indexPos;
     float fraction = indexPos - (float)i;
 
-    // 3. Interpolation linéaire (essentiel pour éviter le bruit)
+    // 3. Interpolation linï¿½aire (essentiel pour ï¿½viter le bruit)
     if (i >= lutSize - 1) return lut[lutSize - 1];
     return lut[i] + fraction * (lut[i + 1] - lut[i]);
 }
 
 float AmpProcessor::processSample(float x) {
     float absx = std::abs(x);
-    // Enveloppe (déjà correcte dans ton code)
+    // Enveloppe (dï¿½jï¿½ correcte dans ton code)
     if (absx > env) env = attackCoef * env + (1.0f - attackCoef) * absx;
     else env = releaseCoef * env + (1.0f - releaseCoef) * absx;
 

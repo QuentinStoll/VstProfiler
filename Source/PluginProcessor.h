@@ -10,7 +10,7 @@
 
 #include <JuceHeader.h>
 #include "SweepGenerator.h"
-#include "DynamicWaveshaper.h"
+#include "AmpEngine.h"
 
 //==============================================================================
 /**
