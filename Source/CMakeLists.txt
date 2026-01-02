@@ -34,6 +34,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     SelectionScreen.cpp
     UsingScreen.cpp
     ViewManager.cpp
+    DynamicWaveshaper.cpp
 )
 
 # Create plugin library
