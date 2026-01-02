@@ -66,13 +66,13 @@ public:
     void startSweep();
 
 	// Loading the Impulse responce file
-    void ProfilerAudioProcessor::loadIRFile();
+    void loadIRFile();
 
 	// Loading the Amplitude profile file
-    void ProfilerAudioProcessor::loadAmpProfile();
+    void loadAmpProfile();
 
 	// Generating the Amplitude LUT from DI file and Amp file
-    void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce::File& ampFile);
+    void generateAmpLUT(const juce::File& diFile, const juce::File& ampFile);
 
 private:
     juce::dsp::ProcessorChain <

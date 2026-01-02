@@ -29,7 +29,7 @@ goto end
 
 :config
 echo [INFO] Configuring cmake
-cmake -S "%SCRIPT_DIR%" -B "%BUILD_DIR%"
+cmake -S . -B build
 if errorlevel 1 (
     echo [ERROR] cmake configuration failed
     exit /b 1
