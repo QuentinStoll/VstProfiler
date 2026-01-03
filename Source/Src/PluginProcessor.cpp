@@ -143,78 +143,63 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 }
 #endif
 
+/**
+    Performs the real-time audio processing. 
+    This implementation handles gain scaling, a main DSP chain, 
+    an oversampled non-linear amp stage, and an IR convolution stage.
+*/
 void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
 
+    // 1. Prepare Buffer & Parameters
+    const int numSamples = buffer.getNumSamples();
+    const int totalNumInputChannels = getTotalNumInputChannels();
+    const int totalNumOutputChannels = getTotalNumOutputChannels();
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-    
-	// Update filter coefficients based on current parameter values
-	updateFilterCoefficients();
+        buffer.clear(i, 0, numSamples);
 
-	// Retrieve gain parameters
-	float inputGain = _apvts.getRawParameterValue("input")->load();
-	float outputGain = _apvts.getRawParameterValue("output")->load();
+    updateFilterCoefficients();
 
-	// Convert dB to linear gain
-    float inputFactor = juce::Decibels::decibelsToGain(inputGain);
-	float outputFactor = juce::Decibels::decibelsToGain(outputGain);
+    // 2. Apply Main DSP Chain (Linear gains and utility filters)
+    float inputFactor = juce::Decibels::decibelsToGain(_apvts.getRawParameterValue("input")->load());
+    float outputFactor = juce::Decibels::decibelsToGain(_apvts.getRawParameterValue("output")->load());
 
-	// Set gain values in the main processor chain
     _mainProcessor.get<0>().setGainLinear(inputFactor);
-	_mainProcessor.get<5>().setGainLinear(outputFactor);
+    _mainProcessor.get<5>().setGainLinear(outputFactor);
 
-	// Create audio block and process context
     juce::dsp::AudioBlock<float> block(buffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
-
-	// Process the audio through the main processor chain
     _mainProcessor.process(context);
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer(channel);
-
-        // ..do something to the data...
-    }
-
+    // 3. Amp Simulation Stage (Non-linear processing with oversampling)
     if (_ampLoaded)
     {
-        // A. Passage à une fréquence plus haute (ex: 44.1kHz -> 176.4kHz)
-        juce::dsp::AudioBlock<float> oversampledBlock = oversampler.processSamplesUp(block);
+        // Upsample to reduce aliasing distortion
+        auto oversampledBlock = oversampler.processSamplesUp(block);
+        
+        const int numChans = (int)oversampledBlock.getNumChannels();
+        const int numSamps = (int)oversampledBlock.getNumSamples();
 
-        for (int ch = 0; ch < (int)oversampledBlock.getNumChannels(); ++ch)
+        for (int ch = 0; ch < numChans; ++ch)
         {
             auto* data = oversampledBlock.getChannelPointer(ch);
-
-            for (int i = 0; i < (int)oversampledBlock.getNumSamples(); ++i)
+            for (int i = 0; i < numSamps; ++i)
             {
-                // On traite chaque échantillon à haute fréquence
                 data[i] = _ampStage.processSample(data[i]);
             }
         }
 
-        // B. Retour à la fréquence d'origine (Filtre passe-bas + Downsampling)
+        // Downsample back to the host's sample rate
         oversampler.processSamplesDown(block);
     }
 
+    // 4. Cabinet Simulation (Convolution / IR)
     if (_irLoaded)
     {
-        juce::dsp::AudioBlock<float> block(buffer);
-        juce::dsp::ProcessContextReplacing<float> context(block);
         _convolver.process(context);
     }
-
 }
 
 //==============================================================================

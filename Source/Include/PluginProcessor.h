@@ -86,7 +86,7 @@ private:
 
     //================================= Amp load ====================================
     std::vector<float> _ampLUT;
-    bool _ampLoaded = false;
+    bool _ampLoaded = true;
 
     AmpProcessor  _ampStage;
 
