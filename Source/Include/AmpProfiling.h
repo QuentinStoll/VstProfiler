@@ -1,0 +1,15 @@
+#pragma once
+
+#include <JuceHeader.h>
+#include "AmpEngine.h"
+
+class AmpProfiling : public juce::Component
+{
+    public:
+        void generateAndSaveGainSignal();
+        void startGainAnalysis(AmpProcessor& processor);
+        void processGainAnalysis(juce::File fileRef, juce::File fileRec, AmpProcessor& processor);
+
+    private:
+        std::unique_ptr<juce::FileChooser> _chooser;
+};

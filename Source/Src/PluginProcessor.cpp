@@ -356,3 +356,13 @@ void ProfilerAudioProcessor::loadIRFile()
         });
 
 }
+
+void ProfilerAudioProcessor::startAmpProfiling()
+{
+    _ampProfiling.generateAndSaveGainSignal();
+}
+
+void ProfilerAudioProcessor::startGainAnalysis()
+{
+    _ampProfiling.startGainAnalysis(_ampStage);
+}

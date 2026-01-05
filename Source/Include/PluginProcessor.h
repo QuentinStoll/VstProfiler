@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "AmpEngine.h"
+#include "AmpProfiling.h"
 
 //==============================================================================
 /**
@@ -56,6 +57,8 @@ public:
 
 	// Loading the Impulse responce file
     void loadIRFile();
+    void startAmpProfiling();
+    void startGainAnalysis();
 
 private:
     juce::dsp::ProcessorChain <
@@ -88,7 +91,9 @@ private:
     std::vector<float> _ampLUT;
     bool _ampLoaded = true;
 
-    AmpProcessor  _ampStage;
+    AmpProcessor _ampStage;
+
+    AmpProfiling _ampProfiling;
 
     juce::dsp::Oversampling<float> oversampler{ 2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true };
 };

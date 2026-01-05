@@ -66,19 +66,19 @@ float AmpProcessor::readLUT(float input) {
  * @return The processed (distorted) output sample.
  */
 float AmpProcessor::processSample(float x) {
+    // 1. Enveloppe (inchangée)
     float absx = std::abs(x);
-    
-    // Update the envelope follower (classic Attack/Release behavior)
     if (absx > env) {
         env = attackCoef * env + (1.0f - attackCoef) * absx;
     } else {
         env = releaseCoef * env + (1.0f - releaseCoef) * absx;
     }
 
-    // Apply dynamic drive: gain increases or decreases based on signal envelope
-    // DrivenSignal = x * (BaseGain + DynamicSensitivity * Envelope)
-    float drivenSignal = x * (A + B * env);
+    // 2. SATURATION FIXE
+    // On multiplie par 2.0 (ou 4.0) juste pour être sûr que ça sature un peu
+    float saturated = readLUT(x * (2.0f + B * env));
 
-    // Final stage: apply the asymmetric saturation via the LUT
-    return readLUT(drivenSignal);
+    // 3. GAIN STATIQUE (A)
+    // On applique A à la fin. C'est ce qu'on veut tester.
+    return saturated * A; 
 }

@@ -16,6 +16,9 @@ public:
     void prepare(float sr);
     float processSample(float x);
 
+    void setA(float newA) { A = newA; }
+    float getA() const { return A; }
+
 private:
     // --- Look-Up Table (LUT) Management ---
     
@@ -37,10 +40,10 @@ private:
     float sampleRate = 44100.0f;
     
     /** Base Gain: Static drive amount applied to the signal. */
-    float A = 4.0f;
+    float A = 1.0f;
     
     /** Dynamic Sensitivity: Determines how much the envelope affects the drive. */
-    float B = 10.0f;
+    float B = 5.0f;
     
     /** Time constants for the envelope follower's response. */
     float attackCoef, releaseCoef;
