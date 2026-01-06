@@ -79,6 +79,5 @@ float AmpProcessor::processSample(float x) {
     float saturated = readLUT(x * (2.0f + B * env));
 
     // 3. GAIN STATIQUE (A)
-    // On applique A à la fin. C'est ce qu'on veut tester.
     return saturated * A; 
 }

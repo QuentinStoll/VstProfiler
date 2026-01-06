@@ -19,6 +19,21 @@ public:
     void setA(float newA) { A = newA; }
     float getA() const { return A; }
 
+    int getLutSize() { return lutSize; };
+
+    void updateLUT(const std::vector<float>& newValues) {
+        if (newValues.size() != (size_t)lutSize) return;
+
+        for (int i = 0; i < lutSize; ++i) {
+            lut[i] = newValues[i];
+    }
+        
+        //                              IMPORTANT
+        // Optionnel : Normalisation
+        // Si l'enregistrement WET était trop faible, on peut normaliser la LUT 
+        // pour qu'elle atteigne 1.0 à l'index max.
+    };
+
 private:
     // --- Look-Up Table (LUT) Management ---
     
