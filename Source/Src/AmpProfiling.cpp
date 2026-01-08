@@ -7,7 +7,7 @@ void AmpProfiling::generateAndSaveGainSignal()
     juce::AudioBuffer<float> buffer(1, numSamples);
     
     float freq = 1000.0f;
-    float amp = 0.25f; // On monte à -12dB pour mieux voir la courbe
+    float amp = 0.25f; 
     
     for (int i = 0; i < numSamples; ++i) {
         float angle = 2.0f * juce::MathConstants<float>::pi * freq * (i / (float)sampleRate);
@@ -17,19 +17,18 @@ void AmpProfiling::generateAndSaveGainSignal()
     buffer.applyGainRamp(0, 0, 1000, 0.0f, 1.0f);
     buffer.applyGainRamp(0, numSamples - 1000, 1000, 1.0f, 0.0f);
 
-    _chooser = std::make_unique<juce::FileChooser>("Sauver", juce::File::getSpecialLocation(juce::File::userDesktopDirectory), "*.wav");
+    // Cible le bureau et définit le nom du fichier
+    juce::File desktop = juce::File::getSpecialLocation(juce::File::userDesktopDirectory);
+    juce::File file = desktop.getChildFile("SweepGain.wav");
 
-    _chooser->launchAsync(juce::FileBrowserComponent::saveMode, [buffer, sampleRate](const juce::FileChooser& fc) mutable {
-        auto file = fc.getResult();
-        if (file != juce::File()) {
-            file = file.withFileExtension(".wav");
-            juce::WavAudioFormat wavFormat;
-            if (auto writer = wavFormat.createWriterFor(file.createOutputStream().release(), sampleRate, 1, 24, {}, 0)) {
-                writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples());
-                delete writer; // <--- LE FIX EST ICI
-            }
-        }
-    });
+    // Suppression du fichier s'il existe déjà pour pouvoir réécrire par-dessus
+    if (file.existsAsFile()) file.deleteFile();
+
+    juce::WavAudioFormat wavFormat;
+    if (auto writer = wavFormat.createWriterFor(file.createOutputStream().release(), sampleRate, 1, 24, {}, 0)) {
+        writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples());
+        delete writer; // On garde votre fix ici
+    }
 }
 
 void AmpProfiling::startGainAnalysis(AmpProcessor& processor)
@@ -131,30 +130,24 @@ void AmpProfiling::processGainAnalysis(juce::File fileRef, juce::File fileRec, A
 void AmpProfiling::generateSaturationProbe()
 {
     double sampleRate = 44100.0;
-    // Une rampe très lente pour éviter que les filtres de l'ampli ne déphasent trop
     int numSamples = (int)(5.0 * sampleRate); 
     juce::AudioBuffer<float> buffer(1, numSamples);
     
     for (int i = 0; i < numSamples; ++i) {
-        // Génère une ligne droite de -1.0 à +1.0
         float val = (2.0f * i / (float)(numSamples - 1)) - 1.0f;
         buffer.setSample(0, i, val);
     }
 
-    _chooser = std::make_unique<juce::FileChooser>("Sauver le Probe de Saturation", 
-        juce::File::getSpecialLocation(juce::File::userDesktopDirectory), "*.wav");
+    juce::File desktop = juce::File::getSpecialLocation(juce::File::userDesktopDirectory);
+    juce::File file = desktop.getChildFile("SweepLut.wav");
 
-    _chooser->launchAsync(juce::FileBrowserComponent::saveMode, [buffer, sampleRate](const juce::FileChooser& fc) mutable {
-        auto file = fc.getResult();
-        if (file != juce::File()) {
-            file = file.withFileExtension(".wav");
-            juce::WavAudioFormat wavFormat;
-            if (auto writer = wavFormat.createWriterFor(file.createOutputStream().release(), sampleRate, 1, 24, {}, 0)) {
-                writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples());
-                delete writer;
-            }
-        }
-    });
+    if (file.existsAsFile()) file.deleteFile();
+
+    juce::WavAudioFormat wavFormat;
+    if (auto writer = wavFormat.createWriterFor(file.createOutputStream().release(), sampleRate, 1, 24, {}, 0)) {
+        writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples());
+        delete writer;
+    }
 }
 
 // 2. ANALYSER ET CLONER LA LUT

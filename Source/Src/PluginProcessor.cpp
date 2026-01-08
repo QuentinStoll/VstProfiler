@@ -359,7 +359,7 @@ void ProfilerAudioProcessor::loadIRFile()
 
 void ProfilerAudioProcessor::startAmpProfiling()
 {
-    // _ampProfiling.generateAndSaveGainSignal();
+    _ampProfiling.generateAndSaveGainSignal();
     _ampProfiling.generateSaturationProbe();
 }
 
