@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    ViewManager.cpp
-    Created: 30 Nov 2025 4:10:29pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #include "ViewManager.h"
 #include "SelectionScreen.h"
 #include "CloningScreen.h"
