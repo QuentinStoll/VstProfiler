@@ -95,7 +95,7 @@ LoggingConfig LoggingConfigLoader::loadFromFile(const juce::File& file) {
 
     // log_directory
     std::string_view _logDirectory;
-    if (root["log_level"].get(_logDirectory) == simdjson::SUCCESS) {
+    if (root["log_directory"].get(_logDirectory) == simdjson::SUCCESS) {
         std::string _logDirectoryStr = std::string(_logDirectory);
         juce::File dir(_logDirectoryStr);
         if (dir.isDirectory()) {
@@ -154,12 +154,12 @@ void AppLogger::initialise(LoggingConfig config) {
     }
     currentConfig = config;
     initialised = true;
-    AppLogger::info(LogCategory::INIT, "-\nLogger initialised\n-");
+    AppLogger::info(LogCategory::INIT, "--==## Logger initialised ##==--");
 }
 
 void AppLogger::shutdown() {
     if (!initialised) { return; }
-    AppLogger::info(LogCategory::INIT, "-\nLogger shutdown\n-");
+    AppLogger::info(LogCategory::INIT, "--==## Logger shutdown ##==--");
     delete juce::Logger::getCurrentLogger();
     juce::Logger::setCurrentLogger(nullptr);
     initialised = false;
@@ -174,9 +174,7 @@ void AppLogger::log(LogLevel level, LogCategory category, const juce::String& me
     if (level < currentConfig.logLevel) { return; }
     juce::String line;
     line << "[" << juce::Time::getCurrentTime().toString(true, true) << "] "
-         << "[" << logLevelToString(level) << "] "
-         << "[" << logCategoryToString(category) << "] "
-         << message;
+        << logLevelToString(level) << logCategoryToString(category) << message;
     #if JUCE_DEBUG
     DBG(line);
     #endif
