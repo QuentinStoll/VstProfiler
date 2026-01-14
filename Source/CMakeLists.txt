@@ -36,6 +36,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/ViewManager.cpp
     Src/AmpEngine.cpp
     Src/AmpProfiling.cpp
+    Src/Logging.cpp
 )
 
 # Create plugin library
