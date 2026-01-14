@@ -1,3 +1,4 @@
+#include "Logging.h"
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -14,6 +15,10 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
                        )
 #endif
 {
+    LoggingConfig config= LoggingConfigLoader::loadFromFile(juce::File(".config/log_settings.json"));
+    AppLogger::initialise();
+    AppLogger::info(LogCategory::INIT, "Plugin instance created");
+
     _masterParam = _apvts.getRawParameterValue("master");
     _gainParam = _apvts.getRawParameterValue("gain");
     _noiseParam = _apvts.getRawParameterValue("noise");
@@ -25,8 +30,9 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
 	_presenceParam = _apvts.getRawParameterValue("presence");
 }
 
-ProfilerAudioProcessor::~ProfilerAudioProcessor()
-{
+ProfilerAudioProcessor::~ProfilerAudioProcessor() {
+    AppLogger::info(LogCategory::INIT, "Plugin instance destroyed");
+    AppLogger::shutdown();
 }
 
 //==============================================================================
