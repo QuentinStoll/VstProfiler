@@ -16,7 +16,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
 #endif
 {
     LoggingConfig config= LoggingConfigLoader::loadFromFile(juce::File(".config/log_settings.json"));
-    AppLogger::initialise();
+    AppLogger::initialise(config);
     AppLogger::info(LogCategory::INIT, "Plugin instance created");
 }
 
