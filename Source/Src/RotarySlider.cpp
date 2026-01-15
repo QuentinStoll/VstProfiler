@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    RotarySlider.cpp
-    Created: 2 Dec 2025 2:31:04pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #include "RotarySlider.h"
 
 RotarySlider::RotarySlider(const RotarySliderParameter& param)

@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    ViewManager.h
-    Created: 30 Nov 2025 3:37:40pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #pragma once
 #include <JuceHeader.h>
 #include "PluginProcessor.h"

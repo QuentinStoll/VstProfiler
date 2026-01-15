@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    AmpLoaderSection.cpp
-    Created: 2 Dec 2025 3:49:03pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #include "AmpLoaderSection.h"
 
 AmpLoaderSection::AmpLoaderSection()

@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.22) # same as JUCE
+
+project(Profiler VERSION 0.0.0 LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+include(dependencies)
+include(juce_setup)
+include(presets)
+include(compiler_options)
+
+add_subdirectory(Source)

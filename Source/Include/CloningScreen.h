@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    CloningScreen.h
-    Created: 30 Nov 2025 1:39:39pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #pragma once
 #include "PluginProcessor.h"
 #include <JuceHeader.h>

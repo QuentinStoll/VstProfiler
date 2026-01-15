@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    UsingScreen.cpp
-    Created: 30 Nov 2025 2:06:43pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #include "UsingScreen.h"
 
 // This class is for the Use mode of the plugin

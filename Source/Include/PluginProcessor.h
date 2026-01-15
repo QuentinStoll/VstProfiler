@@ -1,15 +1,8 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #pragma once
 
 #include <JuceHeader.h>
-#include "SweepGenerator.h"
+#include "AmpEngine.h"
+#include "AmpProfiling.h"
 
 //==============================================================================
 /**
@@ -62,17 +55,10 @@ public:
   
     //===================================== Our func ===============================
 
-	//starting the sweep and initializing pos
-    void startSweep();
-
 	// Loading the Impulse responce file
-    void ProfilerAudioProcessor::loadIRFile();
-
-	// Loading the Amplitude profile file
-    void ProfilerAudioProcessor::loadAmpProfile();
-
-	// Generating the Amplitude LUT from DI file and Amp file
-    void ProfilerAudioProcessor::generateAmpLUT(const juce::File& diFile, const juce::File& ampFile);
+    void loadIRFile();
+    void startAmpProfiling();
+    void startGainAnalysis();
 
 private:
     juce::dsp::ProcessorChain <
@@ -89,17 +75,6 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessor)
 
-    //================================= Sweep generation =====================================
-
-    // Buffer to contain the sweep
-    juce::AudioBuffer<float> _sweepBuffer;
-
-    // Actual pos in the sweep
-    int _sweepPos = 0;
-
-    // Is sweep running bool
-    bool _sweepRunning = false;
-
     //================================= Ir load =====================================
 
     // Buffer that contain the ir
@@ -114,6 +89,11 @@ private:
 
     //================================= Amp load ====================================
     std::vector<float> _ampLUT;
-    bool _ampLoaded = false;
+    bool _ampLoaded = true;
 
+    AmpProcessor _ampStage;
+
+    AmpProfiling _ampProfiling;
+
+    juce::dsp::Oversampling<float> oversampler{ 2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true };
 };

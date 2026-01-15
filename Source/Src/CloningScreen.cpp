@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    CloningScreen.cpp
-    Created: 30 Nov 2025 1:39:18pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #include "CloningScreen.h"
 
 CloningScreen::CloningScreen(ProfilerAudioProcessor& p) : _audioProcessor(p)
@@ -15,7 +5,7 @@ CloningScreen::CloningScreen(ProfilerAudioProcessor& p) : _audioProcessor(p)
     addAndMakeVisible(_sweepButton);
     _sweepButton.onClick = [this]()
     {
-        _audioProcessor.startSweep();
+        _audioProcessor.startAmpProfiling();
     };
 
     addAndMakeVisible(_irButton);
@@ -27,7 +17,7 @@ CloningScreen::CloningScreen(ProfilerAudioProcessor& p) : _audioProcessor(p)
     addAndMakeVisible(_ampButton);
     _ampButton.onClick = [this]()
     {
-        _audioProcessor.loadAmpProfile();
+        _audioProcessor.startGainAnalysis();
     };
 
 	setSize(600, 400);

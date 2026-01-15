@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    UsingScreen.h
-    Created: 30 Nov 2025 2:06:33pm
-    Author:  Laurent ZHANG
-
-  ==============================================================================
-*/
-
 #pragma once
 #include <JuceHeader.h>
 #include "MainSettingsSection.h"
