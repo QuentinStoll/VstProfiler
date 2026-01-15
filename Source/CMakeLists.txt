@@ -37,6 +37,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/AmpEngine.cpp
     Src/AmpProfiling.cpp
     Src/Logging.cpp
+    Src/IRGenerator.cpp
 )
 
 # Create plugin library
