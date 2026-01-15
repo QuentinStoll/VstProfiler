@@ -42,8 +42,32 @@ else()
 endif()
 
 
-# gtk workaround (linux) ----
+# simdjson ------------------
 
+option(USE_SYSTEM_SIMDJSON "Use system-installed simdjson via find_package" OFF) # local builds only
+if (TARGET simdjson::simdjson)
+    message(STATUS "simdjson: using existing target")
+elseif (USE_SYSTEM_SIMDJSON)
+    message(STATUS "simdjson: using system package")
+    find_package(simdjson CONFIG REQUIRED)
+else()
+    FetchContent_Declare(
+        simdjson
+        GIT_REPOSITORY https://github.com/simdjson/simdjson.git
+        GIT_TAG v4.2.4
+    )
+
+    set(SIMDJSON_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(SIMDJSON_BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
+    set(SIMDJSON_BUILD_STATIC ON CACHE BOOL "" FORCE)
+    set(SIMDJSON_ENABLE_THREADS ON CACHE BOOL "" FORCE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+    FetchContent_MakeAvailable(simdjson)
+endif()
+
+
+# gtk workaround (linux) ----
 
 if(NOT WIN32)
     find_package(PkgConfig REQUIRED)

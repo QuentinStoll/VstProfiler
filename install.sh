@@ -42,8 +42,8 @@ case "$1" in
 		build
 		;;
 	re )
-		rm $BUILD_DIR
-		rm $CACHE_DIR
+		rm -fr $BUILD_DIR
+		rm -fr $CACHE_DIR
 		config
 		build
 		;;

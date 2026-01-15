@@ -1,6 +1,6 @@
 #pragma once
 #include <cmath>
-#include <corecrt_math_defines.h>
+#include <JuceHeader.h>
 
 class SweepGenerator
 {

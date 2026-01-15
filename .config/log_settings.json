@@ -1,0 +1,7 @@
+{
+    "log_level": "TRACE",
+    "show_in_ui": false,
+    "write_to_file": true,
+    "write_to_debug": true,
+    "log_directory": "/home/krt/dev/EIP/Profiler/.cache"
+}
