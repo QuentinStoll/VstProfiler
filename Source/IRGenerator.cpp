@@ -1,12 +1,44 @@
 ﻿/*
-  ==============================================================================
-
-    IRGenerator.cpp
-    Created: 27 Dec 2025 6:00:22pm
-    Author:  sebpi
-
-  ==============================================================================
-*/
+ * ==============================================================================
+ * deconvolve()
+ *
+ * Generates an Impulse Response (IR) by deconvolving a recorded exponential
+ * sine sweep with the original dry sweep using frequency-domain division
+ * (implemented via FFT multiplication with the time-reversed inverse filter).
+ *
+ * This is the classic Farina / Angelo method for logarithmic sine sweep
+ * deconvolution, widely used for measuring room/gear impulse responses.
+ *
+ * Parameters:
+ *   drySweep                                       - The original exponential sine sweep that was played
+ *   recordedSweep                                  - The sweep captured by microphone (room/amp/cab/etc.)
+ *   resultIR                                       - Output buffer that will contain the resulting impulse response
+ *   sampleRate                                     - Audio sample rate in Hz
+ *   duration                                       - Total
+ *   duration of the sweep in seconds fStart        - Starting frequency of the sweep (typically ~20 Hz)
+ *   fEnd                                           - Ending frequency of the sweep (typically ~20 kHz)
+ *
+ * How it works (high-level):
+ *   1. Computes the inverse filter = time-reversed sweep × amplitude compensation envelope
+ *   2. Performs convolution via FFT (multiplication in frequency domain)
+ *   3. Finds the main peak (direct sound arrival) and crops around it
+ *   4. Normalizes to ≈ -6 dBFS peak
+ *   5. Applies a gentle cosine fade-out to prevent clicks
+ *
+ * Notes:
+ *   - Assumes single-channel (mono) input buffers
+ *   - Output IR is limited to max 500 ms after the detected peak
+ *   - Uses JUCE dsp::FFT (real-only transforms)
+ *   - Normalization target is roughly -6 dB (0.501187 ≈ 10^(-6/20))
+ *
+ * Possible improvements / future work:
+ *   - Add optional pre-windowing (Hann/Blackman) before FFT
+ *   - Support multi-channel processing
+ *   - Add noise gating / early reflection threshold
+ *   - Allow user-configurable max IR length or tail fade
+ *   - Handle latency/delay estimation more robustly
+ * ==============================================================================
+ */
 
 #include <cmath>
 #include "IRGenerator.h"
