@@ -1,0 +1,64 @@
+{
+    "presets": [
+        {
+            "name": "default",
+            "buildType": "Debug",
+            "formats": {
+                "vst3": true,
+                "au": false,
+                "aax": false,
+                "standalone": true
+            },
+            "features": {
+                "assertions": true,
+                "logging": true,
+                "dspTrace": false
+            }
+        },
+        {
+            "name": "release",
+            "buildType": "Release",
+            "formats": {
+                "vst3": true,
+                "au": true,
+                "aax": false,
+                "standalone": true
+            },
+            "features": {
+                "assertions": false,
+                "logging": false,
+                "dspTrace": false
+            }
+        },
+        {
+            "name": "all-formats",
+            "buildType": "Release",
+            "formats": {
+                "vst3": true,
+                "au": true,
+                "aax": true,
+                "standalone": true
+            },
+            "features": {
+                "assertions": false,
+                "logging": false,
+                "dspTrace": false
+            }
+        },
+        {
+            "name": "dev",
+            "buildType": "Debug",
+            "formats": {
+                "vst3": true,
+                "au": false,
+                "aax": false,
+                "standalone": true
+            },
+            "features": {
+                "assertions": true,
+                "logging": true,
+                "dspTrace": true
+            }
+        }
+    ]
+}
