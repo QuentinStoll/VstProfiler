@@ -52,8 +52,8 @@ All features listed below will be demonstrated during the beta defense.
 ## **4. Success criteria**
 | **Feature ID** | **Key success criteria** | **Indicator/metric** | **Result** |
 | --- | --- | --- | --- |
-| **F1** | Sound Accuracy | Digital copy sounds ~90% identical to the real amplifier | Pending |
-| **F2** | Instant Response | Sound delay is less than ~10 milliseconds (imperceptible to humans) | Pending |
+| **F1** | Sound Accuracy | Digital copy sounds almost identical to the real amplifier | Pending |
+| **F2** | Instant Response | Sound delay is less than ~10 milliseconds (imperceptible to humans) | Achieved |
 | **F3** | Save Amplifier Sound | File is created successfully with all sound characteristics included | Pending |
 | **F4** | Load Amplifier Sound | Loaded sound matches the saved version with 100% accuracy | Pending |
 | **F5** | Save Complete Session | File is created successfully with all the states for elements of the plugin included | Pending |
