@@ -36,6 +36,10 @@ function(apply_plugin_definitions target)
         target_compile_definitions(${target} PRIVATE ENABLE_LOGGING=1)
     endif()
 
+    if(ENABLE_PERF_LOGGING)
+        target_compile_definitions(${target} PRIVATE ENABLE_PERF_LOGGING=1)
+    endif()
+
     if(ENABLE_DSP_TRACE)
         target_compile_definitions(${target} PRIVATE ENABLE_DSP_TRACE=1)
     endif()
