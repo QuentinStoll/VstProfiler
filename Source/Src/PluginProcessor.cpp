@@ -15,14 +15,24 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
                        )
 #endif
 {
-    LoggingConfig config= LoggingConfigLoader::loadFromFile(juce::File(".config/log_settings.json"));
-    AppLogger::initialise(config);
-    AppLogger::info(LogCategory::INIT, "Plugin instance created");
+    LogRegistry::create("mainLog",  LogConfig::fromFile(juce::File(".config/log_settings.json")));
+    LogRegistry::create("perfLog",  LogConfig::fromFile(juce::File(".config/perflog_settings.json")));
+    LogRegistry::get("mainLog").info(LogCategory::INIT, "Plugin instance created");
+    LogRegistry::get("perfLog").info(LogCategory::INIT, "_start Initialisation");
+
+    // init code
+
+    LogRegistry::get("perfLog").info(LogCategory::INIT, "_end Initialisation");
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() {
-    AppLogger::info(LogCategory::INIT, "Plugin instance destroyed");
-    AppLogger::shutdown();
+    LogRegistry::get("perfLog").info(LogCategory::INIT, "_start Deinitialisation");
+
+    // Dinit code
+
+    LogRegistry::get("perfLog").info(LogCategory::INIT, "_end Deinitialisation");
+    LogRegistry::get("mainLog").info(LogCategory::INIT, "Plugin instance destroyed");
+    LogRegistry::shutdownAll();
 }
 
 //==============================================================================

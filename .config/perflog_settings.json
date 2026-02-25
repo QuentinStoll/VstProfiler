@@ -1,5 +1,5 @@
 {
-    "name": "Profiler",
+    "name": "Performance",
     "log_level": "TRACE",
     "show_in_ui": false,
     "write_to_file": true,
