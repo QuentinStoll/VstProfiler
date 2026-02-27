@@ -99,9 +99,9 @@ void ProfilerAudioProcessor::changeProgramName (int index, const juce::String& n
 //==============================================================================
 void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
+    PerfLog::Timer("prepareToPlay");
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-  
 
 	// Prepare the main processor chain
     juce::dsp::ProcessSpec spec;
@@ -114,14 +114,12 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     _mainProcessor.reset();
 
     oversampler.initProcessing(samplesPerBlock);
-    
     _ampStage.prepare(sampleRate);
 
 
 //     spec.maximumBlockSize = samplesPerBlock;
 //     spec.numChannels = getTotalNumOutputChannels();
 
-    
 }
 
 
@@ -164,6 +162,7 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 */
 void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    PerfLog::Timer("processBlock");
     juce::ScopedNoDenormals noDenormals;
 
     // 1. Prepare Buffer & Parameters
@@ -190,6 +189,7 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     // 3. Amp Simulation Stage (Non-linear processing with oversampling)
     if (_ampLoaded)
     {
+        PerfLog::Timer("Amp Simulation Stage");
         // Upsample to reduce aliasing distortion
         auto oversampledBlock = oversampler.processSamplesUp(block);
         
@@ -212,6 +212,7 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     // 4. Cabinet Simulation (Convolution / IR)
     if (_irLoaded)
     {
+        PerfLog::Timer("Cabinet Simulation");
         _convolver.process(context);
     }
 }
