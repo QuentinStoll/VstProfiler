@@ -1,7 +1,7 @@
 /*
   ==============================================================================
-    [NOM_DE_VOTRE_PROJET] - Guitar Amp Emulation VST
-    Copyright (C) 2026  [VOTRE_NOM / NOM_DU_GROUPE_EIP]
+    [VSTPROFILER] - Guitar Amp Emulation VST
+    Copyright (C) 2026  [VST PROFILER Team]
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
