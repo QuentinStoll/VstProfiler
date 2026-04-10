@@ -1,32 +1,26 @@
 #pragma once
-#include <cmath>
 #include <JuceHeader.h>
 
-class SweepGenerator
-{
-public:
+#include <cmath>
+
+class SweepGenerator {
+   public:
     SweepGenerator() = default;
 
     // Generate log sweep of 15 seconds 20Hz to 20kHz with fade
-    static void generateLogSweep(juce::AudioBuffer<float>& buffer,
-        double sampleRate,
-        float durationSeconds = 15.0f,
-        float fStart = 20.0f,
-        float fEnd = 20000.0f,
-        float amplitude = 0.5f)
-    {
+    static void generateLogSweep(juce::AudioBuffer<float>& buffer, double sampleRate, float durationSeconds = 15.0f,
+                                 float fStart = 20.0f, float fEnd = 20000.0f, float amplitude = 0.5f) {
         int numSamples = int(sampleRate * durationSeconds);
-        buffer.setSize(1, numSamples); // mono
+        buffer.setSize(1, numSamples);  // mono
         float* writePtr = buffer.getWritePointer(0);
 
         const double K = durationSeconds / std::log(fEnd / fStart);
 
         // Param�tres du fade (en secondes)
-        float fadeTime = 0.05f; // 50 ms
+        float fadeTime = 0.05f;  // 50 ms
         int fadeSamples = int(fadeTime * sampleRate);
 
-        for (int n = 0; n < numSamples; ++n)
-        {
+        for (int n = 0; n < numSamples; ++n) {
             double t = n / sampleRate;
             double freq = fStart * std::exp(t / K);
             float sample = amplitude * std::sin(juce::MathConstants<double>::twoPi * freq * t);

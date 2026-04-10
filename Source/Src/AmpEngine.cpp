@@ -7,19 +7,19 @@
  */
 void AmpProcessor::prepare(float sr) {
     sampleRate = sr;
-    
+
     // Attack time: ~1ms. Converts time constant to recursive filter coefficient.
     attackCoef = std::exp(-1.0f / (0.001f * 1.0f * sr));
-    
+
     // Release time: ~80ms. Provides a natural decay for the dynamic drive.
     releaseCoef = std::exp(-1.0f / (0.001f * 80.0f * sr));
-    
+
     fillAsymmetricLUT();
 }
 
 /**
  * Populates the Look-Up Table (LUT) with an asymmetric saturation curve.
- * This simulates the behavior of tube stages where positive and negative 
+ * This simulates the behavior of tube stages where positive and negative
  * cycles are clipped differently, creating even-order harmonics.
  */
 void AmpProcessor::fillAsymmetricLUT() {
@@ -54,8 +54,9 @@ float AmpProcessor::readLUT(float input) {
     float fraction = indexPos - (float)i;
 
     // 3. Linear interpolation between index 'i' and 'i+1'
-    if (i >= lutSize - 1) return lut[lutSize - 1];
-    
+    if (i >= lutSize - 1)
+        return lut[lutSize - 1];
+
     return lut[i] + fraction * (lut[i + 1] - i[lut]);
 }
 
@@ -79,5 +80,5 @@ float AmpProcessor::processSample(float x) {
     float saturated = readLUT(x * (2.0f + B * env));
 
     // 3. GAIN STATIQUE (A)
-    return saturated * A; 
+    return saturated * A;
 }

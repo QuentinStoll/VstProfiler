@@ -10,7 +10,11 @@ set "SCRIPT_DIR=%~dp0"
 set "BUILD_DIR=%SCRIPT_DIR%build"
 set "CACHE_DIR=%SCRIPT_DIR%.cache"
 
+if not exist %BUILD_DIR% mkdir %BUILD_DIR%
+if not exist %CACHE_DIR% mkdir %CACHE_DIR%
+
 if "%1"=="" goto default
+if /I "%1"=="all" goto default
 if /I "%1"=="config" goto config
 if /I "%1"=="build" goto build
 if /I "%1"=="re" goto rebuild
@@ -20,7 +24,7 @@ goto unknown
 
 :usage
 echo Usage:
-echo   install.bat           config + build (default)
+echo   install.bat all       config + build (default)
 echo   install.bat config    cmake config only
 echo   install.bat build     cmake build only
 echo   install.bat re        cache delete + remake

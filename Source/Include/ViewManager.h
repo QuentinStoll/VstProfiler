@@ -1,20 +1,20 @@
 #pragma once
 #include <JuceHeader.h>
+
 #include "PluginProcessor.h"
 #include "ScreenID.h"
 
-class ViewManager : public juce::Component
-{
-public:
+class ViewManager : public juce::Component {
+   public:
     ViewManager(ProfilerAudioProcessor&);
     ~ViewManager();
 
-	void resized() override;
-	void changeView(ScreenID screenID);
+    void resized() override;
+    void changeView(ScreenID screenID);
 
-private:
-	std::unique_ptr<juce::Component> _currentView;
-    juce::TextButton _backButton{ "Back" };
+   private:
+    std::unique_ptr<juce::Component> _currentView;
+    juce::TextButton _backButton{"Back"};
 
     ProfilerAudioProcessor& _audioProcessor;
 
