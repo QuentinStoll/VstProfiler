@@ -1,7 +1,7 @@
 # ADR 001: Development Standards and Workflow Automation
 
 * **Status:** Accepted
-* **Date:** 2024-05-22
+* **Date:** 2026-04-10
 * **Author:** @LeCentenaire
 * **Deciders:** @LeCentenaire
 
