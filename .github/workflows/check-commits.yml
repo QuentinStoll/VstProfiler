@@ -9,9 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Check PR Title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          fetch-depth: 0
-      - name: Commits Check
-        uses: wagoid/commitlint-github-action@v5
-        with:
-          configFile: commitlint.config.js
+          types: |
+            feat
+            fix
+            docs
+            chore
+            refactor
