@@ -1,0 +1,23 @@
+name: "Branch Naming Rules"
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          # On récupère le nom de la branche source de la PR
+          BRANCH_NAME="${{ github.head_ref }}"
+          # Notre règle (regex)
+          REGEX="^(feat|fix|docs|poc|chore)\/[a-z0-9._-]+$"
+          
+          if [[ ! $BRANCH_NAME =~ $REGEX ]]; then
+            echo "❌ Error: Invalid branch name '$BRANCH_NAME'."
+            echo "Branches must start with: feat/, fix/, docs/, poc/, or chore/"
+            exit 1
+          fi
+          echo "✅ Branch name is valid."
