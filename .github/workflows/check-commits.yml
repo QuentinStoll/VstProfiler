@@ -1,0 +1,17 @@
+name: "Commit Message Check"
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  check-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Commits Check
+        uses: wagoid/commitlint-github-action@v5
+        with:
+          configFile: commitlint.config.js
