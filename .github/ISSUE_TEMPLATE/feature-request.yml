@@ -1,0 +1,19 @@
+name: "🚀 Feature Request"
+description: Suggest an idea for this project
+title: "[FEAT]: <title>"
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Describe the pain point you are experiencing.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How should this work?
+    validations:
+      required: true
