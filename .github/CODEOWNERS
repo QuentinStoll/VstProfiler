@@ -1,0 +1,23 @@
+# TO BE CHANGED
+
+# This is a comment.
+# The syntax is: [File Pattern] [GitHub Username]
+
+# 1. Global Owners
+# By default, you own everything.
+* @YourGitHubUsername
+
+# 2. Documentation & ADRs
+# Whenever someone updates the research or decisions, you get notified.
+/docs/adr/     @YourGitHubUsername
+/docs/veille/  @YourGitHubUsername
+
+# 3. Project Configuration
+# Changes to the core "engine" or dependencies.
+/package.json  @YourGitHubUsername
+/tsconfig.json @YourGitHubUsername
+/.github/      @YourGitHubUsername
+
+# 4. Specific Modules (Example)
+# If you have a specific contributor for the backend:
+# /src/backend/  @ContributorUsername
