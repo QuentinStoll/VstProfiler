@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ Main, Dev, feat/ci-linter-setup ]
+    branches: [ Main, Dev, CICD ]
   pull_request:
-    branches: [ Main, Dev, feat/ci-linter-setup ]
+    branches: [ Main, Dev, CICD ]
 
 env:
   BUILD_DIR: build
