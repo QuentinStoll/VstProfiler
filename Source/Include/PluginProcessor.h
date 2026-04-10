@@ -1,28 +1,28 @@
 #pragma once
 
 #include <JuceHeader.h>
+
 #include "AmpEngine.h"
 #include "AmpProfiling.h"
 
 //==============================================================================
 /**
-*/
-class ProfilerAudioProcessor  : public juce::AudioProcessor
-{
-public:
+ */
+class ProfilerAudioProcessor : public juce::AudioProcessor {
+   public:
     //==============================================================================
     ProfilerAudioProcessor();
     ~ProfilerAudioProcessor() override;
 
     //==============================================================================
-    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
+    void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
-   #ifndef JucePlugin_PreferredChannelConfigurations
-    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
-   #endif
+#ifndef JucePlugin_PreferredChannelConfigurations
+    bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
+#endif
 
-    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
@@ -39,20 +39,20 @@ public:
     //==============================================================================
     int getNumPrograms() override;
     int getCurrentProgram() override;
-    void setCurrentProgram (int index) override;
-    const juce::String getProgramName (int index) override;
-    void changeProgramName (int index, const juce::String& newName) override;
+    void setCurrentProgram(int index) override;
+    const juce::String getProgramName(int index) override;
+    void changeProgramName(int index, const juce::String& newName) override;
 
     //==============================================================================
-    void getStateInformation (juce::MemoryBlock& destData) override;
-    void setStateInformation (const void* data, int sizeInBytes) override;
+    void getStateInformation(juce::MemoryBlock& destData) override;
+    void setStateInformation(const void* data, int sizeInBytes) override;
 
 	//==============================================================================
     juce::AudioProcessorValueTreeState _apvts{ *this, nullptr, "Parameters", createParameterLayout() };
   
     //===================================== Our func ===============================
 
-	// Loading the Impulse responce file
+    // Loading the Impulse responce file
     void loadIRFile();
     void startAmpProfiling();
     void startGainAnalysis();
@@ -106,19 +106,18 @@ private:
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ProfilerAudioProcessor)
 
     //================================= Ir load =====================================
 
     // Buffer that contain the ir
     juce::AudioBuffer<float> _irBuffer;
 
-	// Is ir loaded bool
+    // Is ir loaded bool
     bool _irLoaded = false;
 
-	// Convolver object
+    // Convolver object
     juce::dsp::Convolution _convolver;
-
 
     //================================= Amp load ====================================
     std::vector<float> _ampLUT;
@@ -128,5 +127,5 @@ private:
 
     AmpProfiling _ampProfiling;
 
-    juce::dsp::Oversampling<float> oversampler{ 2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true };
+    juce::dsp::Oversampling<float> oversampler{2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true};
 };

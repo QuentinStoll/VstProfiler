@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+
 #include "PluginProcessor.h"
 #include "Components/CustomTabs.h"
 
@@ -8,18 +9,18 @@
 class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor
 {
 public:
-    ProfilerAudioProcessorEditor (ProfilerAudioProcessor&);
+    ProfilerAudioProcessorEditor(ProfilerAudioProcessor&);
     ~ProfilerAudioProcessorEditor() override;
 
     //
-    void paint (juce::Graphics&) override;
+    void paint(juce::Graphics&) override;
     
     //
     void resized() override;
 
-private:
-    
-    //
+   private:
+    // This reference is provided as a quick way for your editor to
+    // access the processor object that created it.
     ProfilerAudioProcessor& _audioProcessor;
 
     //

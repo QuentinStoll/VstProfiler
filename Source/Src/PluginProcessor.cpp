@@ -1,21 +1,24 @@
-#include "Logging.h"
 #include "PluginProcessor.h"
+
+#include "Logging.h"
 #include "PluginEditor.h"
 
 //==============================================================================
 ProfilerAudioProcessor::ProfilerAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       )
+    : AudioProcessor(
+          BusesProperties()
+#if !JucePlugin_IsMidiEffect
+#if !JucePlugin_IsSynth
+              .withInput("Input", juce::AudioChannelSet::stereo(), true)
+#endif
+              .withOutput("Output", juce::AudioChannelSet::stereo(), true)
+#endif
+      )
 #endif
 {
-    LoggingConfig config= LoggingConfigLoader::loadFromFile(juce::File(".config/log_settings.json"));
+    LoggingConfig config = LoggingConfigLoader::loadFromFile(
+        juce::File(".config/log_settings.json"));
     AppLogger::initialise(config);
     AppLogger::info(LogCategory::INIT, "Plugin instance created");
 
@@ -36,75 +39,60 @@ ProfilerAudioProcessor::~ProfilerAudioProcessor() {
 }
 
 //==============================================================================
-const juce::String ProfilerAudioProcessor::getName() const
-{
+const juce::String ProfilerAudioProcessor::getName() const {
     return JucePlugin_Name;
 }
 
-bool ProfilerAudioProcessor::acceptsMidi() const
-{
-   #if JucePlugin_WantsMidiInput
+bool ProfilerAudioProcessor::acceptsMidi() const {
+#if JucePlugin_WantsMidiInput
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
-bool ProfilerAudioProcessor::producesMidi() const
-{
-   #if JucePlugin_ProducesMidiOutput
+bool ProfilerAudioProcessor::producesMidi() const {
+#if JucePlugin_ProducesMidiOutput
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
-bool ProfilerAudioProcessor::isMidiEffect() const
-{
-   #if JucePlugin_IsMidiEffect
+bool ProfilerAudioProcessor::isMidiEffect() const {
+#if JucePlugin_IsMidiEffect
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
-double ProfilerAudioProcessor::getTailLengthSeconds() const
-{
-    return 0.0;
+double ProfilerAudioProcessor::getTailLengthSeconds() const { return 0.0; }
+
+int ProfilerAudioProcessor::getNumPrograms() {
+    return 1;  // NB: some hosts don't cope very well if you tell them there are
+               // 0 programs, so this should be at least 1, even if you're not
+               // really implementing programs.
 }
 
-int ProfilerAudioProcessor::getNumPrograms()
-{
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-                // so this should be at least 1, even if you're not really implementing programs.
-}
+int ProfilerAudioProcessor::getCurrentProgram() { return 0; }
 
-int ProfilerAudioProcessor::getCurrentProgram()
-{
-    return 0;
-}
+void ProfilerAudioProcessor::setCurrentProgram(int index) {}
 
-void ProfilerAudioProcessor::setCurrentProgram (int index)
-{
-}
-
-const juce::String ProfilerAudioProcessor::getProgramName (int index)
-{
+const juce::String ProfilerAudioProcessor::getProgramName(int index) {
     return {};
 }
 
-void ProfilerAudioProcessor::changeProgramName (int index, const juce::String& newName)
-{
-}
+void ProfilerAudioProcessor::changeProgramName(int index,
+                                               const juce::String& newName) {}
 
 //==============================================================================
-void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
-{
+void ProfilerAudioProcessor::prepareToPlay(double sampleRate,
+                                           int samplesPerBlock) {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-  
 
-	// Prepare the main processor chain
+    // Prepare the main processor chain
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
     spec.maximumBlockSize = (juce::uint32)samplesPerBlock;
@@ -133,7 +121,7 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 	_chain.get<Presence>().coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate, PRESENCE_FREQ, SHELF_Q, 1.0f);
 
     oversampler.initProcessing(samplesPerBlock);
-    
+
     _ampStage.prepare(sampleRate);
 
 //     spec.maximumBlockSize = samplesPerBlock;
@@ -147,38 +135,38 @@ void ProfilerAudioProcessor::releaseResources()
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool ProfilerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
-{
-  #if JucePlugin_IsMidiEffect
-    juce::ignoreUnused (layouts);
+bool ProfilerAudioProcessor::isBusesLayoutSupported(
+    const BusesLayout& layouts) const {
+#if JucePlugin_IsMidiEffect
+    juce::ignoreUnused(layouts);
     return true;
-  #else
+#else
     // This is the place where you check if the layout is supported.
     // In this template code we only support mono or stereo.
     // Some plugin hosts, such as certain GarageBand versions, will only
     // load plugins that support stereo bus layouts.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono() &&
+        layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 
     // This checks if the input layout matches the output layout
-   #if ! JucePlugin_IsSynth
+#if !JucePlugin_IsSynth
     if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
         return false;
-   #endif
+#endif
 
     return true;
-  #endif
+#endif
 }
 #endif
 
 /**
-    Performs the real-time audio processing. 
-    This implementation handles gain scaling, a main DSP chain, 
+    Performs the real-time audio processing.
+    This implementation handles gain scaling, a main DSP chain,
     an oversampled non-linear amp stage, and an IR convolution stage.
 */
-void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
-{
+void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
+                                          juce::MidiBuffer& midiMessages) {
     juce::ScopedNoDenormals noDenormals;
 
     // 1. Prepare Buffer & Parameters
@@ -200,19 +188,16 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     _chain.process(context);
 
     // 3. Amp Simulation Stage (Non-linear processing with oversampling)
-    if (_ampLoaded)
-    {
+    if (_ampLoaded) {
         // Upsample to reduce aliasing distortion
         auto oversampledBlock = oversampler.processSamplesUp(block);
-        
+
         const int numChans = (int)oversampledBlock.getNumChannels();
         const int numSamps = (int)oversampledBlock.getNumSamples();
 
-        for (int ch = 0; ch < numChans; ++ch)
-        {
+        for (int ch = 0; ch < numChans; ++ch) {
             auto* data = oversampledBlock.getChannelPointer(ch);
-            for (int i = 0; i < numSamps; ++i)
-            {
+            for (int i = 0; i < numSamps; ++i) {
                 data[i] = _ampStage.processSample(data[i]);
             }
         }
@@ -222,8 +207,7 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     }
 
     // 4. Cabinet Simulation (Convolution / IR)
-    if (_irLoaded)
-    {
+    if (_irLoaded) {
         _convolver.process(context);
     }
 }
@@ -247,19 +231,17 @@ void ProfilerAudioProcessor::updateEqCoefficients()
 }
 
 //==============================================================================
-bool ProfilerAudioProcessor::hasEditor() const
-{
-    return true; // (change this to false if you choose to not supply an editor)
+bool ProfilerAudioProcessor::hasEditor() const {
+    return true;  // (change this to false if you choose to not supply an
+                  // editor)
 }
 
-juce::AudioProcessorEditor* ProfilerAudioProcessor::createEditor()
-{
-    return new ProfilerAudioProcessorEditor (*this);
+juce::AudioProcessorEditor* ProfilerAudioProcessor::createEditor() {
+    return new ProfilerAudioProcessorEditor(*this);
 }
 
 //==============================================================================
-void ProfilerAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
-{
+void ProfilerAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
@@ -360,38 +342,31 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
 
 //==============================================================================
 // This creates new instances of the plugin..
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
-{
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() {
     return new ProfilerAudioProcessor();
 }
 
-void ProfilerAudioProcessor::loadIRFile()
-{
+void ProfilerAudioProcessor::loadIRFile() {
     auto chooser = new juce::FileChooser("Select an IR file", {}, "*.wav");
-    chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-        [this, chooser](const juce::FileChooser& fc)
-        {
-            auto file = fc.getResult();
-            if (file.existsAsFile())
-            {
-                _convolver.loadImpulseResponse(file,
-                    juce::dsp::Convolution::Stereo::yes,
-                    juce::dsp::Convolution::Trim::no,
-                    0);
-                _irLoaded = true;
-            }
-			delete chooser; // clean up memory
-        });
-
+    chooser->launchAsync(juce::FileBrowserComponent::openMode |
+                             juce::FileBrowserComponent::canSelectFiles,
+                         [this, chooser](const juce::FileChooser& fc) {
+                             auto file = fc.getResult();
+                             if (file.existsAsFile()) {
+                                 _convolver.loadImpulseResponse(
+                                     file, juce::dsp::Convolution::Stereo::yes,
+                                     juce::dsp::Convolution::Trim::no, 0);
+                                 _irLoaded = true;
+                             }
+                             delete chooser;  // clean up memory
+                         });
 }
 
-void ProfilerAudioProcessor::startAmpProfiling()
-{
+void ProfilerAudioProcessor::startAmpProfiling() {
     // _ampProfiling.generateAndSaveGainSignal();
     _ampProfiling.generateSaturationProbe();
 }
 
-void ProfilerAudioProcessor::startGainAnalysis()
-{
+void ProfilerAudioProcessor::startGainAnalysis() {
     _ampProfiling.startGainAnalysis(_ampStage);
 }

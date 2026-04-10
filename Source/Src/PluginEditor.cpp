@@ -1,7 +1,8 @@
-#include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "ProfilerConstantValues.h"
 #include "Styles/Stylesheet.h"
+
+#include "PluginProcessor.h"
 
 //==============================================================================
 ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcessor& p)
