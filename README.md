@@ -3,7 +3,6 @@
 <!-- PROJECT SHIELDS -->
 [![Epitech](https://img.shields.io/badge/Epitech-Paris-blue)](https://www.epitech.eu/fr/)
 [![JUCE](https://img.shields.io/badge/JUCE-8.0.12+-brightgreen)](https://juce.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![C++20](https://img.shields.io/badge/C++-20-blue)](https://en.cppreference.com/w/cpp/20)
 
 
