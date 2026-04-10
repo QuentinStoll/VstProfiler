@@ -17,6 +17,5 @@
 /.github/workflows/        @RychlewL
 
 # 5. Documentation & ADRs
-# (Placed at the end because rules are processed top-to-bottom)
 /docs/                     @LeCentenaire
 /docs/adr/                 @QuentinStoll @LaurntZhang @RychlewL @LeCentenaire
