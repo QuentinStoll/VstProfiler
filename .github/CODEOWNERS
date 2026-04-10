@@ -1,23 +1,22 @@
-# TO BE CHANGED
+# Format: [Path] [Owner]
 
-# This is a comment.
-# The syntax is: [File Pattern] [GitHub Username]
+# 1. Default owner for everything
+* @QuentinStoll
 
-# 1. Global Owners
-# By default, you own everything.
-* @YourGitHubUsername
+# 2. Global file types
+*.cpp       @QuentinStoll
+*.md        @QuentinStoll @RychlewL @LeCentenaire
 
-# 2. Documentation & ADRs
-# Whenever someone updates the research or decisions, you get notified.
-/docs/adr/     @YourGitHubUsername
-/docs/veille/  @YourGitHubUsername
+# 3. Source Code - Specific Modules
+/Source/Src/Components/    @LaurntZhang
+/Source/Src/Modules/       @QuentinStoll @LeCentenaire
+/Source/Src/Views/         @QuentinStoll @LaurntZhang @LeCentenaire
 
-# 3. Project Configuration
-# Changes to the core "engine" or dependencies.
-/package.json  @YourGitHubUsername
-/tsconfig.json @YourGitHubUsername
-/.github/      @YourGitHubUsername
+# 4. Build System & CI/CD
+/Source/CMakeLists.txt     @RychlewL
+/.github/workflows/        @RychlewL
 
-# 4. Specific Modules (Example)
-# If you have a specific contributor for the backend:
-# /src/backend/  @ContributorUsername
+# 5. Documentation & ADRs
+# (Placed at the end because rules are processed top-to-bottom)
+/docs/                     @LeCentenaire
+/docs/adr/                 @QuentinStoll @LaurntZhang @RychlewL @LeCentenaire
