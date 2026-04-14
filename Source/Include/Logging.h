@@ -1,26 +1,26 @@
 #pragma once
 #include <JuceHeader.h>
 
-enum class LogLevel { TRACE,
-                      DEBUG,
-                      INFO,
-                      WARNING,
-                      ERROR,
-                      FATAL,
-                      OTHER };
+enum class LogLevel { Trace,
+                      Debug,
+                      Info,
+                      Warning,
+                      Error,
+                      Fatal,
+                      Other };
 
-enum class LogCategory { INIT,
-                         DSP,
-                         IO,
-                         UI,
-                         PARAM,
-                         HOST,
-                         PERF,
-                         OTHER };
+enum class LogCategory { Init,
+                         Dsp,
+                         Io,
+                         Ui,
+                         Param,
+                         Host,
+                         Perf,
+                         Other };
 
 struct LoggingConfig {
-    LogLevel logLevel = LogLevel::INFO;
-    bool showInUI = false;
+    LogLevel logLevel = LogLevel::Info;
+    bool showInUi = false;
     bool writeToFile = false;
     bool writeToDebug = true;
     juce::File logDirectory = juce::File();

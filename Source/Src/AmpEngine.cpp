@@ -75,7 +75,7 @@ float AmpProcessor::processSample(float x) {
         env = releaseCoef * env + (1.0f - releaseCoef) * absx;
     }
 
-    // 2. SATURATION FIXE
+    // 2. SATURATIoN FIXE
     // On multiplie par 2.0 (ou 4.0) juste pour être sûr que ça sature un peu
     float saturated = readLUT(x * (2.0f + B * env));
 

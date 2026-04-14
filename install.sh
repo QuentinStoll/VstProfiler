@@ -23,7 +23,7 @@ usage() {
 
 config() {
 	echo "[INFO] Configuring cmake"
-	cmake -S $SCRIPT_DIR -B $BUILD_DIR
+	cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S $SCRIPT_DIR -B $BUILD_DIR
 	echo "[OK] cmake configured"
 }
 
