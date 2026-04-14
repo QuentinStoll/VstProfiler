@@ -5,6 +5,8 @@
   <MAINGROUP id="np7PK7" name="Profiler">
     <GROUP id="{008EAF89-8325-0CC2-E0EB-0C4D8EFBEC65}" name="Include">
       <GROUP id="{1067897D-12FB-92DD-7738-E02416E4000A}" name="Components">
+        <FILE id="hssDtW" name="CustomComboBox.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomComboBox.h"/>
         <FILE id="up6Ar1" name="CustomSlider.h" compile="0" resource="0" file="Source/Include/Components/CustomSlider.h"/>
         <FILE id="GdUZQl" name="CustomTabs.h" compile="0" resource="0" file="Source/Include/Components/CustomTabs.h"/>
         <FILE id="tcTwa0" name="CustomTabBar.h" compile="0" resource="0" file="Source/Include/Components/CustomTabBar.h"/>
@@ -35,31 +37,21 @@
       <FILE id="WeqCms" name="ProfilerConstantValues.h" compile="0" resource="0"
             file="Source/Include/ProfilerConstantValues.h"/>
       <FILE id="BQk8Z4" name="AmpEngine.h" compile="0" resource="0" file="Source/Include/AmpEngine.h"/>
-      <FILE id="K9791m" name="AmpLoaderSection.h" compile="0" resource="0"
-            file="Source/Include/AmpLoaderSection.h"/>
       <FILE id="JjJUYx" name="AmpProfiling.h" compile="0" resource="0" file="Source/Include/AmpProfiling.h"/>
-      <FILE id="Pu0lAQ" name="CloningScreen.h" compile="0" resource="0" file="Source/Include/CloningScreen.h"/>
-      <FILE id="ydUweE" name="EqNormalizeSection.h" compile="0" resource="0"
-            file="Source/Include/EqNormalizeSection.h"/>
       <FILE id="NbTrvN" name="MainSettingsSection.h" compile="0" resource="0"
             file="Source/Include/MainSettingsSection.h"/>
       <FILE id="dEQ4CG" name="PluginEditor.h" compile="0" resource="0" file="Source/Include/PluginEditor.h"/>
       <FILE id="DnsYDd" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/Include/PluginProcessor.h"/>
-      <FILE id="He9AKV" name="RotarySlider.h" compile="0" resource="0" file="Source/Include/RotarySlider.h"/>
-      <FILE id="ku4DB2" name="RotarySliderParameter.h" compile="0" resource="0"
-            file="Source/Include/RotarySliderParameter.h"/>
-      <FILE id="BCpH27" name="ScreenID.h" compile="0" resource="0" file="Source/Include/ScreenID.h"/>
       <FILE id="Tq16GP" name="SelectionScreen.h" compile="0" resource="0"
             file="Source/Include/SelectionScreen.h"/>
       <FILE id="kpnwSI" name="SweepGenerator.h" compile="0" resource="0"
             file="Source/Include/SweepGenerator.h"/>
-      <FILE id="adZk28" name="UsingScreen.h" compile="0" resource="0" file="Source/Include/UsingScreen.h"/>
-      <FILE id="TPOVjK" name="DisplayManager.h" compile="0" resource="0"
-            file="Source/Include/DisplayManager.h"/>
     </GROUP>
     <GROUP id="{3842B737-32C2-E9C6-BA17-6825D882BBB8}" name="Src">
       <GROUP id="{AA97C183-8D39-580E-1626-3283C80FFCDE}" name="Components">
+        <FILE id="aHd87L" name="CustomComboBox.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomComboBox.cpp"/>
         <FILE id="RR5QUf" name="CustomSlider.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomSlider.cpp"/>
         <FILE id="XkxKqA" name="CustomTabs.cpp" compile="1" resource="0" file="Source/Src/Components/CustomTabs.cpp"/>
@@ -89,22 +81,9 @@
             file="Source/Src/PluginEditor.cpp"/>
       <FILE id="KQ9tZq" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/Src/PluginProcessor.cpp"/>
-      <FILE id="U8iGJB" name="RotarySlider.cpp" compile="1" resource="0"
-            file="Source/Src/RotarySlider.cpp"/>
-      <FILE id="X3uScO" name="SelectionScreen.cpp" compile="1" resource="0"
-            file="Source/Src/SelectionScreen.cpp"/>
-      <FILE id="I2FDHl" name="UsingScreen.cpp" compile="1" resource="0" file="Source/Src/UsingScreen.cpp"/>
-      <FILE id="EsSALF" name="DisplayManager.cpp" compile="1" resource="0"
-            file="Source/Src/DisplayManager.cpp"/>
       <FILE id="xNJlRd" name="AmpEngine.cpp" compile="1" resource="0" file="Source/Src/AmpEngine.cpp"/>
-      <FILE id="TX3pmg" name="AmpLoaderSection.cpp" compile="1" resource="0"
-            file="Source/Src/AmpLoaderSection.cpp"/>
       <FILE id="Njb4db" name="AmpProfiling.cpp" compile="1" resource="0"
             file="Source/Src/AmpProfiling.cpp"/>
-      <FILE id="IAAVm4" name="CloningScreen.cpp" compile="1" resource="0"
-            file="Source/Src/CloningScreen.cpp"/>
-      <FILE id="as6yi7" name="EqNormalizeSection.cpp" compile="1" resource="0"
-            file="Source/Src/EqNormalizeSection.cpp"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
