@@ -3,8 +3,17 @@
 
 namespace ProfilerStyle
 {
+	enum class Theme
+	{
+		Dark,
+		Light,
+		Orange
+	};
+
 	namespace Colors
 	{
+		inline const juce::Colour white = juce::Colour(0xffffffff);
+
 		inline const juce::Colour lightestGrey = juce::Colour(0xff505050);
 		inline const juce::Colour lighterGrey = juce::Colour(0xff3a3a3a);
 		inline const juce::Colour lightGrey = juce::Colour(0xff282828);

@@ -1,6 +1,9 @@
 #include <juceHeader.h>
+#include "Styles/Stylesheet.h"
+
 #include "Components/CustomTickBox.h"
 #include "Components/CustomComboBox.h"
+#include "Components/CustomTextButton.h"
 
 class UtilityBarModule : public juce::Component
 {
@@ -13,7 +16,7 @@ public:
 
 private:
 	CustomComboBox _profilMenu;
-	juce::TextButton _resetButton { "reset" };
+	CustomTextButton _resetButton{ "reset", ProfilerStyle::Theme::Orange };
 	CustomTickBox _muteSwitch{ "Mute"};
 	CustomTickBox _eqSwitch{ "EQ" };
 };

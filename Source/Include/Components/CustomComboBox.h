@@ -1,10 +1,10 @@
 #include <JuceHeader.h>
 
 //=============================================================================
-// Custom LookAndFeel for the ComboBox
+// Custom LookAndFeel 
 //=============================================================================
 
-class CustomComboBoxLF : public juce::LookAndFeel_V4
+static class CustomComboBoxLF : public juce::LookAndFeel_V4
 {
 	public:
 		void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown,

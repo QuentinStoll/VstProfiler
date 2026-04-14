@@ -2,7 +2,7 @@
 #include "Styles/Stylesheet.h"
 
 //=============================================================================
-// Custom LookAndFeel for the ComboBox
+// CustomLookAndFeelLF Implementation
 //=============================================================================
 
 void CustomComboBoxLF::drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown,
@@ -86,7 +86,7 @@ void CustomComboBoxLF::drawPopupMenuItem(juce::Graphics& g, const juce::Rectangl
 }
 
 //=============================================================================
-// Custom ComboBox component that uses the CustomComboBoxLF
+// CustomComboBox Implementation
 //=============================================================================
 
 CustomComboBox::CustomComboBox()
