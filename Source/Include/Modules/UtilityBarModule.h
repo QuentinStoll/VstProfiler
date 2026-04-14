@@ -1,5 +1,6 @@
 #include <juceHeader.h>
 #include "Components/CustomTickBox.h"
+#include "Components/CustomComboBox.h"
 
 class UtilityBarModule : public juce::Component
 {
@@ -11,7 +12,7 @@ public:
 	void resized() override;
 
 private:
-	juce::ComboBox _profilMenu;
+	CustomComboBox _profilMenu;
 	juce::TextButton _resetButton { "reset" };
 	CustomTickBox _muteSwitch{ "Mute"};
 	CustomTickBox _eqSwitch{ "EQ" };
