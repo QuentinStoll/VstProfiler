@@ -7,6 +7,8 @@
       <GROUP id="{1067897D-12FB-92DD-7738-E02416E4000A}" name="Components">
         <FILE id="hssDtW" name="CustomComboBox.h" compile="0" resource="0"
               file="Source/Include/Components/CustomComboBox.h"/>
+        <FILE id="ftiu49" name="CustomTextButton.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomTextButton.h"/>
         <FILE id="up6Ar1" name="CustomSlider.h" compile="0" resource="0" file="Source/Include/Components/CustomSlider.h"/>
         <FILE id="GdUZQl" name="CustomTabs.h" compile="0" resource="0" file="Source/Include/Components/CustomTabs.h"/>
         <FILE id="tcTwa0" name="CustomTabBar.h" compile="0" resource="0" file="Source/Include/Components/CustomTabBar.h"/>
@@ -52,6 +54,8 @@
       <GROUP id="{AA97C183-8D39-580E-1626-3283C80FFCDE}" name="Components">
         <FILE id="aHd87L" name="CustomComboBox.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomComboBox.cpp"/>
+        <FILE id="Wx776V" name="CustomTextButton.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomTextButton.cpp"/>
         <FILE id="RR5QUf" name="CustomSlider.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomSlider.cpp"/>
         <FILE id="XkxKqA" name="CustomTabs.cpp" compile="1" resource="0" file="Source/Src/Components/CustomTabs.cpp"/>
