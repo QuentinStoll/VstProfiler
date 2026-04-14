@@ -214,7 +214,7 @@ void AmpProfiling::startSaturationAnalysis(AmpProcessor& processor) {
                 // On crée une table temporaire pour stocker la capture
                 std::vector<float> capturedLut(processor.getLutSize());
 
-                /* LOGIQUE DE DEDUCTION :
+                /* LOGIQUE DE DEDUCTIoN :
                    Puisque le RAW était une rampe parfaite de -1 à 1,
                    chaque échantillon du WET correspond DIRECTEMENT à un index
                    de la LUT.
