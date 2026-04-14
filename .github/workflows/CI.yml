@@ -1,0 +1,275 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ Main, Dev, CICD ]
+  pull_request:
+    branches: [ Main, Dev, CICD ]
+
+env:
+  BUILD_DIR: build
+
+permissions:
+  contents: write
+  actions: read
+
+# ─────────────────────────────────────────────
+# STAGE 1 — LINT CHECK
+# ─────────────────────────────────────────────
+jobs:
+  lint-check:
+    name: Lint Check (clang-format)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format
+
+      - name: Run clang-format check
+        run: |
+          find ./Source -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \
+            | xargs clang-format --dry-run --Werror
+        # Hard failure — blocks all downstream jobs
+
+# ─────────────────────────────────────────────
+# STAGE 2 — UNIT TESTS
+# ─────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests (${{ matrix.os-name }})
+    needs: lint-check
+    continue-on-error: true   # Failures are reported but do NOT block full-build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os-name: windows-x86
+            runner: windows-latest
+          - os-name: windows-arm
+            runner: windows-11-arm
+          - os-name: linux-x86
+            runner: ubuntu-latest
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Dependencies (Linux only) ──────────────────
+      - name: Install Clang, gcovr & JUCE dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang \
+            gcovr \
+            pkg-config \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxcomposite-dev \
+            libfreetype6-dev \
+            libfontconfig1-dev \
+            libasound2-dev \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            webkit2gtk-4.1 \
+            libgtk-3-dev \
+            libglib2.0-dev \
+            mesa-common-dev \
+            libjack-jackd2-dev \
+            libdbus-1-dev
+
+      # ── Build ──────────────────────────────────────
+      - name: Build unit tests (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: install.bat all debug
+
+      - name: Build unit tests (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: ./install.sh all debug
+
+      # ── Run tests ─────────────────────────────────
+      - name: Run unit tests (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          for /r build %%f in (*_test.exe) do (
+            echo Running %%f
+            %%f || exit /b 1
+          )
+
+      - name: Run unit tests (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          find build/ -name "*_test" -executable | while read test; do
+            echo "Running $test"
+            "$test"
+          done
+
+      # ── Coverage (Linux only) ──────────────────────
+      - name: Collect gcov data
+        if: matrix.os-name == 'linux-x86'
+        shell: bash
+        run: gcovr --root . --exclude 'build/' --xml coverage.xml --txt coverage.txt
+
+      - name: Print coverage summary
+        if: matrix.os-name == 'linux-x86'
+        shell: bash
+        run: cat coverage.txt
+
+      # ── Artifacts ─────────────────────────────────
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os-name }}
+          retention-days: 7
+          path: |
+            build/
+            coverage.xml
+            coverage.txt
+
+# ─────────────────────────────────────────────
+# STAGE 3 — FULL RELEASE BUILD
+# ─────────────────────────────────────────────
+  full-build:
+    name: Full Build (${{ matrix.os-name }})
+    needs: lint-check
+    if: always() # Runs even when unit-tests fail
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os-name: windows-x86
+            runner: windows-latest
+          - os-name: windows-arm
+            runner: windows-11-arm
+          - os-name: linux-x86
+            runner: ubuntu-latest
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Build ──────────────────────────────────────
+      - name: Build release (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: install.bat all release
+
+      - name: Install JUCE dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxcomposite-dev \
+            libfreetype6-dev \
+            libfontconfig1-dev \
+            libasound2-dev \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            webkit2gtk-4.1 \
+            libgtk-3-dev \
+            libglib2.0-dev \
+            mesa-common-dev \
+            libjack-jackd2-dev \
+            libdbus-1-dev
+
+      - name: Build release (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: ./install.sh all release
+
+      # ── Collect & upload artifacts ─────────────────
+      - name: Upload build artifacts (Windows — .exe / .dll)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os-name }}
+          retention-days: 14
+          path: |
+            build/**/*.exe
+            build/**/*.dll
+
+      - name: Upload build artifacts (Linux — binaries without extension)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os-name }}
+          retention-days: 14
+          path: build/**
+
+# ─────────────────────────────────────────────
+# STAGE 4 — RELEASE
+# ─────────────────────────────────────────────
+  release:
+    name: Publish Release
+    needs: full-build
+    # Only publish on direct pushes to Main (not PRs)
+    if: github.ref == 'refs/heads/Main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-*
+          path: artifacts/
+
+      # ── Normalize structure ────────────────────────
+      # artifacts/build-windows-x86/ → release-package/windows-x86/
+      - name: Normalize artifact structure
+        run: |
+          mkdir -p release-package
+          for dir in artifacts/build-*/; do
+            os_arch=$(basename "$dir" | sed 's/^build-//')
+            mkdir -p "release-package/$os_arch"
+            cp -r "$dir"* "release-package/$os_arch/"
+          done
+
+      # ── Package ───────────────────────────────────
+      # Windows → .zip  (preserves .exe / .dll extensions)
+      # Linux   → .tar.gz
+      - name: Create release archives
+        run: |
+          cd release-package
+          for dir in */; do
+            os_arch="${dir%/}"
+            if [[ "$os_arch" == windows-* ]]; then
+              zip -r "../${os_arch}.zip" "$dir"
+            else
+              tar -czf "../${os_arch}.tar.gz" "$dir"
+            fi
+          done
+
+      # ── Version tag  (e.g. v2026.04.10-42) ────────
+      - name: Generate version tag
+        id: version
+        run: |
+          echo "tag=v$(date +'%Y.%m.%d')-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      # ── Publish ───────────────────────────────────
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            *.zip
+            *.tar.gz

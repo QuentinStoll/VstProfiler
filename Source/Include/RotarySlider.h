@@ -1,19 +1,18 @@
 #pragma once
 #include <JuceHeader.h>
+
 #include "RotarySliderParameter.h"
 
-class RotarySlider : public juce::Component
-{
-public:
-	RotarySlider(const RotarySliderParameter& param);
-	~RotarySlider();
-	
-	void resized() override;
+class RotarySlider : public juce::Component {
+   public:
+    RotarySlider(const RotarySliderParameter& param);
+    ~RotarySlider();
 
-	juce::Slider& getSlider() { return _slider; };
+    void resized() override;
 
-private:
+    juce::Slider& getSlider() { return _slider; };
+
+   private:
     juce::Slider _slider;
-	juce::Label _name;
+    juce::Label _name;
 };
-
