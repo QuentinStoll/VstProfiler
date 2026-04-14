@@ -20,7 +20,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
     LoggingConfig config = LoggingConfigLoader::loadFromFile(
         juce::File(".config/log_settings.json"));
     AppLogger::initialise(config);
-    AppLogger::info(LogCategory::INIT, "Plugin instance created");
+    AppLogger::info(LogCategory::Init, "Plugin instance created");
 
     _masterParam = _apvts.getRawParameterValue("master");
     _gainParam = _apvts.getRawParameterValue("gain");
@@ -34,7 +34,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() {
-    AppLogger::info(LogCategory::INIT, "Plugin instance destroyed");
+    AppLogger::info(LogCategory::Init, "Plugin instance destroyed");
     AppLogger::shutdown();
 }
 
@@ -162,7 +162,7 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported(
 
 /**
     Performs the real-time audio processing.
-    This implementation handles gain scaling, a main DSP chain,
+    This implementation handles gain scaling, a main Dsp chain,
     an oversampled non-linear amp stage, and an IR convolution stage.
 */
 void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,

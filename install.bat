@@ -33,7 +33,7 @@ goto end
 
 :config
 echo [INFO] Configuring cmake
-cmake -S "%~dp0." -B "%~dp0build"
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S "%~dp0." -B "%~dp0build"
 if errorlevel 1 (
     echo [ERROR] cmake configuration failed
     exit /b 1

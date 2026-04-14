@@ -9,41 +9,41 @@
 
 const char* logLevelToString(LogLevel level) noexcept {
     switch (level) {
-        case LogLevel::TRACE:
-            return "[TRACE]";
-        case LogLevel::DEBUG:
-            return "[DEBUG]";
-        case LogLevel::INFO:
-            return "[INFO]";
-        case LogLevel::WARNING:
-            return "[WARNING]";
-        case LogLevel::ERROR:
-            return "[ERROR]";
-        case LogLevel::FATAL:
-            return "[FATAL]";
+        case LogLevel::Trace:
+            return "[Trace]";
+        case LogLevel::Debug:
+            return "[Debug]";
+        case LogLevel::Info:
+            return "[Info]";
+        case LogLevel::Warning:
+            return "[Warning]";
+        case LogLevel::Error:
+            return "[Error]";
+        case LogLevel::Fatal:
+            return "[Fatal]";
         default:
-            return "[OTHER]";
+            return "[Other]";
     }
 }
 
 const char* logCategoryToString(LogCategory category) noexcept {
     switch (category) {
-        case LogCategory::INIT:
-            return "[INIT]";
-        case LogCategory::DSP:
-            return "[DSP]";
-        case LogCategory::IO:
-            return "[IO]";
-        case LogCategory::UI:
-            return "[UI]";
-        case LogCategory::PARAM:
-            return "[PARAM]";
-        case LogCategory::HOST:
-            return "[HOST]";
-        case LogCategory::PERF:
-            return "[PERF]";
+        case LogCategory::Init:
+            return "[Init]";
+        case LogCategory::Dsp:
+            return "[Dsp]";
+        case LogCategory::Io:
+            return "[Io]";
+        case LogCategory::Ui:
+            return "[Ui]";
+        case LogCategory::Param:
+            return "[Param]";
+        case LogCategory::Host:
+            return "[Host]";
+        case LogCategory::Perf:
+            return "[Perf]";
         default:
-            return "[OTHER]";
+            return "[Other]";
     }
 }
 
@@ -69,27 +69,27 @@ LoggingConfig LoggingConfigLoader::loadFromFile(const juce::File& file) {
     // log_level
     std::string_view _logLevel;
     if (root["log_level"].get(_logLevel) == simdjson::SUCCESS) {
-        if (_logLevel == "TRACE") {
-            config.logLevel = LogLevel::TRACE;
-        } else if (_logLevel == "DEBUG") {
-            config.logLevel = LogLevel::DEBUG;
-        } else if (_logLevel == "INFO") {
-            config.logLevel = LogLevel::INFO;
-        } else if (_logLevel == "WARNING") {
-            config.logLevel = LogLevel::WARNING;
-        } else if (_logLevel == "ERROR") {
-            config.logLevel = LogLevel::ERROR;
-        } else if (_logLevel == "FATAL") {
-            config.logLevel = LogLevel::FATAL;
+        if (_logLevel == "Trace") {
+            config.logLevel = LogLevel::Trace;
+        } else if (_logLevel == "Debug") {
+            config.logLevel = LogLevel::Debug;
+        } else if (_logLevel == "Info") {
+            config.logLevel = LogLevel::Info;
+        } else if (_logLevel == "Warning") {
+            config.logLevel = LogLevel::Warning;
+        } else if (_logLevel == "Error") {
+            config.logLevel = LogLevel::Error;
+        } else if (_logLevel == "Fatal") {
+            config.logLevel = LogLevel::Fatal;
         } else {
-            config.logLevel = LogLevel::OTHER;
+            config.logLevel = LogLevel::Other;
         }
     }
 
     // show_in_ui
-    bool _showInUI;
-    if (root["show_in_ui"].get(_showInUI) == simdjson::SUCCESS) {
-        config.showInUI = _showInUI;
+    bool _showInUi;
+    if (root["show_in_ui"].get(_showInUi) == simdjson::SUCCESS) {
+        config.showInUi = _showInUi;
     }
 
     // write_to_file
@@ -166,14 +166,14 @@ void AppLogger::initialise(LoggingConfig config) {
     }
     currentConfig = config;
     initialised = true;
-    AppLogger::info(LogCategory::INIT, "--==## Logger initialised ##==--");
+    AppLogger::info(LogCategory::Init, "--==## Logger initialised ##==--");
 }
 
 void AppLogger::shutdown() {
     if (!initialised) {
         return;
     }
-    AppLogger::info(LogCategory::INIT, "--==## Logger shutdown ##==--");
+    AppLogger::info(LogCategory::Init, "--==## Logger shutdown ##==--");
     delete juce::Logger::getCurrentLogger();
     juce::Logger::setCurrentLogger(nullptr);
     initialised = false;
@@ -192,7 +192,7 @@ void AppLogger::log(LogLevel level, LogCategory category,
     juce::String line;
     line << "[" << juce::Time::getCurrentTime().toString(true, true) << "] "
          << logLevelToString(level) << logCategoryToString(category) << message;
-#if JUCE_DEBUG
+#if JUCE_Debug
     DBG(line);
 #endif
     if (juce::Logger* logger = juce::Logger::getCurrentLogger()) {
@@ -201,20 +201,20 @@ void AppLogger::log(LogLevel level, LogCategory category,
 }
 
 void AppLogger::trace(LogCategory c, const juce::String& m) {
-    log(LogLevel::TRACE, c, m);
+    log(LogLevel::Trace, c, m);
 }
 void AppLogger::debug(LogCategory c, const juce::String& m) {
-    log(LogLevel::DEBUG, c, m);
+    log(LogLevel::Debug, c, m);
 }
 void AppLogger::info(LogCategory c, const juce::String& m) {
-    log(LogLevel::INFO, c, m);
+    log(LogLevel::Info, c, m);
 }
 void AppLogger::warn(LogCategory c, const juce::String& m) {
-    log(LogLevel::WARNING, c, m);
+    log(LogLevel::Warning, c, m);
 }
 void AppLogger::error(LogCategory c, const juce::String& m) {
-    log(LogLevel::ERROR, c, m);
+    log(LogLevel::Error, c, m);
 }
 void AppLogger::fatal(LogCategory c, const juce::String& m) {
-    log(LogLevel::FATAL, c, m);
+    log(LogLevel::Fatal, c, m);
 }
