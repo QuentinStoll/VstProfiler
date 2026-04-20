@@ -41,17 +41,17 @@ void PlayView::paint(juce::Graphics& g)
 	g.fillPath(path);
 
 	// Draw zones with different colors for visualization
-	g.setColour(juce::Colours::blue.withAlpha(0.2f));
-	g.fillRect(_tabBarZone.getBounds());
+	//g.setColour(juce::Colours::blue.withAlpha(0.2f));
+	//g.fillRect(_tabBarZone.getBounds());
 
-	g.setColour(juce::Colours::yellow.withAlpha(0.2f));
-	g.fillRect(_utilsBarZone.getBounds());
+	//g.setColour(juce::Colours::yellow.withAlpha(0.2f));
+	//g.fillRect(_utilsBarZone.getBounds());
 
-	g.setColour(juce::Colours::red.withAlpha(0.2f));
-	g.fillRect(_tabContentZone.getBounds());
+	//g.setColour(juce::Colours::red.withAlpha(0.2f));
+	//g.fillRect(_tabContentZone.getBounds());
 
-	g.setColour(juce::Colours::green.withAlpha(0.2f));
-	g.fillRect(_masterZone.getBounds());
+	//g.setColour(juce::Colours::green.withAlpha(0.2f));
+	//g.fillRect(_masterZone.getBounds());
 }
 
 void PlayView::resized()

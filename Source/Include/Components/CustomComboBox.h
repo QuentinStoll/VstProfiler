@@ -1,7 +1,7 @@
 #include <JuceHeader.h>
 
 //=============================================================================
-// Custom LookAndFeel 
+// Custom LookAndFeel for the ComboBox
 //=============================================================================
 
 static class CustomComboBoxLF : public juce::LookAndFeel_V4

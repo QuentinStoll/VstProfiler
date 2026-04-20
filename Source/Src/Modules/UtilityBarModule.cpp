@@ -7,7 +7,7 @@ UtilityBarModule::UtilityBarModule()
 	addAndMakeVisible(_muteSwitch);
 	addAndMakeVisible(_eqSwitch);
 
-	_eqSwitch.setToggleState(true);
+	_eqSwitch.setToggleState(true, false);
 
 	_profilMenu.addItem("Default", 1);
 	_profilMenu.addItem("Profil 1", 2);
