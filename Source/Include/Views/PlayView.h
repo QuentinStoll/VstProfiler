@@ -5,7 +5,6 @@
 #include "Components/CustomSlider.h"
 #include "Components/CustomTabBar.h"
 
-#include "Modules/BasicEqModule.h"
 #include "Modules/MasterSlidersModule.h"
 #include "Modules/UtilityBarModule.h"
 
@@ -22,15 +21,13 @@ public:
 private:
 	ProfilerAudioProcessor& _audioProcessor;
 
-	juce::Component _tabBarZone;
 	CustomTabBar _eqDisplayBar;
 
-	juce::Component _utilsBarZone;
 	UtilityBarModule _utilityBar;
-	
-	juce::Component _tabContentZone;
-	BasicEqModule _basicEqModule;
 
-	juce::Component _masterZone;
+	std::unique_ptr<juce::Component> _currentContent;
+
+	void changeEqModule(int index);
+
 	MasterSlidersModule _masterSliders;
 };
