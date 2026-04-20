@@ -12,7 +12,8 @@
         <FILE id="up6Ar1" name="CustomSlider.h" compile="0" resource="0" file="Source/Include/Components/CustomSlider.h"/>
         <FILE id="GdUZQl" name="CustomTabs.h" compile="0" resource="0" file="Source/Include/Components/CustomTabs.h"/>
         <FILE id="tcTwa0" name="CustomTabBar.h" compile="0" resource="0" file="Source/Include/Components/CustomTabBar.h"/>
-        <FILE id="h484I7" name="CustomTickBox.h" compile="0" resource="0" file="Source/Include/Components/CustomTickBox.h"/>
+        <FILE id="EYUdcH" name="CustomToggleButton.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomToggleButton.h"/>
       </GROUP>
       <GROUP id="{8789495B-6AA2-883E-889B-35A707BE144B}" name="Modules">
         <FILE id="FjiNh8" name="AdvancedEqModule.h" compile="0" resource="0"
@@ -27,8 +28,6 @@
         <FILE id="miSdqm" name="CustomButtonLF.h" compile="0" resource="0"
               file="Source/Include/Styles/CustomButtonLF.h"/>
         <FILE id="SK15uX" name="CustomTabsLF.h" compile="0" resource="0" file="Source/Include/Styles/CustomTabsLF.h"/>
-        <FILE id="JJei9g" name="CustomTickBoxLF.h" compile="0" resource="0"
-              file="Source/Include/Styles/CustomTickBoxLF.h"/>
         <FILE id="oeWtYH" name="Stylesheet.h" compile="0" resource="0" file="Source/Include/Styles/Stylesheet.h"/>
       </GROUP>
       <GROUP id="{419AB495-F068-27D4-A555-0CE15B1FA834}" name="Views">
@@ -61,8 +60,8 @@
         <FILE id="XkxKqA" name="CustomTabs.cpp" compile="1" resource="0" file="Source/Src/Components/CustomTabs.cpp"/>
         <FILE id="ClPX26" name="CustomTabBar.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomTabBar.cpp"/>
-        <FILE id="cT4Svh" name="CustomTickBox.cpp" compile="1" resource="0"
-              file="Source/Src/Components/CustomTickBox.cpp"/>
+        <FILE id="n2THk1" name="CustomToggleButton.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomToggleButton.cpp"/>
       </GROUP>
       <GROUP id="{4E4AD594-4741-D111-D468-4CF8E50F7F65}" name="Modules">
         <FILE id="bTAvt1" name="AdvancedEqModule.cpp" compile="1" resource="0"
