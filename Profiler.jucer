@@ -39,8 +39,6 @@
             file="Source/Include/ProfilerConstantValues.h"/>
       <FILE id="BQk8Z4" name="AmpEngine.h" compile="0" resource="0" file="Source/Include/AmpEngine.h"/>
       <FILE id="JjJUYx" name="AmpProfiling.h" compile="0" resource="0" file="Source/Include/AmpProfiling.h"/>
-      <FILE id="NbTrvN" name="MainSettingsSection.h" compile="0" resource="0"
-            file="Source/Include/MainSettingsSection.h"/>
       <FILE id="dEQ4CG" name="PluginEditor.h" compile="0" resource="0" file="Source/Include/PluginEditor.h"/>
       <FILE id="DnsYDd" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/Include/PluginProcessor.h"/>
@@ -78,8 +76,6 @@
         <FILE id="dMY8H7" name="PlayView.cpp" compile="1" resource="0" file="Source/Src/Views/PlayView.cpp"/>
         <FILE id="Ngw0KX" name="ProfilView.cpp" compile="1" resource="0" file="Source/Src/Views/ProfilView.cpp"/>
       </GROUP>
-      <FILE id="jD5wtr" name="MainSettingsSection.cpp" compile="1" resource="0"
-            file="Source/Src/MainSettingsSection.cpp"/>
       <FILE id="YuLaMY" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/Src/PluginEditor.cpp"/>
       <FILE id="KQ9tZq" name="PluginProcessor.cpp" compile="1" resource="0"
