@@ -49,9 +49,6 @@ public:
 
 	//==============================================================================
     juce::AudioProcessorValueTreeState _apvts{ *this, nullptr, "Parameters", createParameterLayout() };
-
-	//==============================================================================
-	void updateFilterCoefficients();
   
     //===================================== Our func ===============================
 
@@ -61,14 +58,20 @@ public:
     void startGainAnalysis();
 
 private:
-    juce::dsp::ProcessorChain <
-        juce::dsp::Gain<float>,             // Input Gain
-		juce::dsp::NoiseGate<float>,        // Noise Gate
-		juce::dsp::IIR::Filter<float>,      // Bass - Low Shelf
-		juce::dsp::IIR::Filter<float>,      // Mid - Peak Filter
-		juce::dsp::IIR::Filter<float>,      // Treble - High Shelf
-		juce::dsp::Gain<float>              // Output Gain
-    > _mainProcessor;
+    enum ChainPositions
+    {
+        Gain,
+        NoiseGate,
+		MasterVolume
+	};
+
+    using Chain = juce::dsp::ProcessorChain <
+        juce::dsp::Gain<float>,             
+		juce::dsp::NoiseGate<float>,
+		juce::dsp::Gain<float>
+    >;
+
+	Chain _masterProcessor;
 
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
