@@ -1,10 +1,14 @@
 #include "Modules/MasterSlidersModule.h"
 
-MasterSlidersModule::MasterSlidersModule()
+MasterSlidersModule::MasterSlidersModule(juce::AudioProcessorValueTreeState& apvts)
 {
 	addAndMakeVisible(_masterVolumeSlider);
 	addAndMakeVisible(_gainSlider);
 	addAndMakeVisible(_noiseGateSlider);
+
+	_masterVolumeAttachment = std::make_unique<SliderAttachment>(apvts, "master", _masterVolumeSlider.getSlider());
+	_gainAttachment = std::make_unique<SliderAttachment>(apvts, "gain", _gainSlider.getSlider());
+	_noiseGateAttachment = std::make_unique<SliderAttachment>(apvts, "noise", _noiseGateSlider.getSlider());
 }
 
 MasterSlidersModule::~MasterSlidersModule()

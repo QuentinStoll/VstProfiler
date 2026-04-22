@@ -5,7 +5,7 @@
 #include "Modules/AdvancedEqModule.h"
 
 PlayView::PlayView(ProfilerAudioProcessor& p)
-	: _audioProcessor(p)
+	: _audioProcessor(p), _masterSliders(p._apvts)
 {
 	// Initialize the EQ display bar with tabs and set up the callback for tab changes
 	addAndMakeVisible(_eqDisplayBar);
@@ -78,10 +78,10 @@ void PlayView::changeEqModule(int index)
 
 	switch (index) {
 	case 0:
-		_currentContent = std::make_unique<BasicEqModule>();
+		_currentContent = std::make_unique<BasicEqModule>(_audioProcessor._apvts);
 		break;
 	case 1:
-		_currentContent = std::make_unique<AdvancedEqModule>();
+		_currentContent = std::make_unique<AdvancedEqModule>(_audioProcessor._apvts);
 		break;
 	default:
 		break;

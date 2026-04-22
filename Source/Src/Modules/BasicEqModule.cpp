@@ -1,12 +1,18 @@
 #include "Modules/BasicEqModule.h"
 
-BasicEqModule::BasicEqModule()
+BasicEqModule::BasicEqModule(juce::AudioProcessorValueTreeState& apvts)
 {
 	addAndMakeVisible(_bassSlider);
 	addAndMakeVisible(_midSlider);
 	addAndMakeVisible(_trebleSlider);
 	addAndMakeVisible(_presenceSlider);
 	addAndMakeVisible(_depthSlider);
+
+	_bassAttachment = std::make_unique<SliderAttachment>(apvts, "bass", _bassSlider.getSlider());
+	_midAttachment = std::make_unique<SliderAttachment>(apvts, "mid", _midSlider.getSlider());
+	_trebleAttachment = std::make_unique<SliderAttachment>(apvts, "treble", _trebleSlider.getSlider());
+	_presenceAttachment = std::make_unique<SliderAttachment>(apvts, "presence", _presenceSlider.getSlider());
+	_depthAttachment = std::make_unique<SliderAttachment>(apvts, "depth", _depthSlider.getSlider());
 }
 
 BasicEqModule::~BasicEqModule()

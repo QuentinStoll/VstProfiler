@@ -62,7 +62,7 @@ public:
 
 private:
     juce::dsp::ProcessorChain <
-		juce::dsp::Gain<float>,             // Input Gain
+        juce::dsp::Gain<float>,             // Input Gain
 		juce::dsp::NoiseGate<float>,        // Noise Gate
 		juce::dsp::IIR::Filter<float>,      // Bass - Low Shelf
 		juce::dsp::IIR::Filter<float>,      // Mid - Peak Filter
