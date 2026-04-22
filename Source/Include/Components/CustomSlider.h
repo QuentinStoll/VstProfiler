@@ -12,6 +12,8 @@ public:
 	void paint(juce::Graphics& g);
 	void resized();
 
+	juce::Slider& getSlider() { return _slider; };
+
 private:
 	CustomButtonLF _lookAndFeel;
 
