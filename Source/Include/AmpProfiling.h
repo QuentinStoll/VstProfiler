@@ -12,6 +12,7 @@ class AmpProfiling : public juce::Component {
 
     void generateSaturationProbe();
     void startSaturationAnalysis(AmpProcessor& processor);
+    void saveAmpConfig(const juce::File& file);
 
    private:
     std::unique_ptr<juce::FileChooser> _chooser;

@@ -35,6 +35,9 @@ class AmpProcessor : public juce::Component {
         // pour qu'elle atteigne 1.0 à l'index max.
     };
 
+    void saveAmpConfig(const juce::File& file);
+    void loadAmpConfig(const juce::File& file);
+
    private:
     // --- Look-Up Table (LUT) Management ---
 

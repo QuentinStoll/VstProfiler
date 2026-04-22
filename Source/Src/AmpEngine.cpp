@@ -57,7 +57,7 @@ float AmpProcessor::readLUT(float input) {
     if (i >= lutSize - 1)
         return lut[lutSize - 1];
 
-    return lut[i] + fraction * (lut[i + 1] - i[lut]);
+    return lut[i] + fraction * (lut[i + 1] - lut[i]);
 }
 
 /**
@@ -81,4 +81,36 @@ float AmpProcessor::processSample(float x) {
 
     // 3. GAIN STATIQUE (A)
     return saturated * A;
+}
+
+void AmpProcessor::saveAmpConfig(const juce::File& file) {
+    juce::var data(new juce::DynamicObject());
+    
+    data.getDynamicObject()->setProperty("A", A);
+    data.getDynamicObject()->setProperty("B", B);
+    
+    juce::Array<juce::var> lutArray;
+    for (int i = 0; i < lutSize; ++i) {
+        lutArray.add(lut[i]);
+    }
+    data.getDynamicObject()->setProperty("LUT", lutArray);
+    
+    juce::FileOutputStream stream(file);
+    if (stream.openedOk()) {
+        stream.writeText(juce::JSON::toString(data), false, false, "\n");
+    }
+}
+
+void AmpProcessor::loadAmpConfig(const juce::File& file) {
+    juce::FileInputStream stream(file);
+    if (stream.openedOk()) {
+        // Read parameters
+        A = stream.readFloat();
+        B = stream.readFloat();
+        
+        // Read LUT
+        for (int i = 0; i < lutSize; ++i) {
+            lut[i] = stream.readFloat();
+        }
+    }
 }

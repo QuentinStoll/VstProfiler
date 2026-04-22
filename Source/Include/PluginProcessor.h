@@ -46,6 +46,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     //==============================================================================
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
+    void saveAmpConfiguration(const juce::File& file);
 
     //==============================================================================
     juce::AudioProcessorValueTreeState _apvts{*this, nullptr, "Parameters", createParameterLayout()};

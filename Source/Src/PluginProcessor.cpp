@@ -319,3 +319,7 @@ void ProfilerAudioProcessor::startAmpProfiling() {
 void ProfilerAudioProcessor::startGainAnalysis() {
     _ampProfiling.startGainAnalysis(_ampStage);
 }
+
+void ProfilerAudioProcessor::saveAmpConfiguration(const juce::File& file) {
+    _ampStage.saveAmpConfig(file);
+}
