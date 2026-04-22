@@ -9,10 +9,13 @@ BUILD_DIR="$SCRIPT_DIR/build"
 CACHE_DIR="$SCRIPT_DIR/.cache"
 
 set -e
+mkdir -p $BUILD_DIR
+mkdir -p $CACHE_DIR
+
 
 usage() {
 	echo "Usage:"
-	echo "  ./install.sh           config + build (default)"
+	echo "  ./install.sh all       config + build (default)"
 	echo "  ./install.sh config    cmake config only"
 	echo "  ./install.sh build     cmake build only"
 	echo "  ./install.sh re    	   cache delete + remake"
@@ -20,7 +23,7 @@ usage() {
 
 config() {
 	echo "[INFO] Configuring cmake"
-	cmake -S $SCRIPT_DIR -B $BUILD_DIR
+	cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S $SCRIPT_DIR -B $BUILD_DIR
 	echo "[OK] cmake configured"
 }
 
@@ -31,7 +34,7 @@ build() {
 }
 
 case "$1" in
-	"" )
+	"" | "all")
 		config
 		build
 		;;
@@ -42,8 +45,8 @@ case "$1" in
 		build
 		;;
 	re )
-		rm $BUILD_DIR
-		rm $CACHE_DIR
+		rm -fr $BUILD_DIR
+		rm -fr $CACHE_DIR
 		config
 		build
 		;;

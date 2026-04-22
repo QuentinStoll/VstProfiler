@@ -1,22 +1,22 @@
 #pragma once
-#include "PluginProcessor.h"
 #include <JuceHeader.h>
 
-class CloningScreen : public juce::Component
-{
-public:
-	CloningScreen(ProfilerAudioProcessor& p);
-	~CloningScreen();
+#include "PluginProcessor.h"
 
-	void paint(juce::Graphics& g) override;
-	void resized() override;
+class CloningScreen : public juce::Component {
+   public:
+    CloningScreen(ProfilerAudioProcessor& p);
+    ~CloningScreen();
 
-private:
-	ProfilerAudioProcessor& _audioProcessor;
+    void paint(juce::Graphics& g) override;
+    void resized() override;
 
-	juce::TextButton _sweepButton{ "Start sweep" };
-	juce::TextButton _irButton{ "load ir" };
-	juce::TextButton _ampButton{ "load amp" };
+   private:
+    ProfilerAudioProcessor& _audioProcessor;
 
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CloningScreen)
+    juce::TextButton _sweepButton{"Start sweep"};
+    juce::TextButton _irButton{"load ir"};
+    juce::TextButton _ampButton{"load amp"};
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CloningScreen)
 };
