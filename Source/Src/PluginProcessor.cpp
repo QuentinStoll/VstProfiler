@@ -14,6 +14,15 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
                        )
 #endif
 {
+    _masterParam = _apvts.getRawParameterValue("master");
+    _gainParam = _apvts.getRawParameterValue("gain");
+    _noiseParam = _apvts.getRawParameterValue("noise");
+
+	_depthParam = _apvts.getRawParameterValue("depth");
+	_bassParam = _apvts.getRawParameterValue("bass");
+	_midParam = _apvts.getRawParameterValue("mid");
+	_trebleParam = _apvts.getRawParameterValue("treble");
+	_presenceParam = _apvts.getRawParameterValue("presence");
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor()
@@ -97,35 +106,38 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
     _convolver.prepare(spec);
 
-    _masterProcessor.reset();
-	_masterProcessor.prepare(spec);
+    _chain.reset();
+	_chain.prepare(spec);
 
-    _masterProcessor.get<Gain>().setGainDecibels(_apvts.getRawParameterValue("gain")->load());
-	_masterProcessor.get<Gain>().setRampDurationSeconds(0.05);
+    _chain.get<Gain>().setGainDecibels(_gainParam->load());
+	_chain.get<Gain>().setRampDurationSeconds(0.05);
+	
+    _chain.get<NoiseGate>().setThreshold(_noiseParam->load() - 60.0f);
+	_chain.get<NoiseGate>().setAttack(5.0f);
+	_chain.get<NoiseGate>().setRelease(100.0f);
+	_chain.get<NoiseGate>().setRatio(10.0f);
 
-	_masterProcessor.get<NoiseGate>().setThreshold(_apvts.getRawParameterValue("noise")->load() - 60.0f);
-	_masterProcessor.get<NoiseGate>().setAttack(5.0f);
-	_masterProcessor.get<NoiseGate>().setRelease(100.0f);
-	_masterProcessor.get<NoiseGate>().setRatio(10.0f);
+	_chain.get<MasterVolume>().setGainDecibels(_masterParam->load() / 100.0f);
+	_chain.get<MasterVolume>().setRampDurationSeconds(0.05);
 
-	_masterProcessor.get<MasterVolume>().setGainDecibels(_apvts.getRawParameterValue("master")->load() / 100.0f);
-	_masterProcessor.get<MasterVolume>().setRampDurationSeconds(0.05);
+	_chain.get<Depth>().coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate, DEPTH_FREQ, SHELF_Q, 1.0f);
+	_chain.get<Bass>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, BASS_FREQ, PEAK_Q, 1.0f);
+	_chain.get<Mid>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, MID_FREQ, PEAK_Q, 1.0f);
+	_chain.get<Treble>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, TREBLE_FREQ, PEAK_Q, 1.0f);
+	_chain.get<Presence>().coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate, PRESENCE_FREQ, SHELF_Q, 1.0f);
 
     oversampler.initProcessing(samplesPerBlock);
     
     _ampStage.prepare(sampleRate);
 
-
 //     spec.maximumBlockSize = samplesPerBlock;
 //     spec.numChannels = getTotalNumOutputChannels();
-
-    
 }
 
 
 void ProfilerAudioProcessor::releaseResources()
 {
-	_masterProcessor.reset();
+	_chain.reset();
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -171,13 +183,15 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, numSamples);
 
-	_masterProcessor.get<Gain>().setGainDecibels(_apvts.getRawParameterValue("gain")->load());
-    _masterProcessor.get<NoiseGate>().setThreshold(_apvts.getRawParameterValue("noise")->load() - 60.0f);
-	_masterProcessor.get<MasterVolume>().setGainLinear(_apvts.getRawParameterValue("master")->load() / 100.0f);
+	_chain.get<Gain>().setGainDecibels(_gainParam->load());
+    _chain.get<NoiseGate>().setThreshold(_noiseParam->load() - 60.0f);
+	_chain.get<MasterVolume>().setGainLinear(_masterParam->load() / 100.0f);
+
+	updateEqCoefficients();
 
     juce::dsp::AudioBlock<float> block(buffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
-    _masterProcessor.process(context);
+    _chain.process(context);
 
     // 3. Amp Simulation Stage (Non-linear processing with oversampling)
     if (_ampLoaded)
@@ -206,6 +220,24 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     {
         _convolver.process(context);
     }
+}
+
+void ProfilerAudioProcessor::updateEqCoefficients()
+{
+    _chain.get<Depth>().coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf(
+		getSampleRate(), DEPTH_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_depthParam->load()));
+
+    _chain.get<Bass>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
+        getSampleRate(), BASS_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_bassParam->load()));
+
+    _chain.get<Mid>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
+        getSampleRate(), MID_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_midParam->load()));
+
+    _chain.get<Treble>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
+        getSampleRate(), TREBLE_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_trebleParam->load()));
+
+	_chain.get<Presence>().coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf(
+		getSampleRate(), PRESENCE_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_presenceParam->load()));
 }
 
 //==============================================================================
