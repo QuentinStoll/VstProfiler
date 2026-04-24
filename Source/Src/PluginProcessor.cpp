@@ -81,7 +81,6 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate,
                                            int samplesPerBlock) {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-
     // Prepare the main processor chain
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
@@ -92,12 +91,19 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate,
     _mainProcessor.prepare(spec);
     _mainProcessor.reset();
 
-    oversampler.initProcessing(samplesPerBlock);
 
     _ampStage.prepare(sampleRate);
 
-    //     spec.maximumBlockSize = samplesPerBlock;
-    //     spec.numChannels = getTotalNumOutputChannels();
+
+    // Neural Amp Preparation
+    // Initialisation
+    oversampler.initProcessing (static_cast<size_t> (samplesPerBlock));
+    
+    //'IA  fréquence multipliée par 4
+    _neuralAmp.prepare (sampleRate * oversampler.getOversamplingFactor(), samplesPerBlock);
+    
+    //compensation de latence DAW
+    setLatencySamples (static_cast<int> (oversampler.getLatencyInSamples()));
 }
 
 void ProfilerAudioProcessor::releaseResources() {
@@ -163,23 +169,26 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     juce::dsp::ProcessContextReplacing<float> context(block);
     _mainProcessor.process(context);
 
-    // 3. Amp Simulation Stage (Non-linear processing with oversampling)
-    if (_ampLoaded) {
-        // Upsample to reduce aliasing distortion
-        auto oversampledBlock = oversampler.processSamplesUp(block);
+    // 3. Neural Amp Simulation (L'IA insérée ici)
+    if (_neuralAmpLoaded) {
+        // On isole le canal 0 (Mono)
+        auto monoBlock = block.getSingleChannelBlock(0);
 
-        const int numChans = (int)oversampledBlock.getNumChannels();
-        const int numSamps = (int)oversampledBlock.getNumSamples();
+        // Upsampling vers la fréquence de l'IA
+        auto oversampledBlock = oversampler.processSamplesUp(monoBlock);
+        
+        // Inférence sur le bloc suréchantillonné
+        // Note: Assure-toi que ta classe NeuralAmp a bien la méthode processBlock(float*, int)
+        _neuralAmp.processBlock(oversampledBlock.getChannelPointer(0), 
+                                static_cast<int>(oversampledBlock.getNumSamples()));
 
-        for (int ch = 0; ch < numChans; ++ch) {
-            auto* data = oversampledBlock.getChannelPointer(ch);
-            for (int i = 0; i < numSamps; ++i) {
-                data[i] = _ampStage.processSample(data[i]);
-            }
+        // Downsampling vers la fréquence du host
+        oversampler.processSamplesDown(monoBlock);
+
+        // Duplication mono vers stéréo pour que l'IR (étape 4) traite les deux côtés
+        if (totalNumOutputChannels > 1) {
+            buffer.copyFrom(1, 0, buffer.getReadPointer(0), numSamples);
         }
-
-        // Downsample back to the host's sample rate
-        oversampler.processSamplesDown(block);
     }
 
     // 4. Cabinet Simulation (Convolution / IR)
@@ -187,6 +196,28 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         _convolver.process(context);
     }
 }
+
+
+    // 3. Amp Simulation Stage (Non-linear processing with oversampling)
+    // if (_ampLoaded) {
+    //     // Upsample to reduce aliasing distortion
+    //     auto oversampledBlock = oversampler.processSamplesUp(block);
+
+    //     const int numChans = (int)oversampledBlock.getNumChannels();
+    //     const int numSamps = (int)oversampledBlock.getNumSamples();
+
+    //     for (int ch = 0; ch < numChans; ++ch) {
+    //         auto* data = oversampledBlock.getChannelPointer(ch);
+    //         for (int i = 0; i < numSamps; ++i) {
+    //             data[i] = _ampStage.processSample(data[i]);
+    //         }
+    //     }
+
+    //     // Downsample back to the host's sample rate
+    //     oversampler.processSamplesDown(block);
+    // }
+
+    // 4. Cabinet Simulation (Convolution / IR)
 
 //==============================================================================
 bool ProfilerAudioProcessor::hasEditor() const {

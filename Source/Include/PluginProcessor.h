@@ -4,6 +4,7 @@
 
 #include "AmpEngine.h"
 #include "AmpProfiling.h"
+#include "NeuralAmp.h"
 
 //==============================================================================
 /**
@@ -95,4 +96,9 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     AmpProfiling _ampProfiling;
 
     juce::dsp::Oversampling<float> oversampler{2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true};
+
+    // Neural Amp
+    NeuralAmp _neuralAmp;
+    bool _neuralAmpLoaded = false;
+
 };

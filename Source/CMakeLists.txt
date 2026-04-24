@@ -34,6 +34,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/AmpEngine.cpp
     Src/AmpProfiling.cpp
     Src/Logging.cpp
+    Src/NeuralAmp.cpp
 )
 
 add_compile_definitions(JUCE_VST3_CAN_REPLACE_VST2=0)
