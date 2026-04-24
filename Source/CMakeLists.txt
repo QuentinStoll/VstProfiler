@@ -1,13 +1,11 @@
 # Plugin compiling
-
 set(PLUGIN_NAME Profiler)
 
 juce_add_plugin(${PLUGIN_NAME}
     COMPANY_NAME "YourCompany"
     PRODUCT_NAME "Profiler"
     PLUGIN_NAME "Profiler"
-
-    FORMATS AU VST3 Standalone   # pick what you need
+    FORMATS AU VST3 Standalone   # Sera surchargé par tes presets plus bas
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
@@ -15,12 +13,11 @@ juce_add_plugin(${PLUGIN_NAME}
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
 )
 
-set_target_properties(${PLUGIN_NAME}  PROPERTIES
+set_target_properties(${PLUGIN_NAME} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/arc"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/lib"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
-
 
 # Collect source files
 target_sources(${PLUGIN_NAME} PRIVATE
@@ -39,15 +36,37 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Logging.cpp
 )
 
-# Create plugin library
-# add_library(${PLUGIN_NAME} STATIC ${SOURCES})
 add_compile_definitions(JUCE_VST3_CAN_REPLACE_VST2=0)
 
-# Link JUCE modules from juce_setup.cmake
+# Link libraries - Intégration de RTNeural et Eigen
 if(NOT WIN32)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} curl simdjson)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE 
+        ${JUCE_MODULES_AVAILABLE} 
+        juce::juce_dsp        # Requis pour l'audio IA
+        curl 
+        simdjson 
+        RTNeural              # Ajout IA
+        Eigen3::Eigen         # Ajout IA
+    )
 else()
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} simdjson)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE 
+        ${JUCE_MODULES_AVAILABLE} 
+        juce::juce_dsp        # Requis pour l'audio IA
+        simdjson 
+        RTNeural              # Ajout IA
+        Eigen3::Eigen         # Ajout IA
+    )
+endif()
+
+# Définitions pour optimiser l'IA
+target_compile_definitions(${PLUGIN_NAME} PRIVATE
+    RTNEURAL_USE_EIGEN=1
+    RTNEURAL_DEFAULT_ALIGNMENT=32
+)
+
+# Optimisation matérielle spécifique Windows
+if(MSVC)
+    target_compile_options(${PLUGIN_NAME} PRIVATE /arch:AVX2)
 endif()
 
 # Include directories

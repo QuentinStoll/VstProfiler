@@ -77,4 +77,26 @@ if(NOT WIN32)
     include_directories(${GTK3_INCLUDE_DIRS} ${WEBKIT2GTK_INCLUDE_DIRS})
 endif()
 
+# --- AJOUT EIGEN & RTNEURAL (Ne pas supprimer le reste) ---
 
+# RTNeural engine
+if(NOT TARGET Eigen3::Eigen)
+    FetchContent_Declare(
+        eigen
+        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+        GIT_TAG 3.4.0
+    )
+    set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "" FORCE)
+    set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(eigen)
+endif()
+
+# RTNeural : IA engine for real-time applications
+if(NOT TARGET RTNeural)
+    FetchContent_Declare(
+        rtneural
+        GIT_REPOSITORY https://github.com/jatinchowdhury18/RTNeural.git
+        GIT_TAG origin/main
+    )
+    FetchContent_MakeAvailable(rtneural)
+endif()
