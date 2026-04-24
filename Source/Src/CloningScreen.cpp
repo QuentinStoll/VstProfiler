@@ -10,6 +10,21 @@ CloningScreen::CloningScreen(ProfilerAudioProcessor& p) : _audioProcessor(p) {
     addAndMakeVisible(_ampButton);
     _ampButton.onClick = [this]() { _audioProcessor.startGainAnalysis(); };
 
+    addAndMakeVisible(_neuralButton);
+    _neuralButton.onClick = [this]() {
+        auto chooser = new juce::FileChooser("Select a neural model file", {}, "*.onnx");
+        chooser->launchAsync(juce::FileBrowserComponent::openMode |
+                                 juce::FileBrowserComponent::canSelectFiles,
+                             [this, chooser](const juce::FileChooser& fc) {
+                                 auto file = fc.getResult();
+                                 if (file.existsAsFile()) {
+                                     _audioProcessor.loadNeuralModel(file);
+                                 }
+                                 delete chooser;  // clean up memory
+                             });
+    };
+    
+
     setSize(600, 400);
 }
 
@@ -31,6 +46,7 @@ void CloningScreen::resized() {
     _sweepButton.setBounds(bounds.getX(), 100, getWidth() - 20, 30);
     _irButton.setBounds(bounds.getX(), 150, getWidth() - 20, 30);
     _ampButton.setBounds(bounds.getX(), 190, getWidth() - 20, 30);
+    _neuralButton.setBounds(bounds.getX(), 230, getWidth() - 20, 30);
     //_startCloneButton.setBounds(bounds.getCentreX() - (buttonWidth / 2),
     // bounds.getCentreY(), buttonWidth,
     // buttonHeight);

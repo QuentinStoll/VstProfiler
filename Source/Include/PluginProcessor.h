@@ -61,6 +61,15 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void startAmpProfiling();
     void startGainAnalysis();
 
+    // Neural functions
+    void loadNeuralModel(const juce::File& file)
+    {
+        // On suspend brièvement le process audio ou on utilise un flag pour éviter les clics
+        if (_neuralAmp.loadModel(file)) {
+            _neuralAmpLoaded = true;
+        }
+    }
+
    private:
     juce::dsp::ProcessorChain<juce::dsp::Gain<float>,         // Input Gain
                               juce::dsp::NoiseGate<float>,    // Noise Gate
