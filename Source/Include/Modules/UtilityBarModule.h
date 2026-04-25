@@ -1,4 +1,4 @@
-#include <juceHeader.h>
+#include <JuceHeader.h>
 #include "Styles/Stylesheet.h"
 
 #include "Components/CustomToggleButton.h"
