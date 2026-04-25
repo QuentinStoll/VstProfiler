@@ -7,7 +7,7 @@
 class CustomTabBar : public juce::TabbedButtonBar {
    public:
     CustomTabBar() : juce::TabbedButtonBar(juce::TabbedButtonBar::TabsAtTop) {}
-    ~CustomTabBar() override = default;
+    ~CustomTabBar() = default;
 
     void currentTabChanged(int newCurrentTabIndex, const juce::String& newCurrentTabName) override;
 
