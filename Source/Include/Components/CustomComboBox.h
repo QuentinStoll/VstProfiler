@@ -4,7 +4,7 @@
 // Custom LookAndFeel for the ComboBox
 //=============================================================================
 
-static class CustomComboBoxLF : public juce::LookAndFeel_V4
+class CustomComboBoxLF : public juce::LookAndFeel_V4
 {
 	public:
 		void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown,

@@ -5,7 +5,7 @@
 // CustomTextButtonLF Implementation
 //=============================================================================
 
-static class CustomTextButtonLF : public juce::LookAndFeel_V4
+class CustomTextButtonLF : public juce::LookAndFeel_V4
 {
 public:
 	void drawButtonBackground(juce::Graphics& g, juce::Button& button,

@@ -4,7 +4,7 @@
 // CustomToggleButtonLF Implementation
 //=============================================================================
 
-static class CustomToggleButtonLF : public juce::LookAndFeel_V4
+class CustomToggleButtonLF : public juce::LookAndFeel_V4
 {
 public:
 	void drawTickBox(juce::Graphics& g, juce::Component& button,
