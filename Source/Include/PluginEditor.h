@@ -12,8 +12,10 @@ public:
     ProfilerAudioProcessorEditor(ProfilerAudioProcessor&);
     ~ProfilerAudioProcessorEditor() override;
 
-    //==============================================================================
+    //
     void paint(juce::Graphics&) override;
+
+    //
     void resized() override;
 
    private:
