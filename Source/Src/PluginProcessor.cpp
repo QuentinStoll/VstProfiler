@@ -26,11 +26,11 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
     _gainParam = _apvts.getRawParameterValue("gain");
     _noiseParam = _apvts.getRawParameterValue("noise");
 
-	_depthParam = _apvts.getRawParameterValue("depth");
-	_bassParam = _apvts.getRawParameterValue("bass");
-	_midParam = _apvts.getRawParameterValue("mid");
-	_trebleParam = _apvts.getRawParameterValue("treble");
-	_presenceParam = _apvts.getRawParameterValue("presence");
+    _depthParam = _apvts.getRawParameterValue("depth");
+    _bassParam = _apvts.getRawParameterValue("bass");
+    _midParam = _apvts.getRawParameterValue("mid");
+    _trebleParam = _apvts.getRawParameterValue("treble");
+    _presenceParam = _apvts.getRawParameterValue("presence");
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() {
@@ -101,37 +101,35 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate,
     _convolver.prepare(spec);
 
     _chain.reset();
-	_chain.prepare(spec);
+    _chain.prepare(spec);
 
     _chain.get<Gain>().setGainDecibels(_gainParam->load());
-	_chain.get<Gain>().setRampDurationSeconds(0.05);
-	
+    _chain.get<Gain>().setRampDurationSeconds(0.05);
+
     _chain.get<NoiseGate>().setThreshold(_noiseParam->load() - 60.0f);
-	_chain.get<NoiseGate>().setAttack(5.0f);
-	_chain.get<NoiseGate>().setRelease(100.0f);
-	_chain.get<NoiseGate>().setRatio(10.0f);
+    _chain.get<NoiseGate>().setAttack(5.0f);
+    _chain.get<NoiseGate>().setRelease(100.0f);
+    _chain.get<NoiseGate>().setRatio(10.0f);
 
-	_chain.get<MasterVolume>().setGainDecibels(_masterParam->load() / 100.0f);
-	_chain.get<MasterVolume>().setRampDurationSeconds(0.05);
+    _chain.get<MasterVolume>().setGainDecibels(_masterParam->load() / 100.0f);
+    _chain.get<MasterVolume>().setRampDurationSeconds(0.05);
 
-	_chain.get<Depth>().coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate, DEPTH_FREQ, SHELF_Q, 1.0f);
-	_chain.get<Bass>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, BASS_FREQ, PEAK_Q, 1.0f);
-	_chain.get<Mid>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, MID_FREQ, PEAK_Q, 1.0f);
-	_chain.get<Treble>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, TREBLE_FREQ, PEAK_Q, 1.0f);
-	_chain.get<Presence>().coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate, PRESENCE_FREQ, SHELF_Q, 1.0f);
+    _chain.get<Depth>().coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate, DEPTH_FREQ, SHELF_Q, 1.0f);
+    _chain.get<Bass>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, BASS_FREQ, PEAK_Q, 1.0f);
+    _chain.get<Mid>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, MID_FREQ, PEAK_Q, 1.0f);
+    _chain.get<Treble>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, TREBLE_FREQ, PEAK_Q, 1.0f);
+    _chain.get<Presence>().coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate, PRESENCE_FREQ, SHELF_Q, 1.0f);
 
     oversampler.initProcessing(samplesPerBlock);
 
     _ampStage.prepare(sampleRate);
 
-//     spec.maximumBlockSize = samplesPerBlock;
-//     spec.numChannels = getTotalNumOutputChannels();
+    //     spec.maximumBlockSize = samplesPerBlock;
+    //     spec.numChannels = getTotalNumOutputChannels();
 }
 
-
-void ProfilerAudioProcessor::releaseResources()
-{
-	_chain.reset();
+void ProfilerAudioProcessor::releaseResources() {
+    _chain.reset();
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -177,11 +175,11 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, numSamples);
 
-	_chain.get<Gain>().setGainDecibels(_gainParam->load());
+    _chain.get<Gain>().setGainDecibels(_gainParam->load());
     _chain.get<NoiseGate>().setThreshold(_noiseParam->load() - 60.0f);
-	_chain.get<MasterVolume>().setGainLinear(_masterParam->load() / 100.0f);
+    _chain.get<MasterVolume>().setGainLinear(_masterParam->load() / 100.0f);
 
-	updateEqCoefficients();
+    updateEqCoefficients();
 
     juce::dsp::AudioBlock<float> block(buffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
@@ -212,10 +210,9 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
 }
 
-void ProfilerAudioProcessor::updateEqCoefficients()
-{
+void ProfilerAudioProcessor::updateEqCoefficients() {
     _chain.get<Depth>().coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf(
-		getSampleRate(), DEPTH_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_depthParam->load()));
+        getSampleRate(), DEPTH_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_depthParam->load()));
 
     _chain.get<Bass>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
         getSampleRate(), BASS_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_bassParam->load()));
@@ -226,8 +223,8 @@ void ProfilerAudioProcessor::updateEqCoefficients()
     _chain.get<Treble>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
         getSampleRate(), TREBLE_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_trebleParam->load()));
 
-	_chain.get<Presence>().coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf(
-		getSampleRate(), PRESENCE_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_presenceParam->load()));
+    _chain.get<Presence>().coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf(
+        getSampleRate(), PRESENCE_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_presenceParam->load()));
 }
 
 //==============================================================================
@@ -250,8 +247,7 @@ void ProfilerAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
         copyXmlToBinary(*xml, destData);
 }
 
-void ProfilerAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
-{
+void ProfilerAudioProcessor::setStateInformation(const void* data, int sizeInBytes) {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
     if (auto xml = getXmlFromBinary(data, sizeInBytes))
@@ -260,82 +256,73 @@ void ProfilerAudioProcessor::setStateInformation (const void* data, int sizeInBy
 }
 
 //==============================================================================
-juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::createParameterLayout()
-{
+juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::createParameterLayout() {
     // Create parameter layout here and add parameters to it
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
-    
-//==============================================================================
-// Master parameters
-//==============================================================================
 
-	// Master Volume (0 to 100 %)
+    //==============================================================================
+    // Master parameters
+    //==============================================================================
+
+    // Master Volume (0 to 100 %)
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "master", 1 },
+        juce::ParameterID{"master", 1},
         "Master Volume",
         juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f),
-		50.0f
-	));
+        50.0f));
 
-	// Input Gain (-12 to +12 dB)
+    // Input Gain (-12 to +12 dB)
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "gain", 1 },
+        juce::ParameterID{"gain", 1},
         "Gain",
         juce::NormalisableRange<float>(-12.0f, 12.0f, 0.1f),
-        0.0f
-    ));
+        0.0f));
 
-	// Noise Gate Threshold (-12 to +12 dB)
+    // Noise Gate Threshold (-12 to +12 dB)
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "noise", 1 },
+        juce::ParameterID{"noise", 1},
         "Noise Gate",
         juce::NormalisableRange<float>(0.0f, 60.0f, 0.1f),
-        10.0f
-    ));
+        10.0f));
 
-//==============================================================================
-// EQ parameters
-//==============================================================================
+    //==============================================================================
+    // EQ parameters
+    //==============================================================================
 
-	// Bass Gain (-24 to +24 dB)
+    // Bass Gain (-24 to +24 dB)
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "bass", 1 },
+        juce::ParameterID{"bass", 1},
         "Bass",
         juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f),
-        0.0f
-    ));
+        0.0f));
 
-	// Mid Gain (-24 to +24 dB)
+    // Mid Gain (-24 to +24 dB)
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "mid", 1 },
+        juce::ParameterID{"mid", 1},
         "Mid",
         juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f),
-        0.0f
-    ));
+        0.0f));
 
-	// Treble Gain (-24 to +24 dB)
+    // Treble Gain (-24 to +24 dB)
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "treble", 1 },
+        juce::ParameterID{"treble", 1},
         "Treble",
         juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f),
-        0.0f
-    ));
+        0.0f));
 
-	// Presence Gain (-24 to +24 dB)
+    // Presence Gain (-24 to +24 dB)
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "presence", 1 },
+        juce::ParameterID{"presence", 1},
         "Presence",
         juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f),
-        0.0f
-    ));
+        0.0f));
 
-	// Depth Gain (-24 to +24 dB)
+    // Depth Gain (-24 to +24 dB)
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "depth", 1 },
+        juce::ParameterID{"depth", 1},
         "Depth",
         juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f),
-        0.0f
-    ));
+        0.0f));
 
     return layout;
 }

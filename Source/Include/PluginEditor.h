@@ -2,13 +2,12 @@
 
 #include <JuceHeader.h>
 
-#include "PluginProcessor.h"
 #include "Components/CustomTabs.h"
+#include "PluginProcessor.h"
 
 //==============================================================================
-class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor
-{
-public:
+class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor {
+   public:
     ProfilerAudioProcessorEditor(ProfilerAudioProcessor&);
     ~ProfilerAudioProcessorEditor() override;
 
@@ -26,5 +25,5 @@ public:
     //
     CustomTabs _tabs;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProfilerAudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ProfilerAudioProcessorEditor)
 };
