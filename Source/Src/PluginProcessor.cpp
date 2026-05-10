@@ -114,11 +114,11 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate,
     _chain.get<MasterVolume>().setGainDecibels(_masterParam->load() / 100.0f);
     _chain.get<MasterVolume>().setRampDurationSeconds(0.05);
 
-    _chain.get<Depth>().coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate, DEPTH_FREQ, SHELF_Q, 1.0f);
-    _chain.get<Bass>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, BASS_FREQ, PEAK_Q, 1.0f);
-    _chain.get<Mid>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, MID_FREQ, PEAK_Q, 1.0f);
-    _chain.get<Treble>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, TREBLE_FREQ, PEAK_Q, 1.0f);
-    _chain.get<Presence>().coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate, PRESENCE_FREQ, SHELF_Q, 1.0f);
+    *_chain.get<Depth>().state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate, DEPTH_FREQ, SHELF_Q, 1.0f);
+    *_chain.get<Bass>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, BASS_FREQ, PEAK_Q, 1.0f);
+    *_chain.get<Mid>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, MID_FREQ, PEAK_Q, 1.0f);
+    *_chain.get<Treble>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, TREBLE_FREQ, PEAK_Q, 1.0f);
+    *_chain.get<Presence>().state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate, PRESENCE_FREQ, SHELF_Q, 1.0f);
 
     oversampler.initProcessing(samplesPerBlock);
 
@@ -211,19 +211,19 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 }
 
 void ProfilerAudioProcessor::updateEqCoefficients() {
-    _chain.get<Depth>().coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf(
+    *_chain.get<Depth>().state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf(
         getSampleRate(), DEPTH_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_depthParam->load()));
 
-    _chain.get<Bass>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
+    *_chain.get<Bass>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
         getSampleRate(), BASS_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_bassParam->load()));
 
-    _chain.get<Mid>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
+    *_chain.get<Mid>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
         getSampleRate(), MID_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_midParam->load()));
 
-    _chain.get<Treble>().coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
+    *_chain.get<Treble>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
         getSampleRate(), TREBLE_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_trebleParam->load()));
 
-    _chain.get<Presence>().coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf(
+    *_chain.get<Presence>().state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(
         getSampleRate(), PRESENCE_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_presenceParam->load()));
 }
 

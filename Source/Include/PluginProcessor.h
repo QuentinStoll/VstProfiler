@@ -69,15 +69,19 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
         Presence
     };
 
+    using Filter = juce::dsp::ProcessorDuplicator<
+        juce::dsp::IIR::Filter<float>,
+        juce::dsp::IIR::Coefficients<float> >;
+
     using Chain = juce::dsp::ProcessorChain<
         juce::dsp::Gain<float>,
         juce::dsp::NoiseGate<float>,
         juce::dsp::Gain<float>,
-        juce::dsp::IIR::Filter<float>,
-        juce::dsp::IIR::Filter<float>,
-        juce::dsp::IIR::Filter<float>,
-        juce::dsp::IIR::Filter<float>,
-        juce::dsp::IIR::Filter<float> >;
+        Filter,
+        Filter,
+        Filter,
+        Filter,
+        Filter>;
 
     Chain _chain;
 
