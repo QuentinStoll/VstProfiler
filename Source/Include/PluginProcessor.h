@@ -103,6 +103,8 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     std::atomic<float>* _trebleParam{nullptr};
     std::atomic<float>* _presenceParam{nullptr};
 
+    std::atomic<float>* _isMuteParam{nullptr};
+
     void updateEqCoefficients();
 
     //==============================================================================

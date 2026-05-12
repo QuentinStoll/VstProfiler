@@ -7,6 +7,7 @@ UtilityBarModule::UtilityBarModule(juce::AudioProcessorValueTreeState& apvts) : 
     addAndMakeVisible(_eqSwitch);
 
     _eqSwitch.setToggleState(true, false);
+    _muteAttach = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(_apvts, "isMute", _muteSwitch);
 
     _profilMenu.addItem("Default", 1);
     _profilMenu.addItem("Profil 1", 2);

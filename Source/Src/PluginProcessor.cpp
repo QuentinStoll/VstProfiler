@@ -31,6 +31,8 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
     _midParam = _apvts.getRawParameterValue("mid");
     _trebleParam = _apvts.getRawParameterValue("treble");
     _presenceParam = _apvts.getRawParameterValue("presence");
+
+    _isMuteParam = _apvts.getRawParameterValue("isMute");
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() {
@@ -167,13 +169,15 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                           juce::MidiBuffer& midiMessages) {
     juce::ScopedNoDenormals noDenormals;
 
-    // 1. Prepare Buffer & Parameters
-    const int numSamples = buffer.getNumSamples();
-    const int totalNumInputChannels = getTotalNumInputChannels();
-    const int totalNumOutputChannels = getTotalNumOutputChannels();
+    // Handle Mute
+    if (_isMuteParam->load() > 0.5f) {
+        buffer.clear();
+        return;
+    }
 
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear(i, 0, numSamples);
+    // Handle any incoming MIDI messages (e.g., for parameter automation)
+    for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
+        buffer.clear(i, 0, buffer.getNumSamples());
 
     _chain.get<Gain>().setGainDecibels(_gainParam->load());
     _chain.get<NoiseGate>().setThreshold(_noiseParam->load() - 60.0f);
@@ -185,7 +189,7 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     juce::dsp::ProcessContextReplacing<float> context(block);
     _chain.process(context);
 
-    // 3. Amp Simulation Stage (Non-linear processing with oversampling)
+    // Amp Simulation Stage (Non-linear processing with oversampling)
     if (_ampLoaded) {
         // Upsample to reduce aliasing distortion
         auto oversampledBlock = oversampler.processSamplesUp(block);
@@ -204,7 +208,7 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         oversampler.processSamplesDown(block);
     }
 
-    // 4. Cabinet Simulation (Convolution / IR)
+    // Cabinet Simulation (Convolution / IR)
     if (_irLoaded) {
         _convolver.process(context);
     }
@@ -323,6 +327,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
         "Depth",
         juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f),
         0.0f));
+
+    //==============================================================================
+    // Other parameters (e.g. Mute)
+    //==============================================================================
+
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{"isMute", 1},
+        "Mute",
+        false));
 
     return layout;
 }
