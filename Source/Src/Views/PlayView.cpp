@@ -5,7 +5,7 @@
 #include "Styles/Stylesheet.h"
 
 PlayView::PlayView(ProfilerAudioProcessor& p)
-    : _audioProcessor(p), _masterSliders(p._apvts) {
+    : _audioProcessor(p), _masterSliders(p._apvts), _utilityBar(p._apvts) {
     // Initialize the EQ display bar with tabs and set up the callback for tab changes
     addAndMakeVisible(_eqDisplayBar);
     _eqDisplayBar.addTab("Basic", juce::Colours::darkgrey, 0);

@@ -1,6 +1,6 @@
 #include "Modules/UtilityBarModule.h"
 
-UtilityBarModule::UtilityBarModule() {
+UtilityBarModule::UtilityBarModule(juce::AudioProcessorValueTreeState& apvts) : _apvts(apvts) {
     addAndMakeVisible(_profilMenu);
     addAndMakeVisible(_resetButton);
     addAndMakeVisible(_muteSwitch);
@@ -12,6 +12,10 @@ UtilityBarModule::UtilityBarModule() {
     _profilMenu.addItem("Profil 1", 2);
     _profilMenu.addItem("Profil 2", 3);
     _profilMenu.setSelectedId(1);
+
+    _resetButton.onClick = [this]() {
+        resetAllParameters();
+    };
 }
 
 UtilityBarModule::~UtilityBarModule() {
@@ -34,4 +38,21 @@ void UtilityBarModule::resized() {
     _resetButton.setBounds(resetButtonArea);
     _muteSwitch.setBounds(muteSwitchArea);
     _eqSwitch.setBounds(eqSwitchArea);
+}
+
+void UtilityBarModule::resetAllParameters() {
+    auto resetParam = [this](const juce::String& paramID) {
+        auto* param = _apvts.getParameter(paramID);
+        if (param != nullptr)
+            param->setValueNotifyingHost(param->getDefaultValue());
+    };
+
+    resetParam("master");
+    resetParam("gain");
+    resetParam("noise");
+    resetParam("bass");
+    resetParam("depth");
+    resetParam("mid");
+    resetParam("presence");
+    resetParam("treble");
 }
