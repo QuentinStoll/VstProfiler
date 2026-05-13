@@ -22,6 +22,7 @@ class UtilityBarModule : public juce::Component {
     CustomToggleButton _eqSwitch{"EQ"};
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> _muteAttach;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> _eqAttach;
 
     void resetAllParameters();
 };

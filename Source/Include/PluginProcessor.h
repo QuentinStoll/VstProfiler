@@ -104,6 +104,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     std::atomic<float>* _presenceParam{nullptr};
 
     std::atomic<float>* _isMuteParam{nullptr};
+    std::atomic<float>* _isEqEnabledParam{nullptr};
 
     void updateEqCoefficients();
 

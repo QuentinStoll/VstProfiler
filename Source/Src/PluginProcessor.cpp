@@ -33,6 +33,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
     _presenceParam = _apvts.getRawParameterValue("presence");
 
     _isMuteParam = _apvts.getRawParameterValue("isMute");
+    _isEqEnabledParam = _apvts.getRawParameterValue("isEqEnabled");
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() {
@@ -116,6 +117,14 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate,
     _chain.get<MasterVolume>().setGainDecibels(_masterParam->load() / 100.0f);
     _chain.get<MasterVolume>().setRampDurationSeconds(0.05);
 
+    const bool eqEnabled = _isEqEnabledParam->load() > 0.5f;
+
+    _chain.setBypassed<Depth>(!eqEnabled);
+    _chain.setBypassed<Bass>(!eqEnabled);
+    _chain.setBypassed<Mid>(!eqEnabled);
+    _chain.setBypassed<Treble>(!eqEnabled);
+    _chain.setBypassed<Presence>(!eqEnabled);
+
     *_chain.get<Depth>().state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate, DEPTH_FREQ, SHELF_Q, 1.0f);
     *_chain.get<Bass>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, BASS_FREQ, PEAK_Q, 1.0f);
     *_chain.get<Mid>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, MID_FREQ, PEAK_Q, 1.0f);
@@ -183,7 +192,17 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     _chain.get<NoiseGate>().setThreshold(_noiseParam->load() - 60.0f);
     _chain.get<MasterVolume>().setGainLinear(_masterParam->load() / 100.0f);
 
-    updateEqCoefficients();
+    bool isEqEnabled = _isEqEnabledParam->load() > 0.5f;
+
+    _chain.setBypassed<Depth>(!isEqEnabled);
+    _chain.setBypassed<Bass>(!isEqEnabled);
+    _chain.setBypassed<Mid>(!isEqEnabled);
+    _chain.setBypassed<Treble>(!isEqEnabled);
+    _chain.setBypassed<Presence>(!isEqEnabled);
+
+    if (isEqEnabled) {
+        updateEqCoefficients();
+    }
 
     juce::dsp::AudioBlock<float> block(buffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
@@ -336,6 +355,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
         juce::ParameterID{"isMute", 1},
         "Mute",
         false));
+
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{"isEqEnabled", 1},
+        "EQ",
+        true));
 
     return layout;
 }
