@@ -8,7 +8,8 @@
 #include "SettingsPath.h"
 #include "juce_core/juce_core.h"
 
-const char* logLevelToString(LogLevel level) noexcept {
+namespace Log {
+const char* toString(LogLevel level) noexcept {
     switch (level) {
         case LogLevel::Trace:
             return "[Trace]";
@@ -47,6 +48,7 @@ const char* toString(LogCategory category) noexcept {
             return "[Other]";
     }
 }
+}  // namespace Log
 
 //  LogConfig factory methods
 LogConfig LogConfig::fromDefaultPath() {

@@ -1,6 +1,6 @@
 {
     "name": "Performance",
-    "log_level": "TRACE",
+    "log_level": "Trace",
     "show_in_ui": false,
     "write_to_file": true,
     "write_to_debug": true,
