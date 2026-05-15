@@ -2,19 +2,19 @@
 
 #include <JuceHeader.h>
 
+#include "Components/CustomTabs.h"
 #include "PluginProcessor.h"
-#include "ViewManager.h"
 
 //==============================================================================
-/**
- */
 class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor {
    public:
     ProfilerAudioProcessorEditor(ProfilerAudioProcessor&);
     ~ProfilerAudioProcessorEditor() override;
 
-    //==============================================================================
+    //
     void paint(juce::Graphics&) override;
+
+    //
     void resized() override;
 
    private:
@@ -22,12 +22,8 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor {
     // access the processor object that created it.
     ProfilerAudioProcessor& _audioProcessor;
 
-    // Init ViewManager
-    std::unique_ptr<ViewManager> _viewManager;
-
-    juce::TextButton SweepButton{"Start sweep"};
-    juce::TextButton IrButton{"load ir"};
-    juce::TextButton AmpButton{"load amp"};
+    //
+    CustomTabs _tabs;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ProfilerAudioProcessorEditor)
 };
