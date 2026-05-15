@@ -1,4 +1,6 @@
-#include <JuceHeader.h>;
+#pragma once
+
+#include <JuceHeader.h>
 
 #include "Styles/Stylesheet.h"
 
@@ -22,7 +24,7 @@ class CustomTextButtonLF : public juce::LookAndFeel_V4 {
 
 class CustomTextButton : public juce::TextButton {
    public:
-    CustomTextButton(const juce::String& buttonName, ProfilerStyle::Theme theme);
+    CustomTextButton(const juce::String& buttonName, ProfilerStyle::Theme theme = ProfilerStyle::Theme::Dark);
     ~CustomTextButton() override;
 
     void setTheme(ProfilerStyle::Theme theme);

@@ -4,8 +4,6 @@
 
 CloneView::CloneView(ProfilerAudioProcessor& p)
     : _audioProcessor(p) {
-    setLookAndFeel(&_lookAndFeel);
-
     addAndMakeVisible(_sweepButton);
     _sweepButton.onClick = [this]() {
         _audioProcessor.startAmpProfiling();
