@@ -8,7 +8,7 @@ setlocal enabledelayedexpansion
 
 set "SCRIPT_DIR=%~dp0"
 set "BUILD_DIR=%SCRIPT_DIR%build"
-set "CACHE_DIR=%SCRIPT_DIR%.cache\clangd"
+set "CACHE_DIR=%SCRIPT_DIR%.cache"
 set BUILD_PRESET="default"
 
 
