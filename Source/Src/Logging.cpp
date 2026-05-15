@@ -49,6 +49,7 @@ const char* toString(LogCategory category) noexcept {
     }
 }
 
+} // namespace Log
 
 
 //  LogConfig factory methods
