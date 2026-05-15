@@ -9,7 +9,7 @@
               file="Source/Include/Components/CustomComboBox.h"/>
         <FILE id="ftiu49" name="CustomTextButton.h" compile="0" resource="0"
               file="Source/Include/Components/CustomTextButton.h"/>
-        <FILE id="up6Ar1" name="CustomSlider.h" compile="0" resource="0" file="Source/Include/Components/CustomSlider.h"/>
+        <FILE id="up6Ar1" name="CustomKnob.h" compile="0" resource="0" file="Source/Include/Components/CustomKnob.h"/>
         <FILE id="GdUZQl" name="CustomTabs.h" compile="0" resource="0" file="Source/Include/Components/CustomTabs.h"/>
         <FILE id="tcTwa0" name="CustomTabBar.h" compile="0" resource="0" file="Source/Include/Components/CustomTabBar.h"/>
         <FILE id="EYUdcH" name="CustomToggleButton.h" compile="0" resource="0"
@@ -25,8 +25,6 @@
               file="Source/Include/Modules/UtilityBarModule.h"/>
       </GROUP>
       <GROUP id="{1B93253F-00A0-983E-66B4-86703E82CAD3}" name="Styles">
-        <FILE id="miSdqm" name="CustomButtonLF.h" compile="0" resource="0"
-              file="Source/Include/Styles/CustomButtonLF.h"/>
         <FILE id="SK15uX" name="CustomTabsLF.h" compile="0" resource="0" file="Source/Include/Styles/CustomTabsLF.h"/>
         <FILE id="oeWtYH" name="Stylesheet.h" compile="0" resource="0" file="Source/Include/Styles/Stylesheet.h"/>
       </GROUP>
@@ -53,8 +51,8 @@
               file="Source/Src/Components/CustomComboBox.cpp"/>
         <FILE id="Wx776V" name="CustomTextButton.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomTextButton.cpp"/>
-        <FILE id="RR5QUf" name="CustomSlider.cpp" compile="1" resource="0"
-              file="Source/Src/Components/CustomSlider.cpp"/>
+        <FILE id="RR5QUf" name="CustomKnob.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomKnob.cpp"/>
         <FILE id="XkxKqA" name="CustomTabs.cpp" compile="1" resource="0" file="Source/Src/Components/CustomTabs.cpp"/>
         <FILE id="ClPX26" name="CustomTabBar.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomTabBar.cpp"/>
