@@ -18,6 +18,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
       )
 #endif
 {
+<<<<<<< HEAD
     PerfLog::init(LogConfig::fromFile(juce::File(".config/perflog_settings.json")));
     PerfLog::Timer("Initialisation");
     LogRegistry::create("mainLog",  LogConfig::fromFile(juce::File(".config/log_settings.json")));
@@ -33,6 +34,25 @@ ProfilerAudioProcessor::~ProfilerAudioProcessor() {
     // Dinit code
 
     LogRegistry::get("mainLog").info(LogCategory::Init, "Plugin instance destroyed");
+=======
+    LogRegistry::create("mainLog",  LogConfig::fromFile(juce::File(".config/log_settings.json")));
+    LogRegistry::create("perfLog",  LogConfig::fromFile(juce::File(".config/perflog_settings.json")));
+    LogRegistry::get("mainLog").info(LogCategory::INIT, "Plugin instance created");
+    LogRegistry::get("perfLog").info(LogCategory::INIT, "_start Initialisation");
+
+    // init code
+
+    LogRegistry::get("perfLog").info(LogCategory::INIT, "_end Initialisation");
+}
+
+ProfilerAudioProcessor::~ProfilerAudioProcessor() {
+    LogRegistry::get("perfLog").info(LogCategory::INIT, "_start Deinitialisation");
+
+    // Dinit code
+
+    LogRegistry::get("perfLog").info(LogCategory::INIT, "_end Deinitialisation");
+    LogRegistry::get("mainLog").info(LogCategory::INIT, "Plugin instance destroyed");
+>>>>>>> a58f9ee (feat: multi instance logging now possible)
     LogRegistry::shutdownAll();
 }
 
