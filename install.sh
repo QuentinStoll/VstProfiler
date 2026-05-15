@@ -28,34 +28,34 @@ usage() {
 	echo "  dev				all debug features"
 }
 
-presets() {
-	case "$2" in
-	"" )
-		BUILD_PRESET="default"
-		;;
-	default )
-		BUILD_PRESET="default"
-		;;
-	release )
-		BUILD_PRESET="release"
-		;;
-	all-formats )
-		BUILD_PRESET="all-formats"
-		;;
-	dev )
-		BUILD_PRESET="dev"
-		;;
-	-h|--help )
-		usage
-		exit 0
-		;;
-	* )
-		echo "[ERROR] Unknown option: $2"
-		usage
-		exit 1
-		;;
-	esac
-}
+
+case "$2" in
+"" )
+	BUILD_PRESET="default"
+	;;
+default )
+	BUILD_PRESET="default"
+	;;
+release )
+	BUILD_PRESET="release"
+	;;
+all-formats )
+	BUILD_PRESET="all-formats"
+	;;
+dev )
+	BUILD_PRESET="dev"
+	;;
+-h|--help )
+	usage
+	exit 0
+	;;
+* )
+	echo "[ERROR] Unknown option: $2"
+	usage
+	exit 1
+	;;
+esac
+
 
 config() {
 	echo "[INFO] Configuring cmake"

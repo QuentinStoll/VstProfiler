@@ -27,17 +27,17 @@ function(apply_compiler_options target)
     endif()
 endfunction()
 
-function(apply_plugin_definitions target)
+function(apply_preset_settings target)
     if(ENABLE_ASSERTIONS)
         target_compile_definitions(${target} PRIVATE ENABLE_ASSERTIONS=1)
     endif()
 
-    if(ENABLE_LOGGING)
-        target_compile_definitions(${target} PRIVATE ENABLE_LOGGING=1)
+    if(ENABLE_LOG)
+        target_compile_definitions(${target} PRIVATE ENABLE_LOG=1)
     endif()
 
-    if(ENABLE_PERF_LOGGING)
-        target_compile_definitions(${target} PRIVATE ENABLE_PERF_LOGGING=1)
+    if(ENABLE_PERF_LOG)
+        target_compile_definitions(${target} PRIVATE ENABLE_PERF_LOG=1)
     endif()
 
     if(ENABLE_DSP_TRACE)

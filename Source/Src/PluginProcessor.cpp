@@ -2,6 +2,7 @@
 
 #include "Logging.h"
 #include "PluginEditor.h"
+#include "PerfLog.h"
 
 //==============================================================================
 ProfilerAudioProcessor::ProfilerAudioProcessor()
@@ -17,22 +18,20 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
       )
 #endif
 {
+    PerfLog::init(LogConfig::fromFile(juce::File(".config/perflog_settings.json")));
+    PerfLog::Timer("Initialisation");
     LogRegistry::create("mainLog",  LogConfig::fromFile(juce::File(".config/log_settings.json")));
-    LogRegistry::create("perfLog",  LogConfig::fromFile(juce::File(".config/perflog_settings.json")));
     LogRegistry::get("mainLog").info(LogCategory::Init, "Plugin instance created");
-    LogRegistry::get("perfLog").info(LogCategory::Init, "_start Initialisation");
 
     // init code
 
-    LogRegistry::get("perfLog").info(LogCategory::Init, "_end Initialisation");
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() {
-    LogRegistry::get("perfLog").info(LogCategory::Init, "_start Deinitialisation");
+    PerfLog::Timer("Deinitialisation");
 
     // Dinit code
 
-    LogRegistry::get("perfLog").info(LogCategory::Init, "_end Deinitialisation");
     LogRegistry::get("mainLog").info(LogCategory::Init, "Plugin instance destroyed");
     LogRegistry::shutdownAll();
 }

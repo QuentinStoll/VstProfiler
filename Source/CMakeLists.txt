@@ -58,6 +58,7 @@ target_include_directories(${PLUGIN_NAME} PRIVATE
 
 # Apply compiler options and preset-based defines
 apply_compiler_options(${PLUGIN_NAME})
+apply_preset_settings(${PLUGIN_NAME})
 
 # Add plugin formats based on presets
 if(APPLE)
