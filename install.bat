@@ -9,6 +9,17 @@ setlocal enabledelayedexpansion
 set "SCRIPT_DIR=%~dp0"
 set "BUILD_DIR=%SCRIPT_DIR%build"
 set "CACHE_DIR=%SCRIPT_DIR%.cache"
+set BUILD_PRESET="default"
+
+
+if "%2"=="" set BUILD_PRESET="default"
+if /I "%2"=="default" set BUILD_PRESET="default"
+if /I "%2"=="release" set BUILD_PRESET="release"
+if /I "%2"=="all-formats" set BUILD_PRESET="all-formats"
+if /I "%2"=="dev" set BUILD_PRESET="dev"
+if /I "%2"=="-h" goto usage
+if /I "%2"=="--help" goto usage
+goto unknown
 
 if not exist %BUILD_DIR% mkdir %BUILD_DIR%
 if not exist %CACHE_DIR% mkdir %CACHE_DIR%
@@ -23,17 +34,22 @@ if /I "%1"=="--help" goto usage
 goto unknown
 
 :usage
-echo Usage:
-echo   install.bat all       config + build (default)
-echo   install.bat config    cmake config only
-echo   install.bat build     cmake build only
-echo   install.bat re        cache delete + remake
-echo   install.bat -h        show this help
+echo Usage: install.bat ACTION [PRESET]
+echo ACTIONS
+echo   all				config + build
+echo   config			cmake config only
+echo   build			cmake build only
+echo   re				cache delete + remake
+echo PRESETS
+echo   default			recommended (for dev or use)
+echo   release			with standard release features
+echo   all-formats		builds plugin in all availlable formats
+echo   dev				all debug features
 goto end
 
 :config
 echo [INFO] Configuring cmake
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S "%~dp0." -B "%~dp0build"
+cmake -S "%~dp0." -B "%~dp0build" -DPRESET_NAME=%BUILD_PRESET%
 if errorlevel 1 (
     echo [ERROR] cmake configuration failed
     exit /b 1
