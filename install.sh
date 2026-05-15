@@ -6,7 +6,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR/build"
-CACHE_DIR="$SCRIPT_DIR/.cache"
+CACHE_DIR="$SCRIPT_DIR/.cache/clangd"
 BUILD_PRESET="default"
 
 set -e

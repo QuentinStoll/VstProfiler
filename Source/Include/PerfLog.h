@@ -14,8 +14,8 @@
 //      PerfLog::log("render took 4ms");
 //      PerfLog::close();
 //
-//  CMake:
-//      target_compile_definitions(MyTarget PRIVATE ENABLE_PERF_LOG)
+//      PerfLog::Timer("thing being timed") // put at the start of function
+//
 // ============================================================
 
 namespace PerfLog {
