@@ -27,7 +27,7 @@
             },
             "features": {
                 "assertions": false,
-                "logging": true,
+                "logging": false,
                 "perfLogging": false,
                 "dspTrace": false
             }
