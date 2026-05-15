@@ -1,10 +1,9 @@
-#include "Components/CustomSlider.h"
+#include <JuceHeader.h>
+
 #include "Components/CustomTabBar.h"
-#include "JuceHeader.h"
 #include "Modules/MasterSlidersModule.h"
 #include "Modules/UtilityBarModule.h"
 #include "PluginProcessor.h"
-#include "Styles/CustomButtonLF.h"
 
 class PlayView : public juce::Component {
    public:
