@@ -1,8 +1,8 @@
 #include "Logging.h"
 
 #include <simdjson.h>
-#include <stdexcept>
 
+#include <stdexcept>
 #include <string_view>
 
 #include "SettingsPath.h"
@@ -29,7 +29,6 @@ const char* logLevelToString(LogLevel level) noexcept {
 
 const char* toString(LogCategory category) noexcept {
     switch (category) {
-
         case LogCategory::Init:
             return "[Init]";
         case LogCategory::Dsp:
@@ -49,16 +48,13 @@ const char* toString(LogCategory category) noexcept {
     }
 }
 
-} // namespace Log
-
-
 //  LogConfig factory methods
 LogConfig LogConfig::fromDefaultPath() {
     return fromFile(getFileInSettingsFolder("log_settings.json"));
 }
 
 LogConfig LogConfig::fromFile(const juce::File& file) {
-    LogConfig config; // defaults set in struct declaration
+    LogConfig config;  // defaults set in struct declaration
     if (!file.existsAsFile()) return config;
 
     juce::String jsonText = file.loadFileAsString();
@@ -115,14 +111,14 @@ LogConfig LogConfig::fromFile(const juce::File& file) {
     }
     // Derive log file path from directory
     if (config.logDirectory.exists()) {
-        juce::Time now       = juce::Time::getCurrentTime();
-        juce::String dateStr  = now.formatted("%Y%m%d");
-        juce::String timeStr  = now.formatted("%H%M%S");
+        juce::Time now = juce::Time::getCurrentTime();
+        juce::String dateStr = now.formatted("%Y%m%d");
+        juce::String timeStr = now.formatted("%H%M%S");
         juce::String fileName = dateStr + "-" + timeStr + "-" + config.name + ".log";
         config.logFile = config.logDirectory.getChildFile(fileName);
         if (!config.logFile.existsAsFile()) {
             if (!config.logFile.create().wasOk()) {
-                config.logFile  = juce::File();
+                config.logFile = juce::File();
                 config.writeToFile = false;
             }
         }
@@ -134,8 +130,6 @@ LogConfig LogConfig::fromFile(const juce::File& file) {
 LogConfig LogConfig::fromDefaultConfigFile() {
     return fromFile(getFileInSettingsFolder("log_settings_defaults.json"));
 }
-
-
 
 //  LogRegistry
 std::map<std::string, std::unique_ptr<Logger>> LogRegistry::registry_;
@@ -169,12 +163,9 @@ void LogRegistry::shutdownAll() {
     registry_.clear();
 }
 
-
-
 //  Logger instance
 Logger::Logger(LogConfig config)
-    : config_(std::move(config))
-{
+    : config_(std::move(config)) {
     initialise();
 }
 
@@ -229,25 +220,24 @@ void Logger::reloadConfig() {
 }
 
 void Logger::log(LogLevel level, LogCategory category, const juce::String& message) {
-    if (!initialised_)              return;
-    if (level < config_.logLevel)   return;
+    if (!initialised_) return;
+    if (level < config_.logLevel) return;
 
     juce::String line;
     line << "[" << juce::Time::getCurrentTime().toString(true, true) << "] "
          << "[" << config_.name << "] "
          << Log::toString(level) << " " << Log::toString(category) << " " << message;
 
-    #if JUCE_DEBUG
+#if JUCE_DEBUG
     if (config_.writeToDebug)
         DBG(line);
-    #endif
+#endif
 
     if (fileStream_) {
         fileStream_->writeText(line + "\n", false, false, nullptr);
         fileStream_->flush();
     }
 }
-
 
 void Logger::trace(LogCategory c, const juce::String& m) {
     log(LogLevel::Trace, c, m);
