@@ -1,5 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
+
 #include <map>
 #include <memory>
 #include <string>
@@ -21,40 +22,34 @@ enum class LogCategory { Init,
                          Perf,
                          Other };
 
-
-
 //  Log helpers
 namespace Log {
-    const char* toString(LogLevel level) noexcept;
-    const char* toString(LogCategory category) noexcept;
-}
-
-
+const char* toString(LogLevel level) noexcept;
+const char* toString(LogCategory category) noexcept;
+}  // namespace Log
 
 //  LogConfig
 struct LogConfig {
-    std::string name        = "default";
-    LogLevel    logLevel    = LogLevel::Info;
-    bool        showInUI    = false;
-    bool        writeToFile = false;
-    bool        writeToDebug = true;
-    juce::File  logDirectory;
-    juce::File  logFile;
+    std::string name = "default";
+    LogLevel logLevel = LogLevel::Info;
+    bool showInUI = false;
+    bool writeToFile = false;
+    bool writeToDebug = true;
+    juce::File logDirectory;
+    juce::File logFile;
 
     static LogConfig fromDefaultPath();
     static LogConfig fromFile(const juce::File& file);
     static LogConfig fromDefaultConfigFile();
 };
 
-
-
 //  Logger
 class Logger final {
-public:
+   public:
     explicit Logger(LogConfig config);
     ~Logger();
 
-    Logger(const Logger&)            = delete;
+    Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
 
     void shutdown();
@@ -62,33 +57,31 @@ public:
     const LogConfig& getConfig() const noexcept;
     void reloadConfig();
 
-    void log  (LogLevel level, LogCategory category, const juce::String& message);
+    void log(LogLevel level, LogCategory category, const juce::String& message);
     void trace(LogCategory category, const juce::String& message);
     void debug(LogCategory category, const juce::String& message);
-    void info (LogCategory category, const juce::String& message);
-    void warn (LogCategory category, const juce::String& message);
+    void info(LogCategory category, const juce::String& message);
+    void warn(LogCategory category, const juce::String& message);
     void error(LogCategory category, const juce::String& message);
     void fatal(LogCategory category, const juce::String& message);
 
-private:
+   private:
     void initialise();
 
-    LogConfig                                config_;
-    bool                                     initialised_ = false;
-    std::unique_ptr<juce::FileOutputStream>  fileStream_;
+    LogConfig config_;
+    bool initialised_ = false;
+    std::unique_ptr<juce::FileOutputStream> fileStream_;
 };
-
-
 
 //  LogRegistry
 class LogRegistry final {
-public:
+   public:
     static Logger& create(const std::string& name, LogConfig config);
     static Logger& get(const std::string& name);
     static Logger* find(const std::string& name) noexcept;
     static void shutdownAll();
 
-private:
+   private:
     LogRegistry() = delete;
     static std::map<std::string, std::unique_ptr<Logger>> registry_;
 };
