@@ -1,6 +1,6 @@
 #include "Components/CustomTabBar.h"
 
-#include "Styles/Stylesheet.h"
+#include "Stylesheet.h"
 
 //===============================================================================
 // CustomTabBarLF Implementation

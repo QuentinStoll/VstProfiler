@@ -2,7 +2,7 @@
 
 #include "Modules/AdvancedEqModule.h"
 #include "Modules/BasicEqModule.h"
-#include "Styles/Stylesheet.h"
+#include "Stylesheet.h"
 
 PlayView::PlayView(ProfilerAudioProcessor& p)
     : _masterSliders(p._apvts),

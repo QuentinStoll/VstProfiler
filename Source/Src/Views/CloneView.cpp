@@ -1,6 +1,6 @@
 #include "Views/CloneView.h"
 
-#include "Styles/Stylesheet.h"
+#include "Stylesheet.h"
 
 CloneView::CloneView(ProfilerAudioProcessor& p)
     : _audioProcessor(p) {

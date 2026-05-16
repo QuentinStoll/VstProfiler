@@ -1,6 +1,6 @@
 #include "Components/CustomComboBox.h"
 
-#include "Styles/Stylesheet.h"
+#include "Stylesheet.h"
 
 //=============================================================================
 // CustomLookAndFeelLF Implementation

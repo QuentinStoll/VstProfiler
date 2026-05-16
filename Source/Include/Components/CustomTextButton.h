@@ -2,7 +2,7 @@
 
 #include <JuceHeader.h>
 
-#include "Styles/Stylesheet.h"
+#include "Stylesheet.h"
 
 //=============================================================================
 // CustomTextButtonLF Implementation

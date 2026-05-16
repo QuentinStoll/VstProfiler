@@ -1,6 +1,6 @@
 #include "Views/ProfilView.h"
 
-#include "Styles/Stylesheet.h"
+#include "Stylesheet.h"
 
 ProfilView::ProfilView(ProfilerAudioProcessor& p)
     : _audioProcessor(p) {

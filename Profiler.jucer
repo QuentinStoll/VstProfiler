@@ -24,9 +24,6 @@
         <FILE id="vAKHlH" name="UtilityBarModule.h" compile="0" resource="0"
               file="Source/Include/Modules/UtilityBarModule.h"/>
       </GROUP>
-      <GROUP id="{1B93253F-00A0-983E-66B4-86703E82CAD3}" name="Styles">
-        <FILE id="oeWtYH" name="Stylesheet.h" compile="0" resource="0" file="Source/Include/Styles/Stylesheet.h"/>
-      </GROUP>
       <GROUP id="{419AB495-F068-27D4-A555-0CE15B1FA834}" name="Views">
         <FILE id="K4sqrq" name="CloneView.h" compile="0" resource="0" file="Source/Include/Views/CloneView.h"/>
         <FILE id="IN4JHx" name="PlayView.h" compile="0" resource="0" file="Source/Include/Views/PlayView.h"/>
@@ -34,6 +31,7 @@
       </GROUP>
       <FILE id="WeqCms" name="ProfilerConstantValues.h" compile="0" resource="0"
             file="Source/Include/ProfilerConstantValues.h"/>
+      <FILE id="oeWtYH" name="Stylesheet.h" compile="0" resource="0" file="Source/Include/Stylesheet.h"/>
       <FILE id="BQk8Z4" name="AmpEngine.h" compile="0" resource="0" file="Source/Include/AmpEngine.h"/>
       <FILE id="JjJUYx" name="AmpProfiling.h" compile="0" resource="0" file="Source/Include/AmpProfiling.h"/>
       <FILE id="dEQ4CG" name="PluginEditor.h" compile="0" resource="0" file="Source/Include/PluginEditor.h"/>

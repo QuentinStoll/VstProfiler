@@ -3,7 +3,7 @@
 #include "Components/CustomComboBox.h"
 #include "Components/CustomTextButton.h"
 #include "Components/CustomToggleButton.h"
-#include "Styles/Stylesheet.h"
+#include "Stylesheet.h"
 
 class UtilityBarModule : public juce::Component {
    public:

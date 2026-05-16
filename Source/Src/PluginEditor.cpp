@@ -2,7 +2,7 @@
 
 #include "PluginProcessor.h"
 #include "ProfilerConstantValues.h"
-#include "Styles/Stylesheet.h"
+#include "Stylesheet.h"
 #include "Views/CloneView.h"
 #include "Views/PlayView.h"
 #include "Views/ProfilView.h"

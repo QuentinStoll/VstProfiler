@@ -1,6 +1,6 @@
 #include "Components/CustomKnob.h"
 
-#include "Styles/Stylesheet.h"
+#include "Stylesheet.h"
 
 //==============================================================================
 // CustomKnobLF Implementation
