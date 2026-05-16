@@ -3,10 +3,18 @@
 #include "PluginProcessor.h"
 #include "ProfilerConstantValues.h"
 #include "Styles/Stylesheet.h"
+#include "Views/CloneView.h"
+#include "Views/PlayView.h"
+#include "Views/ProfilView.h"
 
 //==============================================================================
 ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcessor& p)
-    : AudioProcessorEditor(&p), _audioProcessor(p), _tabs(p) {
+    : AudioProcessorEditor(&p),
+      _audioProcessor(p),
+      _tabs({{"Clone", [&p] { return std::make_unique<CloneView>(p); }},
+             {"Play", [&p] { return std::make_unique<PlayView>(p); }},
+             {"Profil", [&p] { return std::make_unique<ProfilView>(p); }}},
+            1) {
     // Define the initial size of the plugin window
     setResizable(true, true);
     getConstrainer()->setFixedAspectRatio(windowHeight / (double)windowWidth);

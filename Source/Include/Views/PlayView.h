@@ -1,6 +1,6 @@
 #include <JuceHeader.h>
 
-#include "Components/CustomTabBar.h"
+#include "Components/CustomTabs.h"
 #include "Modules/MasterSlidersModule.h"
 #include "Modules/UtilityBarModule.h"
 #include "PluginProcessor.h"
@@ -14,15 +14,9 @@ class PlayView : public juce::Component {
     void resized() override;
 
    private:
-    ProfilerAudioProcessor& _audioProcessor;
-
-    CustomTabBar _eqDisplayBar;
+    CustomTabs _eqDisplay;
 
     UtilityBarModule _utilityBar;
-
-    std::unique_ptr<juce::Component> _currentContent;
-
-    void changeEqModule(int index);
 
     MasterSlidersModule _masterSliders;
 };
