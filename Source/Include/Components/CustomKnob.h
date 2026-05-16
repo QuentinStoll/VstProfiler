@@ -23,8 +23,8 @@ class CustomKnob : public juce::Component {
     CustomKnob(const juce::String& name, float min, float max, float defaultValue, const juce::String& suffix, float step = 0.1f);
     ~CustomKnob();
 
-    void paint(juce::Graphics& g);
-    void resized();
+    void paint(juce::Graphics& g) override;
+    void resized() override;
 
     juce::Slider& getSlider() { return _slider; };
 

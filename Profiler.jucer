@@ -25,7 +25,6 @@
               file="Source/Include/Modules/UtilityBarModule.h"/>
       </GROUP>
       <GROUP id="{1B93253F-00A0-983E-66B4-86703E82CAD3}" name="Styles">
-        <FILE id="SK15uX" name="CustomTabsLF.h" compile="0" resource="0" file="Source/Include/Styles/CustomTabsLF.h"/>
         <FILE id="oeWtYH" name="Stylesheet.h" compile="0" resource="0" file="Source/Include/Styles/Stylesheet.h"/>
       </GROUP>
       <GROUP id="{419AB495-F068-27D4-A555-0CE15B1FA834}" name="Views">

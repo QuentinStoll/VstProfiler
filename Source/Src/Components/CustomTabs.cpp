@@ -5,7 +5,7 @@
 #include "Views/ProfilView.h"
 
 CustomTabs::CustomTabs(ProfilerAudioProcessor& p) : _audioProcessor(p) {
-    setLookAndFeel(&_lookAndFeel);
+    // setLookAndFeel(&_lookAndFeel);
 
     addAndMakeVisible(_tabBar);
 

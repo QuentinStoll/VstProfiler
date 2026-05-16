@@ -2,7 +2,6 @@
 
 #include "Components/CustomTabBar.h"
 #include "PluginProcessor.h"
-#include "Styles/CustomTabsLF.h"
 
 class CustomTabs : public juce::Component {
    public:
@@ -13,7 +12,6 @@ class CustomTabs : public juce::Component {
     void resized() override;
 
    private:
-    CustomTabsLF _lookAndFeel;  // Look and Feel for the tabs
     ProfilerAudioProcessor& _audioProcessor;
 
     CustomTabBar _tabBar;                              // Tab Bar
