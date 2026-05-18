@@ -28,7 +28,7 @@ void AdvancedEqModule::resized() {
     auto area = getLocalBounds();
     auto areaWidth = area.getWidth();
 
-    auto topArea = area.removeFromTop(getHeight() * 0.4f);
+    auto topArea = area.removeFromTop(static_cast<int>(getHeight() * 0.4f));
 
     auto bassArea = topArea.removeFromLeft(areaWidth / 5);
     auto midArea = topArea.removeFromLeft(areaWidth / 5);

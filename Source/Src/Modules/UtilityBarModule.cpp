@@ -6,7 +6,7 @@ UtilityBarModule::UtilityBarModule(juce::AudioProcessorValueTreeState& apvts) : 
     addAndMakeVisible(_muteSwitch);
     addAndMakeVisible(_eqSwitch);
 
-    _eqSwitch.setToggleState(true, false);
+    _eqSwitch.setToggleState(true, juce::dontSendNotification);
     _muteAttach = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(_apvts, "isMute", _muteSwitch);
     _eqAttach = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(_apvts, "isEqEnabled", _eqSwitch);
 
@@ -24,16 +24,15 @@ UtilityBarModule::~UtilityBarModule() {
     _profilMenu.setLookAndFeel(nullptr);
 }
 
-void UtilityBarModule::paint(juce::Graphics& g) {
-}
+void UtilityBarModule::paint(juce::Graphics& /*g*/) {}
 
 void UtilityBarModule::resized() {
     auto area = getLocalBounds();
     auto areaWidth = area.getWidth();
 
-    auto profilMenuArea = area.removeFromLeft(areaWidth * 0.4f);
-    auto resetButtonArea = area.removeFromLeft(areaWidth * 0.2f);
-    auto muteSwitchArea = area.removeFromLeft(areaWidth * 0.2f);
+    auto profilMenuArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.4f));
+    auto resetButtonArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.2f));
+    auto muteSwitchArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.2f));
     auto eqSwitchArea = area;
 
     _profilMenu.setBounds(profilMenuArea);

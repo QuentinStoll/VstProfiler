@@ -7,8 +7,8 @@
 //=============================================================================
 
 void CustomToggleButtonLF::drawTickBox(juce::Graphics& g, juce::Component& button,
-                                       float x, float y, float w, float h,
-                                       bool ticked, bool isEnabled, bool isMouseOver, bool isMouseDown) {
+                                       float /*x*/, float /*y*/, float /*w*/, float /*h*/,
+                                       bool ticked, bool /*isEnabled*/, bool /*isMouseOver*/, bool /*isMouseDown*/) {
     auto area = button.getLocalBounds().toFloat();
 
     auto textArea = area.removeFromTop(area.getHeight() * 0.5f);

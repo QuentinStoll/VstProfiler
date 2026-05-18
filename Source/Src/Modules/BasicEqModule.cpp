@@ -14,17 +14,15 @@ BasicEqModule::BasicEqModule(juce::AudioProcessorValueTreeState& apvts) {
     _depthAttachment = std::make_unique<SliderAttachment>(apvts, "depth", _depthKnob.getSlider());
 }
 
-BasicEqModule::~BasicEqModule() {
-}
+BasicEqModule::~BasicEqModule() {}
 
-void BasicEqModule::paint(juce::Graphics& g) {
-}
+void BasicEqModule::paint(juce::Graphics& /*g*/) {}
 
 void BasicEqModule::resized() {
     auto area = getLocalBounds();
     auto areaWidth = area.getWidth();
 
-    auto topArea = area.removeFromTop(getHeight() * 0.5f);
+    auto topArea = area.removeFromTop(static_cast<int>(getHeight() * 0.5f));
 
     auto bassArea = topArea.removeFromLeft(areaWidth / 3);
     auto midArea = topArea.removeFromLeft(areaWidth / 3);

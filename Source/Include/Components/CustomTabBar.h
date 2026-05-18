@@ -17,9 +17,9 @@ class CustomTabBarLF : public juce::LookAndFeel_V4 {
                        bool isMouseOver,
                        bool isMouseDown) override;
 
-    void drawTabAreaBehindFrontButton(juce::TabbedButtonBar& bar, juce::Graphics& g, int w, int h) override {}
+    void drawTabAreaBehindFrontButton(juce::TabbedButtonBar& /*bar*/, juce::Graphics& /*g*/, int /*w*/, int /*h*/) override {}
 
-    int getTabButtonBestWidth(juce::TabBarButton& bar, int tabDepth) override { return tabDepth; }
+    int getTabButtonBestWidth(juce::TabBarButton& /*bar*/, int tabDepth) override { return tabDepth; }
 };
 
 //===============================================================================

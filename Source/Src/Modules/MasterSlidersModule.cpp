@@ -10,18 +10,16 @@ MasterSlidersModule::MasterSlidersModule(juce::AudioProcessorValueTreeState& apv
     _noiseGateAttachment = std::make_unique<SliderAttachment>(apvts, "noise", _noiseGateKnob.getSlider());
 }
 
-MasterSlidersModule::~MasterSlidersModule() {
-}
+MasterSlidersModule::~MasterSlidersModule() {}
 
-void MasterSlidersModule::paint(juce::Graphics& g) {
-}
+void MasterSlidersModule::paint(juce::Graphics& /*g*/) {}
 
 void MasterSlidersModule::resized() {
     auto area = getLocalBounds();
     auto areaWidth = area.getWidth();
 
     auto sideArea = area.removeFromLeft(areaWidth / 3);
-    auto noiseGateArea = sideArea.removeFromTop(getHeight() * 0.5f);
+    auto noiseGateArea = sideArea.removeFromTop(static_cast<int>(getHeight() * 0.5f));
     auto gainArea = sideArea;
 
     _masterVolumeKnob.setBounds(area);

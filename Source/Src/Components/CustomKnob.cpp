@@ -98,7 +98,7 @@ CustomKnob::~CustomKnob() {
     setLookAndFeel(nullptr);
 }
 
-void CustomKnob::paint(juce::Graphics& g) {
+void CustomKnob::paint(juce::Graphics& /*g*/) {
 }
 
 void CustomKnob::resized() {

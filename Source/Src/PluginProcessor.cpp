@@ -80,14 +80,14 @@ int ProfilerAudioProcessor::getNumPrograms() {
 
 int ProfilerAudioProcessor::getCurrentProgram() { return 0; }
 
-void ProfilerAudioProcessor::setCurrentProgram(int index) {}
+void ProfilerAudioProcessor::setCurrentProgram(int /*index*/) {}
 
-const juce::String ProfilerAudioProcessor::getProgramName(int index) {
+const juce::String ProfilerAudioProcessor::getProgramName(int /*index*/) {
     return {};
 }
 
-void ProfilerAudioProcessor::changeProgramName(int index,
-                                               const juce::String& newName) {}
+void ProfilerAudioProcessor::changeProgramName(int /*index*/,
+                                               const juce::String& /*newName*/) {}
 
 //==============================================================================
 void ProfilerAudioProcessor::prepareToPlay(double sampleRate,
@@ -133,7 +133,7 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate,
 
     oversampler.initProcessing(samplesPerBlock);
 
-    _ampStage.prepare(sampleRate);
+    _ampStage.prepare(static_cast<float>(sampleRate));
 
     //     spec.maximumBlockSize = samplesPerBlock;
     //     spec.numChannels = getTotalNumOutputChannels();
@@ -175,7 +175,7 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported(
     an oversampled non-linear amp stage, and an IR convolution stage.
 */
 void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
-                                          juce::MidiBuffer& midiMessages) {
+                                          juce::MidiBuffer& /*midiMessages*/) {
     juce::ScopedNoDenormals noDenormals;
 
     // Handle Mute

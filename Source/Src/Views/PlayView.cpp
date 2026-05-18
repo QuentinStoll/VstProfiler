@@ -43,7 +43,7 @@ void PlayView::resized() {
 
     auto eqArea = area.removeFromLeft(areaWidth / 2);
 
-    auto utilsBarArea = area.removeFromTop(getHeight() * 0.07f);
+    auto utilsBarArea = area.removeFromTop(static_cast<int>(getHeight() * 0.07f));
     _eqDisplay.setBounds(eqArea);
 
     auto masterArea = area;

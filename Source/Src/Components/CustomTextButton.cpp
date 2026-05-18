@@ -1,4 +1,4 @@
-#include "Components/CustomTextButton.h";
+#include "Components/CustomTextButton.h"
 
 //=============================================================================
 // CustomTextButtonLF Implementation
@@ -25,9 +25,9 @@ void CustomTextButtonLF::drawButtonBackground(juce::Graphics& g, juce::Button& b
 }
 
 void CustomTextButtonLF::drawButtonText(juce::Graphics& g, juce::TextButton& button,
-                                        bool isMouseOverButton, bool isButtonDown) {
+                                        bool /*isMouseOverButton*/, bool /*isButtonDown*/) {
     g.setColour(button.findColour(juce::TextButton::textColourOffId));
-    g.setFont(juce::Font(16.0f));
+    g.setFont(juce::Font(juce::FontOptions(16.0f)));
     g.drawText(button.getButtonText(), button.getLocalBounds(),
                juce::Justification::centred, true);
 }

@@ -12,7 +12,7 @@ CustomTabs::CustomTabs(std::vector<TabInfo> tabs, int defaultIndex) : _tabs(std:
     _tabBar.setCurrentTabIndex(defaultIndex);
 }
 
-void CustomTabs::paint(juce::Graphics& g) {}
+void CustomTabs::paint(juce::Graphics& /*g*/) {}
 
 void CustomTabs::resized() {
     auto area = getLocalBounds();
@@ -20,8 +20,8 @@ void CustomTabs::resized() {
     auto tabBarHeight = getHeight() * 0.07f;                                   // 7% of the total height for the tab bar
     auto tabBarWidth = (tabBarHeight * 5) * static_cast<float>(_tabs.size());  // Calculate the total width needed for all tabs, each 5 times the tab bar height
 
-    auto tabBarArea = area.removeFromTop(tabBarHeight)
-                          .withSizeKeepingCentre(tabBarWidth, tabBarHeight);
+    auto tabBarArea = area.removeFromTop(static_cast<int>(tabBarHeight))
+                          .withSizeKeepingCentre(static_cast<int>(tabBarWidth), static_cast<int>(tabBarHeight));
 
     _tabBar.setBounds(tabBarArea);
 
