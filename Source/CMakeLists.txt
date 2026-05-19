@@ -24,16 +24,21 @@ set_target_properties(${PLUGIN_NAME}  PROPERTIES
 
 # Collect source files
 target_sources(${PLUGIN_NAME} PRIVATE
-    Src/AmpLoaderSection.cpp
-    Src/CloningScreen.cpp
-    Src/EqNormalizeSection.cpp
-    Src/MainSettingsSection.cpp
+    Src/Components/CustomComboBox.cpp
+    Src/Components/CustomSlider.cpp
+    Src/Components/CustomTabBar.cpp
+    Src/Components/CustomTabs.cpp
+    Src/Components/CustomTextButton.cpp
+    Src/Components/CustomToggleButton.cpp
+    Src/Modules/AdvancedEqModule.cpp
+    Src/Modules/BasicEqModule.cpp
+    Src/Modules/MasterSlidersModule.cpp
+    Src/Modules/UtilityBarModule.cpp
+    Src/Views/CloneView.cpp
+    Src/Views/PlayView.cpp
+    Src/Views/ProfilView.cpp
     Src/PluginEditor.cpp
     Src/PluginProcessor.cpp
-    Src/RotarySlider.cpp
-    Src/SelectionScreen.cpp
-    Src/UsingScreen.cpp
-    Src/ViewManager.cpp
     Src/AmpEngine.cpp
     Src/AmpProfiling.cpp
     Src/Logging.cpp

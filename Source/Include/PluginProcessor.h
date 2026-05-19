@@ -50,9 +50,6 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     //==============================================================================
     juce::AudioProcessorValueTreeState _apvts{*this, nullptr, "Parameters", createParameterLayout()};
 
-    //==============================================================================
-    void updateFilterCoefficients();
-
     //===================================== Our func ===============================
 
     // Loading the Impulse responce file
@@ -61,14 +58,55 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void startGainAnalysis();
 
    private:
-    juce::dsp::ProcessorChain<juce::dsp::Gain<float>,         // Input Gain
-                              juce::dsp::NoiseGate<float>,    // Noise Gate
-                              juce::dsp::IIR::Filter<float>,  // Bass - Low Shelf
-                              juce::dsp::IIR::Filter<float>,  // Mid - Peak Filter
-                              juce::dsp::IIR::Filter<float>,  // Treble - High Shelf
-                              juce::dsp::Gain<float>          // Output Gain
-                              >
-        _mainProcessor;
+    enum ChainPositions {
+        Gain = 0,
+        NoiseGate,
+        MasterVolume,
+        Depth,
+        Bass,
+        Mid,
+        Treble,
+        Presence
+    };
+
+    using Filter = juce::dsp::ProcessorDuplicator<
+        juce::dsp::IIR::Filter<float>,
+        juce::dsp::IIR::Coefficients<float> >;
+
+    using Chain = juce::dsp::ProcessorChain<
+        juce::dsp::Gain<float>,
+        juce::dsp::NoiseGate<float>,
+        juce::dsp::Gain<float>,
+        Filter,
+        Filter,
+        Filter,
+        Filter,
+        Filter>;
+
+    Chain _chain;
+
+    static constexpr float DEPTH_FREQ{60.0f};
+    static constexpr float BASS_FREQ{200.0f};
+    static constexpr float MID_FREQ{800.0f};
+    static constexpr float TREBLE_FREQ{3200.0f};
+    static constexpr float PRESENCE_FREQ{8000.0f};
+    static constexpr float SHELF_Q{0.707f};
+    static constexpr float PEAK_Q{1.0f};
+
+    std::atomic<float>* _masterParam{nullptr};
+    std::atomic<float>* _gainParam{nullptr};
+    std::atomic<float>* _noiseParam{nullptr};
+
+    std::atomic<float>* _depthParam{nullptr};
+    std::atomic<float>* _bassParam{nullptr};
+    std::atomic<float>* _midParam{nullptr};
+    std::atomic<float>* _trebleParam{nullptr};
+    std::atomic<float>* _presenceParam{nullptr};
+
+    std::atomic<float>* _isMuteParam{nullptr};
+    std::atomic<float>* _isEqEnabledParam{nullptr};
+
+    void updateEqCoefficients();
 
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
