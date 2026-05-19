@@ -11,6 +11,8 @@ set "BUILD_DIR=%SCRIPT_DIR%build"
 set "CACHE_DIR=%SCRIPT_DIR%.cache\clangd"
 set BUILD_PRESET="default"
 
+if not exist %BUILD_DIR% mkdir %BUILD_DIR%
+if not exist %CACHE_DIR% mkdir %CACHE_DIR%
 
 if "%2"=="" set BUILD_PRESET="default"
 if /I "%2"=="default" set BUILD_PRESET="default"
@@ -19,10 +21,6 @@ if /I "%2"=="all-formats" set BUILD_PRESET="all-formats"
 if /I "%2"=="dev" set BUILD_PRESET="dev"
 if /I "%2"=="-h" goto usage
 if /I "%2"=="--help" goto usage
-goto unknown
-
-if not exist %BUILD_DIR% mkdir %BUILD_DIR%
-if not exist %CACHE_DIR% mkdir %CACHE_DIR%
 
 if "%1"=="" goto default
 if /I "%1"=="all" goto default
