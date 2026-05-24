@@ -15,4 +15,4 @@ jobs:
       - name: Lint commit messages
         uses: wagoid/commitlint-github-action@v6
         with:
-          configFile: commitlint.config.js
+          configFile: .github/workflows/check-commits/commitlint.config.mjs
