@@ -66,6 +66,21 @@ else()
     FetchContent_MakeAvailable(simdjson)
 endif()
 
+# RTNeural 
+if(NOT TARGET RTNeural)
+    message(STATUS "Fetching RTNeural")
+    FetchContent_Declare(
+        rtneural
+        GIT_REPOSITORY https://github.com/jatinchowdhury18/RTNeural.git
+        GIT_TAG main
+    )
+
+    set(RTNEURAL_BACKEND "STL" CACHE STRING "" FORCE)
+    set(RTNEURAL_XSIMD OFF CACHE BOOL "" FORCE) 
+    set(RTNEURAL_USE_JSON ON CACHE BOOL "" FORCE)
+
+    FetchContent_MakeAvailable(rtneural)
+endif()
 
 # gtk workaround (linux) ----
 
