@@ -32,6 +32,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomToggleButton.cpp
     Src/Modules/AdvancedEqModule.cpp
     Src/Modules/BasicEqModule.cpp
+    Src/Modules/CardGridModule.cpp
     Src/Modules/MasterSlidersModule.cpp
     Src/Modules/UtilityBarModule.cpp
     Src/Views/CloneView.cpp

@@ -1,4 +1,6 @@
-#include "JuceHeader.h"
+#include <JuceHeader.h>
+
+#include "Modules/CardGridModule.h"
 #include "PluginProcessor.h"
 
 class ProfilView : public juce::Component {
@@ -10,6 +12,7 @@ class ProfilView : public juce::Component {
     void resized() override;
 
    private:
-    juce::TextButton _sampleButton{"Sample Button"};
+    juce::Viewport _viewport;
+    CardGridModule _grid;
     ProfilerAudioProcessor& _audioProcessor;
 };

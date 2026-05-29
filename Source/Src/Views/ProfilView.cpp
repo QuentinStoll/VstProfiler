@@ -4,8 +4,10 @@
 
 ProfilView::ProfilView(ProfilerAudioProcessor& p)
     : _audioProcessor(p) {
-    addAndMakeVisible(_sampleButton);
-    _sampleButton.setButtonText("Sample Button Profil");
+    addAndMakeVisible(_viewport);
+    _viewport.getVerticalScrollBar().setColour(juce::ScrollBar::thumbColourId, ProfilerStyle::Colors::orange);
+    _viewport.setViewedComponent(&_grid, false);
+    _viewport.setScrollBarsShown(true, false);
 }
 
 ProfilView::~ProfilView() {
@@ -26,5 +28,14 @@ void ProfilView::paint(juce::Graphics& g) {
 }
 
 void ProfilView::resized() {
-    _sampleButton.setBounds(20, 20, 200, 30);
+    const auto area = getLocalBounds().reduced(25);
+    constexpr auto scrollbarOffset = 15;
+    const auto viewportArea = area.withRight(juce::jmin(getLocalBounds().getRight(), area.getRight() + scrollbarOffset));
+
+    _viewport.setBounds(viewportArea);
+
+    const auto gridWidth = area.getWidth();
+    const auto gridHeight = juce::jmax(area.getHeight(), _grid.getRequiredHeight(gridWidth));
+
+    _grid.setBounds(0, 0, gridWidth, gridHeight);
 }
