@@ -11,15 +11,8 @@
 class CustomImageButton : public juce::Button {
    public:
     CustomImageButton(const juce::String& buttonName,
-                      juce::Image image = {},
-                      ProfilerStyle::Theme theme = ProfilerStyle::Theme::Dark);
-
-    CustomImageButton(const juce::String& buttonName,
-                      std::unique_ptr<juce::Drawable> drawable = nullptr,
-                      ProfilerStyle::Theme theme = ProfilerStyle::Theme::Dark);
-
-    CustomImageButton(const juce::String& buttonName,
-                      const juce::File& svgFile,
+                      const void* binaryData = nullptr,
+                      size_t dataSize = 0,
                       ProfilerStyle::Theme theme = ProfilerStyle::Theme::Dark);
 
     ~CustomImageButton() override = default;
@@ -32,7 +25,6 @@ class CustomImageButton : public juce::Button {
     void paintButton(juce::Graphics& g, bool isMouseOverButton, bool isButtonDown) override;
 
    private:
-    juce::Image _image;
     std::unique_ptr<juce::Drawable> _drawable;
 
     // Colors
@@ -44,7 +36,5 @@ class CustomImageButton : public juce::Button {
     bool _outlineVisible = false;
 
     // Methods
-    bool hasImageContent() const { return _image.isValid() || _drawable != nullptr; };
-    void setDrawableColourToWhite();
     void drawImageContent(juce::Graphics& g, juce::Rectangle<float> imageArea, float alpha);
 };

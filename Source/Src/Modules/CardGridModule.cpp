@@ -1,12 +1,13 @@
 #include "Modules/CardGridModule.h"
 
+#include "BinaryData.h"
 #include "Stylesheet.h"
 
 CardGridModule::CardGridModule() {
     auto imageFile = juce::File::getCurrentWorkingDirectory().getChildFile("Source/Assets/Svg/plus-icon.svg");
     jassert(imageFile.existsAsFile());
 
-    _addProfileImageButton = std::make_unique<CustomImageButton>("Add profile", imageFile, ProfilerStyle::Theme::Darker);
+    _addProfileImageButton = std::make_unique<CustomImageButton>("Add profile", BinaryData::plusicon_svg, BinaryData::plusicon_svgSize, ProfilerStyle::Theme::Darker);
     addAndMakeVisible(*_addProfileImageButton);
 
     updateProfileButtons();
@@ -101,7 +102,7 @@ void CardGridModule::updateProfileButtons() {
 
     while (static_cast<int>(_profileButtons.size()) < _profileCount) {
         const auto profileNumber = static_cast<int>(_profileButtons.size()) + 1;
-        auto button = std::make_unique<CustomImageButton>("Profile " + juce::String(profileNumber), imageFile, ProfilerStyle::Theme::Light);
+        auto button = std::make_unique<CustomImageButton>("Profile " + juce::String(profileNumber), BinaryData::musicnote_svg, BinaryData::musicnote_svgSize, ProfilerStyle::Theme::Light);
         addAndMakeVisible(*button);
         _profileButtons.push_back(std::move(button));
     }

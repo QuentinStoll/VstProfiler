@@ -21,6 +21,11 @@ set_target_properties(${PLUGIN_NAME}  PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
+juce_add_binary_data(ProfilerAssets
+    SOURCES
+        Assets/Svg/music-note.svg
+        Assets/Svg/plus-icon.svg
+)
 
 # Collect source files
 target_sources(${PLUGIN_NAME} PRIVATE
@@ -52,9 +57,9 @@ add_compile_definitions(JUCE_VST3_CAN_REPLACE_VST2=0)
 
 # Link JUCE modules from juce_setup.cmake
 if(NOT WIN32)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} curl simdjson)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets curl simdjson)
 else()
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} simdjson)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets simdjson)
 endif()
 
 # Include directories

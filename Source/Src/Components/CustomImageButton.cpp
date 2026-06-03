@@ -5,23 +5,10 @@
 //=============================================================================
 
 CustomImageButton::CustomImageButton(const juce::String& buttonName,
-                                     juce::Image image,
+                                     const void* binaryData,
+                                     size_t dataSize,
                                      ProfilerStyle::Theme theme) : juce::Button(buttonName),
-                                                                   _image(image) {
-    setTheme(theme);
-}
-
-CustomImageButton::CustomImageButton(const juce::String& buttonName,
-                                     std::unique_ptr<juce::Drawable> drawable,
-                                     ProfilerStyle::Theme theme) : juce::Button(buttonName),
-                                                                   _drawable(std::move(drawable)) {
-    setTheme(theme);
-}
-
-CustomImageButton::CustomImageButton(const juce::String& buttonName,
-                                     const juce::File& svgFile,
-                                     ProfilerStyle::Theme theme) : juce::Button(buttonName),
-                                                                   _drawable(juce::Drawable::createFromSVGFile(svgFile)) {
+                                                                   _drawable(juce::Drawable::createFromImageData(binaryData, dataSize)) {
     if (_drawable != nullptr) {
         _drawable->replaceColour(juce::Colour(0xff000000), ProfilerStyle::Colors::white);
     }
@@ -52,7 +39,7 @@ void CustomImageButton::paintButton(juce::Graphics& g, bool isMouseOverButton, b
     auto fillArea = _outlineVisible ? area.reduced(2) : area;
 
     auto buttonText = getButtonText();
-    auto hasImage = hasImageContent();
+    auto hasImage = (_drawable != nullptr);
     auto hasText = buttonText.isNotEmpty();
     auto gap = 0;
     auto font = juce::Font(juce::FontOptions(16.0f));
@@ -107,17 +94,5 @@ void CustomImageButton::drawImageContent(juce::Graphics& g, juce::Rectangle<floa
                               imageArea,
                               juce::RectanglePlacement::centred,
                               alpha);
-        return;
-    }
-
-    if (_image.isValid()) {
-        g.setOpacity(alpha);
-        g.drawImageWithin(_image,
-                          static_cast<int>(imageArea.getX()),
-                          static_cast<int>(imageArea.getY()),
-                          static_cast<int>(imageArea.getWidth()),
-                          static_cast<int>(imageArea.getHeight()),
-                          juce::RectanglePlacement::centred);
-        g.setOpacity(1.0f);
     }
 }
