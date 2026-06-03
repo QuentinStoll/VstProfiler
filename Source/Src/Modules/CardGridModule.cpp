@@ -3,8 +3,11 @@
 #include "Stylesheet.h"
 
 CardGridModule::CardGridModule() {
-    _addProfileButton = std::make_unique<CustomTextButton>("Add profile", ProfilerStyle::Theme::Darker);
-    addAndMakeVisible(*_addProfileButton);
+    auto imageFile = juce::File::getCurrentWorkingDirectory().getChildFile("Source/Assets/Svg/plus-icon.svg");
+    jassert(imageFile.existsAsFile());
+
+    _addProfileImageButton = std::make_unique<CustomImageButton>("Add profile", imageFile, ProfilerStyle::Theme::Darker);
+    addAndMakeVisible(*_addProfileImageButton);
 
     updateProfileButtons();
 }
@@ -64,7 +67,7 @@ void CardGridModule::resized() {
         if (index < static_cast<int>(_profileButtons.size())) {
             _profileButtons[static_cast<size_t>(index)]->setBounds(bounds);
         } else {
-            _addProfileButton->setBounds(bounds);
+            _addProfileImageButton->setBounds(bounds);
         }
     }
 }
@@ -93,9 +96,12 @@ int CardGridModule::getButtonSizeForWidth(int width, int columns) const {
 }
 
 void CardGridModule::updateProfileButtons() {
+    auto imageFile = juce::File::getCurrentWorkingDirectory().getChildFile("Source/Assets/Svg/music-note.svg");
+    jassert(imageFile.existsAsFile());
+
     while (static_cast<int>(_profileButtons.size()) < _profileCount) {
         const auto profileNumber = static_cast<int>(_profileButtons.size()) + 1;
-        auto button = std::make_unique<CustomTextButton>("Profile " + juce::String(profileNumber), ProfilerStyle::Theme::Light);
+        auto button = std::make_unique<CustomImageButton>("Profile " + juce::String(profileNumber), imageFile, ProfilerStyle::Theme::Light);
         addAndMakeVisible(*button);
         _profileButtons.push_back(std::move(button));
     }

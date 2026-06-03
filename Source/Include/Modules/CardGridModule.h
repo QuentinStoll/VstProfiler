@@ -1,6 +1,6 @@
 #include <JuceHeader.h>
 
-#include "Components/CustomTextButton.h"
+#include "Components/CustomImageButton.h"
 
 class CardGridModule : public juce::Component {
    public:
@@ -25,9 +25,9 @@ class CardGridModule : public juce::Component {
     int getButtonSizeForWidth(int width, int columns) const;
     void updateProfileButtons();
 
-    int _profileCount = 3;
-    std::vector<std::unique_ptr<CustomTextButton>> _profileButtons;
-    std::unique_ptr<CustomTextButton> _addProfileButton;
+    int _profileCount = 10;
+    std::vector<std::unique_ptr<CustomImageButton>> _profileButtons;
+    std::unique_ptr<CustomImageButton> _addProfileImageButton;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CardGridModule)
 };
