@@ -7,6 +7,8 @@
       <GROUP id="{1067897D-12FB-92DD-7738-E02416E4000A}" name="Components">
         <FILE id="hssDtW" name="CustomComboBox.h" compile="0" resource="0"
               file="Source/Include/Components/CustomComboBox.h"/>
+        <FILE id="CibH01" name="CustomImageButton.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomImageButton.h"/>
         <FILE id="ftiu49" name="CustomTextButton.h" compile="0" resource="0"
               file="Source/Include/Components/CustomTextButton.h"/>
         <FILE id="up6Ar1" name="CustomKnob.h" compile="0" resource="0" file="Source/Include/Components/CustomKnob.h"/>
@@ -46,6 +48,8 @@
       <GROUP id="{AA97C183-8D39-580E-1626-3283C80FFCDE}" name="Components">
         <FILE id="aHd87L" name="CustomComboBox.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomComboBox.cpp"/>
+        <FILE id="CibC01" name="CustomImageButton.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomImageButton.cpp"/>
         <FILE id="Wx776V" name="CustomTextButton.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomTextButton.cpp"/>
         <FILE id="RR5QUf" name="CustomKnob.cpp" compile="1" resource="0"

@@ -25,6 +25,7 @@ set_target_properties(${PLUGIN_NAME}  PROPERTIES
 # Collect source files
 target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomComboBox.cpp
+    Src/Components/CustomImageButton.cpp
     Src/Components/CustomKnob.cpp
     Src/Components/CustomTabBar.cpp
     Src/Components/CustomTabs.cpp
