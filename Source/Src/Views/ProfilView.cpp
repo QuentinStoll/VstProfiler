@@ -1,6 +1,6 @@
 #include "Views/ProfilView.h"
 
-#include "Components/CustomTextButton.h"
+#include "Modules/AddProfilModule.h"
 #include "Stylesheet.h"
 
 ProfilView::ProfilView(ProfilerAudioProcessor& p)
@@ -15,9 +15,17 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
     };
 
     addChildComponent(_modalOverlay);
-    _modalOverlay.setContent(
-        nullptr,
-        juce::Rectangle<int>(0, 0, 420, 240));
+
+    auto addProfilModule = std::make_unique<AddProfilModule>();
+    addProfilModule->onCreateProfilClicked = [this]() {
+        _modalOverlay.dismiss();
+    };
+    addProfilModule->onImportProfilClicked = [this]() {
+        _modalOverlay.dismiss();
+    };
+
+    _modalOverlay.setContent(std::move(addProfilModule),
+                             juce::Rectangle<int>(0, 0, 480, 280));
 }
 
 ProfilView::~ProfilView() {
