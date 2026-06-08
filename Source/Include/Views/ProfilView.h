@@ -1,5 +1,6 @@
 #include <JuceHeader.h>
 
+#include "Components/ModalOverlay.h"
 #include "Modules/CardGridModule.h"
 #include "PluginProcessor.h"
 
@@ -14,5 +15,8 @@ class ProfilView : public juce::Component {
    private:
     juce::Viewport _viewport;
     CardGridModule _grid;
+    ModalOverlay _modalOverlay;
     ProfilerAudioProcessor& _audioProcessor;
+
+    void showAddProfileModal();
 };

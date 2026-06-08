@@ -36,6 +36,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomTabs.cpp
     Src/Components/CustomTextButton.cpp
     Src/Components/CustomToggleButton.cpp
+    Src/Components/ModalOverlay.cpp
     Src/Modules/AdvancedEqModule.cpp
     Src/Modules/BasicEqModule.cpp
     Src/Modules/CardGridModule.cpp

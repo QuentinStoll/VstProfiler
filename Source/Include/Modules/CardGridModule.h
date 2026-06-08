@@ -7,6 +7,8 @@ class CardGridModule : public juce::Component {
     CardGridModule();
     ~CardGridModule() override;
 
+    std::function<void()> onAddProfileClicked;
+
     void setProfileCount(int profileCount);
     int getRequiredHeight(int width) const;
 

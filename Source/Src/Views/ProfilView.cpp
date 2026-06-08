@@ -1,5 +1,6 @@
 #include "Views/ProfilView.h"
 
+#include "Components/CustomTextButton.h"
 #include "Stylesheet.h"
 
 ProfilView::ProfilView(ProfilerAudioProcessor& p)
@@ -8,6 +9,15 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
     _viewport.getVerticalScrollBar().setColour(juce::ScrollBar::thumbColourId, ProfilerStyle::Colors::orange);
     _viewport.setViewedComponent(&_grid, false);
     _viewport.setScrollBarsShown(true, false);
+
+    _grid.onAddProfileClicked = [this]() {
+        showAddProfileModal();
+    };
+
+    addChildComponent(_modalOverlay);
+    _modalOverlay.setContent(
+        nullptr,
+        juce::Rectangle<int>(0, 0, 420, 240));
 }
 
 ProfilView::~ProfilView() {
@@ -38,4 +48,9 @@ void ProfilView::resized() {
     const auto gridHeight = juce::jmax(area.getHeight(), _grid.getRequiredHeight(gridWidth));
 
     _grid.setBounds(0, 0, gridWidth, gridHeight);
+    _modalOverlay.setBounds(getLocalBounds());
+}
+
+void ProfilView::showAddProfileModal() {
+    _modalOverlay.show();
 }

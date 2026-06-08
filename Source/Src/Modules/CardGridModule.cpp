@@ -8,6 +8,10 @@ CardGridModule::CardGridModule() {
     jassert(imageFile.existsAsFile());
 
     _addProfileImageButton = std::make_unique<CustomImageButton>("Add profile", BinaryData::plusicon_svg, BinaryData::plusicon_svgSize, ProfilerStyle::Theme::Darker);
+    _addProfileImageButton->onClick = [this]() {
+        if (onAddProfileClicked)
+            onAddProfileClicked();
+    };
     addAndMakeVisible(*_addProfileImageButton);
 
     updateProfileButtons();
