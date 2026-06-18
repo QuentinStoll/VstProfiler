@@ -23,6 +23,7 @@ set_target_properties(${PLUGIN_NAME}  PROPERTIES
 
 juce_add_binary_data(ProfilerAssets
     SOURCES
+        Assets/Svg/cross-icon.svg
         Assets/Svg/music-note.svg
         Assets/Svg/plus-icon.svg
 )
@@ -37,6 +38,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomTextButton.cpp
     Src/Components/CustomToggleButton.cpp
     Src/Components/ModalOverlay.cpp
+    Src/Components/NotificationBanner.cpp
     Src/Modules/AddProfilModule.cpp
     Src/Modules/AdvancedEqModule.cpp
     Src/Modules/BasicEqModule.cpp

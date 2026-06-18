@@ -15,13 +15,25 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
     };
 
     addChildComponent(_modalOverlay);
+    addChildComponent(_notificationBanner);
 
     auto addProfilModule = std::make_unique<AddProfilModule>();
     addProfilModule->onCreateProfilClicked = [this]() {
         _modalOverlay.dismiss();
+        _notificationBanner.clearAction();
+        _notificationBanner.showMessage("Profile creation started",
+                                        NotificationBanner::Type::Success);
+        this->resized();
     };
     addProfilModule->onImportProfilClicked = [this]() {
         _modalOverlay.dismiss();
+        _notificationBanner.setAction("Open", []() {
+            DBG("Open imported profile action clicked");
+        });
+        _notificationBanner.showMessage("Profile imported successfully",
+                                        NotificationBanner::Type::Success,
+                                        5000);
+        this->resized();
     };
 
     _modalOverlay.setContent(std::move(addProfilModule),
@@ -57,6 +69,14 @@ void ProfilView::resized() {
 
     _grid.setBounds(0, 0, gridWidth, gridHeight);
     _modalOverlay.setBounds(getLocalBounds());
+
+    const auto bannerWidth = juce::jmin(_notificationBanner.getIdealWidth(),
+                                        juce::jmax(220, getWidth() - 50));
+    _notificationBanner.setBounds(getLocalBounds()
+                                      .withSizeKeepingCentre(bannerWidth,
+                                                             _notificationBanner.getIdealHeight())
+                                      .withRightX(getWidth() - 25)
+                                      .withY(25));
 }
 
 void ProfilView::showAddProfileModal() {
