@@ -12,6 +12,8 @@
         <FILE id="ftiu49" name="CustomTextButton.h" compile="0" resource="0"
               file="Source/Include/Components/CustomTextButton.h"/>
         <FILE id="up6Ar1" name="CustomKnob.h" compile="0" resource="0" file="Source/Include/Components/CustomKnob.h"/>
+        <FILE id="LinSlH" name="CustomLinearSlider.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomLinearSlider.h"/>
         <FILE id="GdUZQl" name="CustomTabs.h" compile="0" resource="0" file="Source/Include/Components/CustomTabs.h"/>
         <FILE id="tcTwa0" name="CustomTabBar.h" compile="0" resource="0" file="Source/Include/Components/CustomTabBar.h"/>
         <FILE id="EYUdcH" name="CustomToggleButton.h" compile="0" resource="0"
@@ -54,6 +56,8 @@
               file="Source/Src/Components/CustomTextButton.cpp"/>
         <FILE id="RR5QUf" name="CustomKnob.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomKnob.cpp"/>
+        <FILE id="LinSlC" name="CustomLinearSlider.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomLinearSlider.cpp"/>
         <FILE id="XkxKqA" name="CustomTabs.cpp" compile="1" resource="0" file="Source/Src/Components/CustomTabs.cpp"/>
         <FILE id="ClPX26" name="CustomTabBar.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomTabBar.cpp"/>

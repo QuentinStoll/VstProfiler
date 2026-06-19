@@ -33,6 +33,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomComboBox.cpp
     Src/Components/CustomImageButton.cpp
     Src/Components/CustomKnob.cpp
+    Src/Components/CustomLinearSlider.cpp
     Src/Components/CustomTabBar.cpp
     Src/Components/CustomTabs.cpp
     Src/Components/CustomTextButton.cpp
