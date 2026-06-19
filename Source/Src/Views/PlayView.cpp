@@ -40,10 +40,11 @@ void PlayView::paint(juce::Graphics& g) {
 void PlayView::resized() {
     auto area = getLocalBounds().reduced(20);
     auto areaWidth = area.getWidth();
+    auto utilsBarHeight = area.getHeight() * 0.07f;
 
     auto eqArea = area.removeFromLeft(areaWidth / 2);
 
-    auto utilsBarArea = area.removeFromTop(static_cast<int>(getHeight() * 0.07f));
+    auto utilsBarArea = area.removeFromTop(static_cast<int>(utilsBarHeight));
     _eqDisplay.setBounds(eqArea);
 
     auto masterArea = area;

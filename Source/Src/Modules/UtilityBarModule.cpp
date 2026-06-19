@@ -30,10 +30,13 @@ void UtilityBarModule::resized() {
     auto area = getLocalBounds();
     auto areaWidth = area.getWidth();
 
-    auto profilMenuArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.4f));
+    auto profilMenuArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.5f));
+    area.removeFromLeft(static_cast<int>(areaWidth * 0.01f));
     auto resetButtonArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.2f));
-    auto muteSwitchArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.2f));
-    auto eqSwitchArea = area;
+    area.removeFromLeft(static_cast<int>(areaWidth * 0.01f));
+    auto muteSwitchArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.1f));
+    area.removeFromLeft(static_cast<int>(areaWidth * 0.01f));
+    auto eqSwitchArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.1f));
 
     _profilMenu.setBounds(profilMenuArea);
     _resetButton.setBounds(resetButtonArea);
