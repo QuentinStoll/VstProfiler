@@ -44,6 +44,8 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Modules/AdvancedEqModule.cpp
     Src/Modules/BasicEqModule.cpp
     Src/Modules/CardGridModule.cpp
+    Src/Modules/CreateProfilModule.cpp
+    Src/Modules/EditProfilModule.cpp
     Src/Modules/MasterSlidersModule.cpp
     Src/Modules/UtilityBarModule.cpp
     Src/Views/CloneView.cpp

@@ -107,6 +107,10 @@ void CardGridModule::updateProfileButtons() {
     while (static_cast<int>(_profileButtons.size()) < _profileCount) {
         const auto profileNumber = static_cast<int>(_profileButtons.size()) + 1;
         auto button = std::make_unique<CustomImageButton>("Profile " + juce::String(profileNumber), BinaryData::musicnote_svg, BinaryData::musicnote_svgSize, ProfilerStyle::Theme::Light);
+        button->onClick = [this, profileNumber]() {
+            if (onProfileClicked)
+                onProfileClicked(profileNumber);
+        };
         addAndMakeVisible(*button);
         _profileButtons.push_back(std::move(button));
     }

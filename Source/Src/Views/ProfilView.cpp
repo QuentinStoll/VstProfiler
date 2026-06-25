@@ -9,9 +9,17 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
     _viewport.getVerticalScrollBar().setColour(juce::ScrollBar::thumbColourId, ProfilerStyle::Colors::orange);
     _viewport.setViewedComponent(&_grid, false);
     _viewport.setScrollBarsShown(true, false);
+    addChildComponent(_createProfilModule);
+    addChildComponent(_editProfilModule);
 
     _grid.onAddProfileClicked = [this]() {
         showAddProfileModal();
+    };
+
+    _grid.onProfileClicked = [this](int profileNumber) {
+        _notificationBanner.clearAction();
+        _notificationBanner.dismiss();
+        showEditProfilModule(profileNumber);
     };
 
     addChildComponent(_modalOverlay);
@@ -21,14 +29,13 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
     addProfilModule->onCreateProfilClicked = [this]() {
         _modalOverlay.dismiss();
         _notificationBanner.clearAction();
-        _notificationBanner.showMessage("Profile creation started",
-                                        NotificationBanner::Type::Success);
-        this->resized();
+        _notificationBanner.dismiss();
+        showCreateProfilModule();
     };
     addProfilModule->onImportProfilClicked = [this]() {
         _modalOverlay.dismiss();
-        _notificationBanner.setAction("Open", []() {
-            DBG("Open imported profile action clicked");
+        _notificationBanner.setAction("Open", [this]() {
+            showCreateProfilModule();
         });
         _notificationBanner.showMessage("Profile imported successfully",
                                         NotificationBanner::Type::Success,
@@ -59,15 +66,23 @@ void ProfilView::paint(juce::Graphics& g) {
 
 void ProfilView::resized() {
     const auto area = getLocalBounds().reduced(25);
-    constexpr auto scrollbarOffset = 15;
-    const auto viewportArea = area.withRight(juce::jmin(getLocalBounds().getRight(), area.getRight() + scrollbarOffset));
 
-    _viewport.setBounds(viewportArea);
+    if (_contentMode == ContentMode::ProfileGrid) {
+        constexpr auto scrollbarOffset = 15;
+        const auto viewportArea = area.withRight(juce::jmin(getLocalBounds().getRight(), area.getRight() + scrollbarOffset));
 
-    const auto gridWidth = area.getWidth();
-    const auto gridHeight = juce::jmax(area.getHeight(), _grid.getRequiredHeight(gridWidth));
+        _viewport.setBounds(viewportArea);
 
-    _grid.setBounds(0, 0, gridWidth, gridHeight);
+        const auto gridWidth = area.getWidth();
+        const auto gridHeight = juce::jmax(area.getHeight(), _grid.getRequiredHeight(gridWidth));
+
+        _grid.setBounds(0, 0, gridWidth, gridHeight);
+    } else if (_contentMode == ContentMode::CreateProfil) {
+        _createProfilModule.setBounds(area);
+    } else {
+        _editProfilModule.setBounds(area);
+    }
+
     _modalOverlay.setBounds(getLocalBounds());
 
     const auto bannerWidth = juce::jmin(_notificationBanner.getIdealWidth(),
@@ -81,4 +96,23 @@ void ProfilView::resized() {
 
 void ProfilView::showAddProfileModal() {
     _modalOverlay.show();
+}
+
+void ProfilView::showCreateProfilModule() {
+    _contentMode = ContentMode::CreateProfil;
+    _viewport.setVisible(false);
+    _createProfilModule.setVisible(true);
+    _editProfilModule.setVisible(false);
+    resized();
+    repaint();
+}
+
+void ProfilView::showEditProfilModule(int profileNumber) {
+    _editProfilModule.setProfileNumber(profileNumber);
+    _contentMode = ContentMode::EditProfil;
+    _viewport.setVisible(false);
+    _createProfilModule.setVisible(false);
+    _editProfilModule.setVisible(true);
+    resized();
+    repaint();
 }
