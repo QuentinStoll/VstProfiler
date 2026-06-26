@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 
 #include "Components/CustomTextButton.h"
+#include "Components/CustomTextEditor.h"
 
 class PathSelector : public juce::Component {
    public:
@@ -20,10 +21,9 @@ class PathSelector : public juce::Component {
 
    private:
     void browseForPath();
-    void stylePathEditor();
 
     juce::Label _label;
-    juce::TextEditor _pathEditor;
+    CustomTextEditor _pathEditor;
     CustomTextButton _browseButton{"...", ProfilerStyle::Theme::Dark};
     std::unique_ptr<juce::FileChooser> _fileChooser;
     juce::String _filePatterns;

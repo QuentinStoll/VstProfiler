@@ -38,6 +38,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomTabBar.cpp
     Src/Components/CustomTabs.cpp
     Src/Components/CustomTextButton.cpp
+    Src/Components/CustomTextEditor.cpp
     Src/Components/CustomToggleButton.cpp
     Src/Components/ModalOverlay.cpp
     Src/Components/NotificationBanner.cpp

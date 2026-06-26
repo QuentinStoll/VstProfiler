@@ -13,8 +13,6 @@ PathSelector::PathSelector(const juce::String& labelText, const juce::String& fi
     _label.setColour(juce::Label::textColourId, ProfilerStyle::Colors::white);
     _label.setFont(juce::Font(juce::FontOptions().withHeight(14.0f)));
 
-    stylePathEditor();
-
     _browseButton.onClick = [this]() {
         browseForPath();
     };
@@ -65,19 +63,4 @@ void PathSelector::browseForPath() {
 
                                   _fileChooser.reset();
                               });
-}
-
-void PathSelector::stylePathEditor() {
-    _pathEditor.setMultiLine(false);
-    _pathEditor.setReturnKeyStartsNewLine(false);
-    _pathEditor.setScrollbarsShown(false);
-    _pathEditor.setSelectAllWhenFocused(true);
-    _pathEditor.setJustification(juce::Justification::centredLeft);
-    _pathEditor.setIndents(8, 0);
-    _pathEditor.setColour(juce::TextEditor::backgroundColourId, ProfilerStyle::Colors::darkGrey);
-    _pathEditor.setColour(juce::TextEditor::textColourId, ProfilerStyle::Colors::white);
-    _pathEditor.setColour(juce::TextEditor::outlineColourId, ProfilerStyle::Colors::darkerGrey);
-    _pathEditor.setColour(juce::TextEditor::focusedOutlineColourId, ProfilerStyle::Colors::orange);
-    _pathEditor.setColour(juce::TextEditor::highlightColourId, ProfilerStyle::Colors::orange.withAlpha(0.35f));
-    _pathEditor.setColour(juce::TextEditor::highlightedTextColourId, ProfilerStyle::Colors::white);
 }
