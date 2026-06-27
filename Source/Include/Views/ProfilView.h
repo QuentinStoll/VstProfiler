@@ -1,3 +1,5 @@
+#pragma once
+
 #include <JuceHeader.h>
 
 #include "Components/ModalOverlay.h"
@@ -32,6 +34,7 @@ class ProfilView : public juce::Component {
     ContentMode _contentMode = ContentMode::ProfileGrid;
 
     void showAddProfileModal();
+    void showProfileGrid();
     void showCreateProfilModule();
     void showEditProfilModule(int profileNumber);
 };

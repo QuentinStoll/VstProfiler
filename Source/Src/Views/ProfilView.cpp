@@ -9,8 +9,33 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
     _viewport.getVerticalScrollBar().setColour(juce::ScrollBar::thumbColourId, ProfilerStyle::Colors::orange);
     _viewport.setViewedComponent(&_grid, false);
     _viewport.setScrollBarsShown(true, false);
-    addChildComponent(_createProfilModule);
-    addChildComponent(_editProfilModule);
+
+    _createProfilModule.onCreateClicked = [this](const juce::NamedValueSet& /*values*/) {
+        _notificationBanner.setAction("Open", [this]() {
+            showCreateProfilModule();
+        });
+        _notificationBanner.showMessage("Profile created successfully",
+                                        NotificationBanner::Type::Success,
+                                        5000);
+        showProfileGrid();
+    };
+    _createProfilModule.onCancelClicked = [this]() {
+        showProfileGrid();
+    };
+    _editProfilModule.onSaveClicked = [this](int /*profileNumber*/, const juce::NamedValueSet& /*values*/) {
+        _notificationBanner.showMessage("Profile saved successfully",
+                                        NotificationBanner::Type::Success,
+                                        5000);
+    };
+    _editProfilModule.onDeleteClicked = [this](int /*profileNumber*/) {
+        _notificationBanner.showMessage("Profile deleted successfully",
+                                        NotificationBanner::Type::Success,
+                                        5000);
+        showProfileGrid();
+    };
+    _editProfilModule.onBackClicked = [this]() {
+        showProfileGrid();
+    };
 
     _grid.onAddProfileClicked = [this]() {
         showAddProfileModal();
@@ -67,20 +92,24 @@ void ProfilView::paint(juce::Graphics& g) {
 void ProfilView::resized() {
     const auto area = getLocalBounds().reduced(25);
 
-    if (_contentMode == ContentMode::ProfileGrid) {
+    if (_contentMode == ContentMode::ProfileGrid || _contentMode == ContentMode::CreateProfil || _contentMode == ContentMode::EditProfil) {
         constexpr auto scrollbarOffset = 15;
         const auto viewportArea = area.withRight(juce::jmin(getLocalBounds().getRight(), area.getRight() + scrollbarOffset));
 
         _viewport.setBounds(viewportArea);
 
-        const auto gridWidth = area.getWidth();
-        const auto gridHeight = juce::jmax(area.getHeight(), _grid.getRequiredHeight(gridWidth));
+        const auto contentWidth = area.getWidth();
 
-        _grid.setBounds(0, 0, gridWidth, gridHeight);
-    } else if (_contentMode == ContentMode::CreateProfil) {
-        _createProfilModule.setBounds(area);
-    } else {
-        _editProfilModule.setBounds(area);
+        if (_contentMode == ContentMode::ProfileGrid) {
+            const auto gridHeight = juce::jmax(area.getHeight(), _grid.getRequiredHeight(contentWidth));
+            _grid.setBounds(0, 0, contentWidth, gridHeight);
+        } else if (_contentMode == ContentMode::CreateProfil) {
+            const auto createHeight = juce::jmax(area.getHeight(), _createProfilModule.getRequiredHeight(contentWidth));
+            _createProfilModule.setBounds(0, 0, contentWidth, createHeight);
+        } else {
+            const auto editHeight = juce::jmax(area.getHeight(), _editProfilModule.getRequiredHeight(contentWidth));
+            _editProfilModule.setBounds(0, 0, contentWidth, editHeight);
+        }
     }
 
     _modalOverlay.setBounds(getLocalBounds());
@@ -98,9 +127,21 @@ void ProfilView::showAddProfileModal() {
     _modalOverlay.show();
 }
 
+void ProfilView::showProfileGrid() {
+    _contentMode = ContentMode::ProfileGrid;
+    _viewport.setViewedComponent(&_grid, false);
+    _viewport.setVisible(true);
+    _createProfilModule.setVisible(false);
+    _editProfilModule.setVisible(false);
+    resized();
+    repaint();
+}
+
 void ProfilView::showCreateProfilModule() {
     _contentMode = ContentMode::CreateProfil;
-    _viewport.setVisible(false);
+    _viewport.setViewedComponent(&_createProfilModule, false);
+    _viewport.setViewPosition(0, 0);
+    _viewport.setVisible(true);
     _createProfilModule.setVisible(true);
     _editProfilModule.setVisible(false);
     resized();
@@ -110,7 +151,9 @@ void ProfilView::showCreateProfilModule() {
 void ProfilView::showEditProfilModule(int profileNumber) {
     _editProfilModule.setProfileNumber(profileNumber);
     _contentMode = ContentMode::EditProfil;
-    _viewport.setVisible(false);
+    _viewport.setViewedComponent(&_editProfilModule, false);
+    _viewport.setViewPosition(0, 0);
+    _viewport.setVisible(true);
     _createProfilModule.setVisible(false);
     _editProfilModule.setVisible(true);
     resized();
