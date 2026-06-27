@@ -11,6 +11,7 @@ class CardGridModule : public juce::Component {
     std::function<void(int)> onProfileClicked;
 
     void setProfileCount(int profileCount);
+    void setProfileNames(const juce::StringArray& profileNames);
     int getRequiredHeight(int width) const;
 
     void paint(juce::Graphics& g) override;
@@ -28,7 +29,8 @@ class CardGridModule : public juce::Component {
     int getButtonSizeForWidth(int width, int columns) const;
     void updateProfileButtons();
 
-    int _profileCount = 10;
+    int _profileCount = 0;
+    juce::StringArray _profileNames;
     std::vector<std::unique_ptr<CustomImageButton>> _profileButtons;
     std::unique_ptr<CustomImageButton> _addProfileImageButton;
 

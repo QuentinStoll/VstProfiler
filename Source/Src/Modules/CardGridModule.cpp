@@ -31,8 +31,21 @@ void CardGridModule::setProfileCount(int profileCount) {
     }
 
     _profileCount = newProfileCount;
+
+    while (_profileNames.size() > _profileCount) {
+        _profileNames.remove(_profileNames.size() - 1);
+    }
+
     updateProfileButtons();
     resized();
+}
+
+void CardGridModule::setProfileNames(const juce::StringArray& profileNames) {
+    _profileNames = profileNames;
+    _profileCount = _profileNames.size();
+    updateProfileButtons();
+    resized();
+    repaint();
 }
 
 int CardGridModule::getRequiredHeight(int width) const {
@@ -106,7 +119,7 @@ void CardGridModule::updateProfileButtons() {
 
     while (static_cast<int>(_profileButtons.size()) < _profileCount) {
         const auto profileNumber = static_cast<int>(_profileButtons.size()) + 1;
-        auto button = std::make_unique<CustomImageButton>("Profile " + juce::String(profileNumber), BinaryData::musicnote_svg, BinaryData::musicnote_svgSize, ProfilerStyle::Theme::Light);
+        auto button = std::make_unique<CustomImageButton>("Profil " + juce::String(profileNumber), BinaryData::musicnote_svg, BinaryData::musicnote_svgSize, ProfilerStyle::Theme::Light);
         button->onClick = [this, profileNumber]() {
             if (onProfileClicked)
                 onProfileClicked(profileNumber);
@@ -118,5 +131,12 @@ void CardGridModule::updateProfileButtons() {
     while (static_cast<int>(_profileButtons.size()) > _profileCount) {
         removeChildComponent(_profileButtons.back().get());
         _profileButtons.pop_back();
+    }
+
+    for (int index = 0; index < static_cast<int>(_profileButtons.size()); ++index) {
+        const auto profileName = index < _profileNames.size() && _profileNames[index].isNotEmpty()
+                                     ? _profileNames[index]
+                                     : "Profil " + juce::String(index + 1);
+        _profileButtons[static_cast<size_t>(index)]->setButtonText(profileName);
     }
 }
