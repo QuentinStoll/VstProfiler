@@ -40,6 +40,13 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomTextButton.cpp
     Src/Components/CustomTextEditor.cpp
     Src/Components/CustomToggleButton.cpp
+    Src/Components/FormFields/FormComboField.cpp
+    Src/Components/FormComponent.cpp
+    Src/Components/FormFields/FormField.cpp
+    Src/Components/FormFields/FormPathField.cpp
+    Src/Components/FormFields/FormSliderField.cpp
+    Src/Components/FormFields/FormTextField.cpp
+    Src/Components/FormFields/FormToggleField.cpp
     Src/Components/ModalOverlay.cpp
     Src/Components/NotificationBanner.cpp
     Src/Modules/AddProfilModule.cpp
