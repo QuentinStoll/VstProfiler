@@ -14,7 +14,10 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
 #endif
               .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-      )
+              ),
+      _profileManager(_apvts)
+#else
+    : _profileManager(_apvts)
 #endif
 {
     LoggingConfig config = LoggingConfigLoader::loadFromFile(
@@ -376,14 +379,38 @@ void ProfilerAudioProcessor::loadIRFile() {
                              juce::FileBrowserComponent::canSelectFiles,
                          [this, chooser](const juce::FileChooser& fc) {
                              auto file = fc.getResult();
-                             if (file.existsAsFile()) {
-                                 _convolver.loadImpulseResponse(
-                                     file, juce::dsp::Convolution::Stereo::yes,
-                                     juce::dsp::Convolution::Trim::no, 0);
-                                 _irLoaded = true;
-                             }
+                             loadIRFile(file);
                              delete chooser;  // clean up memory
                          });
+}
+
+bool ProfilerAudioProcessor::loadIRFile(const juce::File& file) {
+    if (!file.existsAsFile()) {
+        return false;
+    }
+
+    _convolver.loadImpulseResponse(file,
+                                   juce::dsp::Convolution::Stereo::yes,
+                                   juce::dsp::Convolution::Trim::no,
+                                   0);
+    _irLoaded = true;
+    return true;
+}
+
+bool ProfilerAudioProcessor::applyProfile(int profileIndex, juce::String* errorMessage) {
+    if (!_profileManager.applyProfile(profileIndex, errorMessage)) {
+        return false;
+    }
+
+    const auto values = _profileManager.getProfileValues(profileIndex);
+    if (const auto* irPath = values.getVarPointer("irPath")) {
+        const auto irFile = juce::File(irPath->toString());
+        if (irFile.existsAsFile()) {
+            loadIRFile(irFile);
+        }
+    }
+
+    return true;
 }
 
 void ProfilerAudioProcessor::startAmpProfiling() {
@@ -393,4 +420,12 @@ void ProfilerAudioProcessor::startAmpProfiling() {
 
 void ProfilerAudioProcessor::startGainAnalysis() {
     _ampProfiling.startGainAnalysis(_ampStage);
+}
+
+ProfileManager& ProfilerAudioProcessor::getProfileManager() noexcept {
+    return _profileManager;
+}
+
+const ProfileManager& ProfilerAudioProcessor::getProfileManager() const noexcept {
+    return _profileManager;
 }
