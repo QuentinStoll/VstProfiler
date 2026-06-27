@@ -8,6 +8,8 @@
 
 class CustomToggleButtonLF : public juce::LookAndFeel_V4 {
    public:
+    void setLabelVisible(bool shouldShowLabel);
+
     void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
                           bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 
@@ -18,6 +20,8 @@ class CustomToggleButtonLF : public juce::LookAndFeel_V4 {
    private:
     static void drawSwitch(juce::Graphics& g, juce::Rectangle<float> area,
                            bool ticked, bool isEnabled, bool isMouseOver, bool isMouseDown);
+
+    bool _labelVisible = true;
 };
 
 //=============================================================================
@@ -28,6 +32,8 @@ class CustomToggleButton : public juce::ToggleButton {
    public:
     CustomToggleButton(const juce::String& buttonText);
     ~CustomToggleButton();
+
+    void setLabelVisible(bool shouldShowLabel);
 
     void paint(juce::Graphics& g) override;
     void resized() override;

@@ -67,9 +67,19 @@ void CustomToggleButtonLF::drawSwitch(juce::Graphics& g, juce::Rectangle<float> 
 // CustomToggleButtonLF Implementation
 //=============================================================================
 
+void CustomToggleButtonLF::setLabelVisible(bool shouldShowLabel) {
+    _labelVisible = shouldShowLabel;
+}
+
 void CustomToggleButtonLF::drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
                                             bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) {
     auto area = button.getLocalBounds().toFloat();
+
+    if (!_labelVisible) {
+        drawSwitch(g, area, button.getToggleState(), button.isEnabled(), shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
+        return;
+    }
+
     const auto labelHeight = juce::jlimit(8.0f, 20.0f, area.getHeight() * 0.48f);
     auto labelArea = area.removeFromTop(labelHeight);
     auto switchArea = area;
@@ -98,6 +108,11 @@ CustomToggleButton::CustomToggleButton(const juce::String& buttonText) : ToggleB
 
 CustomToggleButton::~CustomToggleButton() {
     setLookAndFeel(nullptr);
+}
+
+void CustomToggleButton::setLabelVisible(bool shouldShowLabel) {
+    _customLF.setLabelVisible(shouldShowLabel);
+    repaint();
 }
 
 void CustomToggleButton::paint(juce::Graphics& g) {
