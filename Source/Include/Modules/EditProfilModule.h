@@ -12,6 +12,7 @@ class EditProfilModule : public juce::Component {
     ~EditProfilModule() override = default;
 
     void setProfileNumber(int profileNumber);
+    void setProfile(int profileNumber, const juce::NamedValueSet& values);
     int getProfileNumber() const;
 
     void paint(juce::Graphics& g) override;

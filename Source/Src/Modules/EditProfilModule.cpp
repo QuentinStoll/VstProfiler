@@ -29,21 +29,30 @@ EditProfilModule::EditProfilModule() {
     _form.setLabelWidth(114);
     _form.setRowGap(10);
 
-    _form.addSliderField("masterVolume", "Master Volume", 0.0, 1.0, 0.68, "%", 0.1);
-    _form.addSliderField("gain", "Gain", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("noiseGate", "Noise gate", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("bass", "Bass", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("middle", "Middle", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("treble", "Treble", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("presence", "Presence", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("depth", "Depth", 0.0, 1.0, 0.68, "dB", 0.1);
+    _form.addSliderField("masterVolume", "Master Volume", 0.0, 100.0, 50.0, "%", 1.0);
+    _form.addSliderField("gain", "Gain", -12.0, 12.0, 0.0, "dB", 0.1);
+    _form.addSliderField("noiseGate", "Noise gate", 0.0, 60.0, 10.0, "dB", 0.1);
+    _form.addSliderField("bass", "Bass", -24.0, 24.0, 0.0, "dB", 0.1);
+    _form.addSliderField("middle", "Middle", -24.0, 24.0, 0.0, "dB", 0.1);
+    _form.addSliderField("treble", "Treble", -24.0, 24.0, 0.0, "dB", 0.1);
+    _form.addSliderField("presence", "Presence", -24.0, 24.0, 0.0, "dB", 0.1);
+    _form.addSliderField("depth", "Depth", -24.0, 24.0, 0.0, "dB", 0.1);
     _form.addPathField("irPath", "IR Path", "*.wav;*.aiff;*.aif;*.flac");
     _form.addPathField("ampPath", "Amp Path", "*.nam;*.json;*.txt");
 }
 
 void EditProfilModule::setProfileNumber(int profileNumber) {
+    setProfile(profileNumber, {});
+}
+
+void EditProfilModule::setProfile(int profileNumber, const juce::NamedValueSet& values) {
     _profileNumber = profileNumber;
     _profileNameEditor.setText("Profil " + juce::String(_profileNumber), juce::dontSendNotification);
+    _form.setValues(values);
+
+    if (const auto* profileName = values.getVarPointer("profileName")) {
+        _profileNameEditor.setText(profileName->toString(), juce::dontSendNotification);
+    }
 }
 
 int EditProfilModule::getProfileNumber() const {
