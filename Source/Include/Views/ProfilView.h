@@ -32,9 +32,12 @@ class ProfilView : public juce::Component {
     NotificationBanner _notificationBanner;
     ProfilerAudioProcessor& _audioProcessor;
     ContentMode _contentMode = ContentMode::ProfileGrid;
+    std::unique_ptr<juce::FileChooser> _profileFileChooser;
 
     void showAddProfileModal();
     void showProfileGrid();
     void showCreateProfilModule();
     void showEditProfilModule(int profileNumber);
+    void importProfil();
+    void refreshProfileGrid();
 };
