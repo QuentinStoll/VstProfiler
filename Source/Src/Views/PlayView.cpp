@@ -6,7 +6,7 @@
 
 PlayView::PlayView(ProfilerAudioProcessor& p)
     : _masterSliders(p._apvts),
-      _utilityBar(p._apvts),
+      _utilityBar(p),
       _eqDisplay({{"Basic", [&p] { return std::make_unique<BasicEqModule>(p._apvts); }},
                   {"Advanced", [&p] { return std::make_unique<AdvancedEqModule>(p._apvts); }}}) {
     addAndMakeVisible(_eqDisplay);
