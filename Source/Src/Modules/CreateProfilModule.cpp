@@ -26,14 +26,14 @@ CreateProfilModule::CreateProfilModule() {
     _form.setLabelWidth(176);
     _form.setRowGap(12);
 
-    _form.addSliderField("masterVolume", "Master Volume", 0.0, 1.0, 0.68, "%", 0.1);
-    _form.addSliderField("gain", "Gain", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("noiseGate", "Noise gate", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("bass", "Bass", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("middle", "Middle", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("treble", "Treble", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("presence", "Presence", 0.0, 1.0, 0.68, "dB", 0.1);
-    _form.addSliderField("depth", "Depth", 0.0, 1.0, 0.68, "dB", 0.1);
+    _form.addSliderField("masterVolume", "Master Volume", 0.0, 100.0, 50.0, "%", 1.0);
+    _form.addSliderField("gain", "Gain", -12.0, 12.0, 0.0, "dB", 0.1);
+    _form.addSliderField("noiseGate", "Noise gate", 0.0, 60.0, 10.0, "dB", 0.1);
+    _form.addSliderField("bass", "Bass", -24.0, 24.0, 0.0, "dB", 0.1);
+    _form.addSliderField("middle", "Middle", -24.0, 24.0, 0.0, "dB", 0.1);
+    _form.addSliderField("treble", "Treble", -24.0, 24.0, 0.0, "dB", 0.1);
+    _form.addSliderField("presence", "Presence", -24.0, 24.0, 0.0, "dB", 0.1);
+    _form.addSliderField("depth", "Depth", -24.0, 24.0, 0.0, "dB", 0.1);
     _form.addPathField("irPath", "IR Path", "*.wav;*.aiff;*.aif;*.flac");
     _form.addPathField("ampPath", "Amp Path", "*.nam;*.json;*.txt");
 }
@@ -68,6 +68,28 @@ void CreateProfilModule::resized() {
 
 int CreateProfilModule::getRequiredHeight(int /*width*/) const {
     return 88 + _form.getContentHeight() + 20;
+}
+
+void CreateProfilModule::setProfileName(const juce::String& profileName) {
+    _profileNameEditor.setText(profileName, juce::dontSendNotification);
+}
+
+void CreateProfilModule::resetToDefaults(const juce::String& profileName) {
+    setProfileName(profileName);
+
+    juce::NamedValueSet defaultValues;
+    defaultValues.set("masterVolume", 50.0);
+    defaultValues.set("gain", 0.0);
+    defaultValues.set("noiseGate", 10.0);
+    defaultValues.set("bass", 0.0);
+    defaultValues.set("middle", 0.0);
+    defaultValues.set("treble", 0.0);
+    defaultValues.set("presence", 0.0);
+    defaultValues.set("depth", 0.0);
+    defaultValues.set("irPath", {});
+    defaultValues.set("ampPath", {});
+
+    _form.setValues(defaultValues);
 }
 
 void CreateProfilModule::createProfil() {

@@ -14,6 +14,8 @@ class CreateProfilModule : public juce::Component {
     void paint(juce::Graphics& g) override;
     void resized() override;
     int getRequiredHeight(int width) const;
+    void setProfileName(const juce::String& profileName);
+    void resetToDefaults(const juce::String& profileName);
 
     std::function<void(const juce::NamedValueSet&)> onCreateClicked;
     std::function<void()> onCancelClicked;
