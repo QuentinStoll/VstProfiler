@@ -60,6 +60,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Views/CloneView.cpp
     Src/Views/PlayView.cpp
     Src/Views/ProfilView.cpp
+    Src/ProfileManager.cpp
     Src/PluginEditor.cpp
     Src/PluginProcessor.cpp
     Src/AmpEngine.cpp
