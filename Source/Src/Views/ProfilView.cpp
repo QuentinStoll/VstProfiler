@@ -1,6 +1,7 @@
 #include "Views/ProfilView.h"
 
 #include "Modules/AddProfilModule.h"
+#include "Modules/DeleteProfileConfirmationModule.h"
 #include "Stylesheet.h"
 
 ProfilView::ProfilView(ProfilerAudioProcessor& p)
@@ -46,20 +47,7 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
         }
     };
     _editProfilModule.onDeleteClicked = [this](int profileNumber) {
-        juce::String errorMessage;
-        if (_audioProcessor.getProfileManager().deleteProfile(profileNumber - 1, &errorMessage)) {
-            refreshProfileGrid();
-            _notificationBanner.clearAction();
-            _notificationBanner.showMessage("Profile deleted successfully",
-                                            NotificationBanner::Type::Success,
-                                            5000);
-            showProfileGrid();
-        } else {
-            _notificationBanner.clearAction();
-            _notificationBanner.showMessage(errorMessage,
-                                            NotificationBanner::Type::Error,
-                                            5000);
-        }
+        showDeleteProfileModal(profileNumber);
     };
     _editProfilModule.onBackClicked = [this]() {
         showProfileGrid();
@@ -86,22 +74,6 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
     addChildComponent(_modalOverlay);
     addChildComponent(_notificationBanner);
 
-    auto addProfilModule = std::make_unique<AddProfilModule>();
-    addProfilModule->onCreateProfilClicked = [this]() {
-        _modalOverlay.dismiss();
-        _notificationBanner.clearAction();
-        _notificationBanner.dismiss();
-        showCreateProfilModule();
-    };
-    addProfilModule->onImportProfilClicked = [this]() {
-        _modalOverlay.dismiss();
-        _notificationBanner.clearAction();
-        _notificationBanner.dismiss();
-        importProfil();
-    };
-
-    _modalOverlay.setContent(std::move(addProfilModule),
-                             juce::Rectangle<int>(0, 0, 480, 280));
 }
 
 ProfilView::~ProfilView() {
@@ -156,7 +128,58 @@ void ProfilView::resized() {
 }
 
 void ProfilView::showAddProfileModal() {
-    _modalOverlay.show();
+    auto addProfilModule = std::make_unique<AddProfilModule>();
+
+    addProfilModule->onCreateProfilClicked = [this]() {
+        _modalOverlay.dismiss();
+        _notificationBanner.clearAction();
+        _notificationBanner.dismiss();
+        showCreateProfilModule();
+    };
+    addProfilModule->onImportProfilClicked = [this]() {
+        _modalOverlay.dismiss();
+        _notificationBanner.clearAction();
+        _notificationBanner.dismiss();
+        importProfil();
+    };
+
+    _modalOverlay.show(std::move(addProfilModule),
+                       juce::Rectangle<int>(0, 0, 480, 280));
+}
+
+void ProfilView::showDeleteProfileModal(int profileNumber) {
+    const auto* profile = _audioProcessor.getProfileManager().getProfile(profileNumber - 1);
+    const auto profileName = profile != nullptr ? profile->name : "this profile";
+    auto confirmationModule = std::make_unique<DeleteProfileConfirmationModule>(profileName);
+
+    confirmationModule->onConfirm = [this, profileNumber]() {
+        _modalOverlay.dismiss();
+        deleteProfile(profileNumber);
+    };
+
+    confirmationModule->onCancel = [this]() {
+        _modalOverlay.dismiss();
+    };
+
+    _modalOverlay.show(std::move(confirmationModule),
+                       juce::Rectangle<int>(0, 0, 296, 108));
+}
+
+void ProfilView::deleteProfile(int profileNumber) {
+    juce::String errorMessage;
+    if (_audioProcessor.getProfileManager().deleteProfile(profileNumber - 1, &errorMessage)) {
+        refreshProfileGrid();
+        _notificationBanner.clearAction();
+        _notificationBanner.showMessage("Profile deleted successfully",
+                                        NotificationBanner::Type::Success,
+                                        5000);
+        showProfileGrid();
+    } else {
+        _notificationBanner.clearAction();
+        _notificationBanner.showMessage(errorMessage,
+                                        NotificationBanner::Type::Error,
+                                        5000);
+    }
 }
 
 void ProfilView::showProfileGrid() {

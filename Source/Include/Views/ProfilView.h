@@ -35,6 +35,8 @@ class ProfilView : public juce::Component {
     std::unique_ptr<juce::FileChooser> _profileFileChooser;
 
     void showAddProfileModal();
+    void showDeleteProfileModal(int profileNumber);
+    void deleteProfile(int profileNumber);
     void showProfileGrid();
     void showCreateProfilModule();
     void showEditProfilModule(int profileNumber);
