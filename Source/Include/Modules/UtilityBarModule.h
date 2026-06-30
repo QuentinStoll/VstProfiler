@@ -16,12 +16,15 @@ class UtilityBarModule : public juce::Component,
     void paint(juce::Graphics& g) override;
     void resized() override;
 
+    std::function<void()> onExportClicked;
+
    private:
     ProfilerAudioProcessor& _audioProcessor;
     juce::AudioProcessorValueTreeState& _apvts;
 
     CustomComboBox _profilMenu;
-    CustomTextButton _resetButton{"reset", ProfilerStyle::Theme::Orange};
+    CustomTextButton _resetButton{"Reset", ProfilerStyle::Theme::Orange};
+    CustomTextButton _exportButton{"Export", ProfilerStyle::Theme::Dark};
     CustomToggleButton _muteSwitch{"Mute"};
     CustomToggleButton _eqSwitch{"EQ"};
 

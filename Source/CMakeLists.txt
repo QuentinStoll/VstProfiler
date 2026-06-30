@@ -56,6 +56,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Modules/CreateProfilModule.cpp
     Src/Modules/DeleteProfileConfirmationModule.cpp
     Src/Modules/EditProfilModule.cpp
+    Src/Modules/ExportProfilModule.cpp
     Src/Modules/MasterSlidersModule.cpp
     Src/Modules/UtilityBarModule.cpp
     Src/Views/CloneView.cpp

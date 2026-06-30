@@ -44,6 +44,9 @@ class ProfileManager : public juce::ChangeBroadcaster {
     // Returns the folder where profile files are stored.
     juce::File getProfileDirectory() const;
 
+    // Captures the currently edited Play view parameter values in profile-file form.
+    juce::NamedValueSet getCurrentProfileValues(const juce::String& profileName = {}) const;
+
     // Returns the profile id saved as the Play view's current profile.
     juce::String getCurrentProfileId() const;
 
@@ -67,6 +70,11 @@ class ProfileManager : public juce::ChangeBroadcaster {
     // Imports an external profile file and assigns it a fresh local UUID.
     bool importProfile(const juce::File& sourceFile,
                        juce::String* errorMessage = nullptr);
+
+    // Exports profile values to a user-selected `.profilerprofile` file.
+    bool exportProfile(const juce::NamedValueSet& values,
+                       const juce::File& destinationFile,
+                       juce::String* errorMessage = nullptr) const;
 
     // Applies only APVTS-backed values; processor-level apply handles IR files.
     // Applies a loaded profile's stored parameter values.

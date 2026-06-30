@@ -7,6 +7,7 @@ UtilityBarModule::UtilityBarModule(ProfilerAudioProcessor& processor)
       _apvts(processor._apvts) {
     addAndMakeVisible(_profilMenu);
     addAndMakeVisible(_resetButton);
+    addAndMakeVisible(_exportButton);
     addAndMakeVisible(_muteSwitch);
     addAndMakeVisible(_eqSwitch);
 
@@ -25,6 +26,12 @@ UtilityBarModule::UtilityBarModule(ProfilerAudioProcessor& processor)
     _resetButton.onClick = [this]() {
         resetAllParameters();
     };
+
+    _exportButton.onClick = [this]() {
+        if (onExportClicked) {
+            onExportClicked();
+        }
+    };
 }
 
 UtilityBarModule::~UtilityBarModule() {
@@ -37,17 +44,21 @@ void UtilityBarModule::paint(juce::Graphics& /*g*/) {}
 void UtilityBarModule::resized() {
     auto area = getLocalBounds();
     auto areaWidth = area.getWidth();
+    const auto gap = juce::jmax(4, static_cast<int>(areaWidth * 0.01f));
 
-    auto profilMenuArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.5f));
-    area.removeFromLeft(static_cast<int>(areaWidth * 0.01f));
-    auto resetButtonArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.2f));
-    area.removeFromLeft(static_cast<int>(areaWidth * 0.01f));
+    auto profilMenuArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.42f));
+    area.removeFromLeft(juce::jmin(gap, area.getWidth()));
+    auto resetButtonArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.15f));
+    area.removeFromLeft(juce::jmin(gap, area.getWidth()));
+    auto exportButtonArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.15f));
+    area.removeFromLeft(juce::jmin(gap, area.getWidth()));
     auto muteSwitchArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.1f));
-    area.removeFromLeft(static_cast<int>(areaWidth * 0.01f));
-    auto eqSwitchArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.1f));
+    area.removeFromLeft(juce::jmin(gap, area.getWidth()));
+    auto eqSwitchArea = area;
 
     _profilMenu.setBounds(profilMenuArea);
     _resetButton.setBounds(resetButtonArea);
+    _exportButton.setBounds(exportButtonArea);
     _muteSwitch.setBounds(muteSwitchArea);
     _eqSwitch.setBounds(eqSwitchArea);
 }

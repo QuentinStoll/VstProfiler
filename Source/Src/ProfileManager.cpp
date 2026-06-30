@@ -43,6 +43,14 @@ const juce::Identifier pathParameterIds[] = {
     juce::Identifier{"ampPath"},
 };
 
+juce::File ensureProfileFileExtension(const juce::File& file) {
+    if (file.hasFileExtension(ProfileManager::profileFileExtension)) {
+        return file;
+    }
+
+    return file.withFileExtension(ProfileManager::profileFileExtension);
+}
+
 // Returns the settings-backed folder that owns all profile files.
 juce::File getDefaultProfileDirectory() {
     // Profiles live with other plugin settings, not in the JUCE cache.
@@ -132,6 +140,54 @@ juce::NamedValueSet ProfileManager::getProfileValues(int profileIndex) const {
 // Returns the directory used for creating/importing profile files.
 juce::File ProfileManager::getProfileDirectory() const {
     return _profileDirectory;
+}
+
+// Captures current APVTS values using the profile JSON field names.
+juce::NamedValueSet ProfileManager::getCurrentProfileValues(const juce::String& profileName) const {
+    juce::NamedValueSet values;
+    auto resolvedProfileName = profileName.trim();
+
+    const auto currentProfileIndex = getCurrentProfileIndex();
+    if (resolvedProfileName.isEmpty()) {
+        if (const auto* profile = getProfile(currentProfileIndex)) {
+            resolvedProfileName = profile->name;
+        }
+    }
+
+    if (resolvedProfileName.isEmpty()) {
+        resolvedProfileName = "Exported Profile";
+    }
+
+    if (const auto* profile = getProfile(currentProfileIndex)) {
+        if (const auto* irPath = profile->values.getVarPointer("irPath")) {
+            values.set("irPath", irPath->toString());
+        }
+
+        if (const auto* ampPath = profile->values.getVarPointer("ampPath")) {
+            values.set("ampPath", ampPath->toString());
+        }
+    }
+
+    auto setCurrentParameterValue = [this, &values](const juce::Identifier& fieldId,
+                                                    const juce::String& parameterId) {
+        if (const auto* value = _apvts.getRawParameterValue(parameterId)) {
+            values.set(fieldId, static_cast<double>(value->load()));
+        }
+    };
+
+    setCurrentParameterValue("masterVolume", "master");
+    setCurrentParameterValue("gain", "gain");
+    setCurrentParameterValue("noiseGate", "noise");
+    setCurrentParameterValue("bass", "bass");
+    setCurrentParameterValue("middle", "mid");
+    setCurrentParameterValue("treble", "treble");
+    setCurrentParameterValue("presence", "presence");
+    setCurrentParameterValue("depth", "depth");
+
+    values.set("irPath", values.getWithDefault("irPath", juce::var{}).toString());
+    values.set("ampPath", values.getWithDefault("ampPath", juce::var{}).toString());
+
+    return normaliseProfileValues(values, resolvedProfileName);
 }
 
 // Returns the persisted current profile id used by the Play view.
@@ -277,6 +333,48 @@ bool ProfileManager::importProfile(const juce::File& sourceFile,
     refreshProfiles();
     sendChangeMessage();
     return true;
+}
+
+// Exports one profile JSON file to a caller-selected location.
+bool ProfileManager::exportProfile(const juce::NamedValueSet& values,
+                                   const juce::File& destinationFile,
+                                   juce::String* errorMessage) const {
+    if (destinationFile.getFullPathName().trim().isEmpty()) {
+        setError(errorMessage, "Choose an export file.");
+        return false;
+    }
+
+    auto exportFile = ensureProfileFileExtension(destinationFile);
+    if (exportFile.isDirectory()) {
+        setError(errorMessage, "Choose a file path, not a folder.");
+        return false;
+    }
+
+    const auto parentDirectory = exportFile.getParentDirectory();
+    if (!parentDirectory.isDirectory()) {
+        setError(errorMessage, "Export folder does not exist: " + parentDirectory.getFullPathName());
+        return false;
+    }
+
+    const auto fallbackName = exportFile.getFileNameWithoutExtension().trim().isNotEmpty()
+                                  ? exportFile.getFileNameWithoutExtension()
+                                  : "Exported Profile";
+    const auto profileName = getProfileNameFromValues(values, fallbackName);
+    const auto timestamp = getTimestamp();
+
+    Profile profile;
+    profile.id = juce::Uuid().toDashedString();
+    profile.name = profileName;
+    profile.file = exportFile;
+    profile.createdAt = timestamp;
+    profile.updatedAt = timestamp;
+    profile.values = normaliseProfileValues(values, profileName);
+
+    if (!validateProfileValues(profile.values, errorMessage)) {
+        return false;
+    }
+
+    return writeProfileFile(profile, errorMessage);
 }
 
 // Applies APVTS-backed values from one loaded profile.
