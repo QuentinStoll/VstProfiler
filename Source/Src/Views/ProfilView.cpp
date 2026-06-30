@@ -65,7 +65,6 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
 
     addChildComponent(_modalOverlay);
     addChildComponent(_notificationBanner);
-
 }
 
 ProfilView::~ProfilView() {
