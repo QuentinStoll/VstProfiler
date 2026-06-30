@@ -60,15 +60,7 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
     _grid.onProfileClicked = [this](int profileNumber) {
         _notificationBanner.clearAction();
         _notificationBanner.dismiss();
-
-        juce::String errorMessage;
-        if (_audioProcessor.applyProfile(profileNumber - 1, &errorMessage)) {
-            showEditProfilModule(profileNumber);
-        } else {
-            _notificationBanner.showMessage(errorMessage,
-                                            NotificationBanner::Type::Error,
-                                            5000);
-        }
+        showEditProfilModule(profileNumber);
     };
 
     addChildComponent(_modalOverlay);

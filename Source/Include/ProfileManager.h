@@ -125,6 +125,10 @@ class ProfileManager : public juce::ChangeBroadcaster {
     static juce::NamedValueSet normaliseProfileValues(const juce::NamedValueSet& values,
                                                       const juce::String& profileName);
 
+    // Rejects invalid known profile fields before they can be saved or applied.
+    static bool validateProfileValues(const juce::NamedValueSet& values,
+                                      juce::String* errorMessage);
+
     // Writes an error message only when the caller provided storage for it.
     static void setError(juce::String* errorMessage, const juce::String& message);
 

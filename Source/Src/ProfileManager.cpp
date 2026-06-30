@@ -1,6 +1,7 @@
 #include "ProfileManager.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "SettingsPath.h"
 
@@ -19,6 +20,28 @@ const juce::Identifier currentProfileId{"currentProfileId"};
 const juce::String profileFormat{"profilerprofile"};
 constexpr int profileFormatVersion = 1;
 const juce::String playViewSettingsFileName{"play_view_settings.json"};
+
+struct NumericProfileParameterRule {
+    juce::Identifier id;
+    double minimum = 0.0;
+    double maximum = 0.0;
+};
+
+const NumericProfileParameterRule numericParameterRules[] = {
+    {juce::Identifier{"masterVolume"}, 0.0, 100.0},
+    {juce::Identifier{"gain"}, -12.0, 12.0},
+    {juce::Identifier{"noiseGate"}, 0.0, 60.0},
+    {juce::Identifier{"bass"}, -24.0, 24.0},
+    {juce::Identifier{"middle"}, -24.0, 24.0},
+    {juce::Identifier{"treble"}, -24.0, 24.0},
+    {juce::Identifier{"presence"}, -24.0, 24.0},
+    {juce::Identifier{"depth"}, -24.0, 24.0},
+};
+
+const juce::Identifier pathParameterIds[] = {
+    juce::Identifier{"irPath"},
+    juce::Identifier{"ampPath"},
+};
 
 // Returns the settings-backed folder that owns all profile files.
 juce::File getDefaultProfileDirectory() {
@@ -152,6 +175,10 @@ bool ProfileManager::createProfile(const juce::NamedValueSet& values,
     profile.updatedAt = timestamp;
     profile.values = normaliseProfileValues(values, profileName);
 
+    if (!validateProfileValues(profile.values, errorMessage)) {
+        return false;
+    }
+
     if (!writeProfileFile(profile, errorMessage)) {
         return false;
     }
@@ -175,6 +202,10 @@ bool ProfileManager::updateProfile(int profileIndex,
     updatedProfile.name = getProfileNameFromValues(values, updatedProfile.name);
     updatedProfile.updatedAt = getTimestamp();
     updatedProfile.values = normaliseProfileValues(values, updatedProfile.name);
+
+    if (!validateProfileValues(updatedProfile.values, errorMessage)) {
+        return false;
+    }
 
     if (!writeProfileFile(updatedProfile, errorMessage)) {
         return false;
@@ -235,6 +266,10 @@ bool ProfileManager::importProfile(const juce::File& sourceFile,
     importedProfile->values = normaliseProfileValues(importedProfile->values,
                                                      importedProfile->name);
 
+    if (!validateProfileValues(importedProfile->values, errorMessage)) {
+        return false;
+    }
+
     if (!writeProfileFile(*importedProfile, errorMessage)) {
         return false;
     }
@@ -254,6 +289,9 @@ bool ProfileManager::applyProfile(int profileIndex,
     }
 
     const auto& values = profile->values;
+    if (!validateProfileValues(values, errorMessage)) {
+        return false;
+    }
 
     // These ids are the UI/form field ids; each maps to the matching APVTS id.
     if (const auto* value = values.getVarPointer("masterVolume")) {
@@ -414,6 +452,12 @@ std::optional<Profile> ProfileManager::readProfileFile(const juce::File& file,
         return std::nullopt;
     }
 
+    const auto version = rootObject->getProperty(versionId);
+    if (!version.isVoid() && static_cast<int>(version) != profileFormatVersion) {
+        setError(errorMessage, "Unsupported profile version in: " + file.getFileName());
+        return std::nullopt;
+    }
+
     Profile profile;
     profile.file = file;
     profile.id = rootObject->getProperty(idId).toString();
@@ -446,9 +490,16 @@ std::optional<Profile> ProfileManager::readProfileFile(const juce::File& file,
         for (int i = 0; i < parameterProperties.size(); ++i) {
             profile.values.set(parameterProperties.getName(i), parameterProperties.getValueAt(i));
         }
+    } else if (!parameters.isVoid()) {
+        setError(errorMessage, "Invalid profile parameters in: " + file.getFileName());
+        return std::nullopt;
     }
 
     profile.values = normaliseProfileValues(profile.values, profile.name);
+    if (!validateProfileValues(profile.values, errorMessage)) {
+        return std::nullopt;
+    }
+
     return profile;
 }
 
@@ -498,6 +549,47 @@ juce::NamedValueSet ProfileManager::normaliseProfileValues(const juce::NamedValu
     auto normalisedValues = values;
     normalisedValues.set(profileNameId, profileName);
     return normalisedValues;
+}
+
+// Validates known profile fields so bad files are rejected with a clear message.
+bool ProfileManager::validateProfileValues(const juce::NamedValueSet& values,
+                                           juce::String* errorMessage) {
+    for (const auto& rule : numericParameterRules) {
+        const auto* value = values.getVarPointer(rule.id);
+        if (value == nullptr) {
+            continue;
+        }
+
+        if (!(value->isInt() || value->isInt64() || value->isDouble())) {
+            setError(errorMessage, "Invalid value for " + rule.id.toString() + ": expected a number.");
+            return false;
+        }
+
+        const auto numericValue = static_cast<double>(*value);
+        if (!std::isfinite(numericValue) || numericValue < rule.minimum || numericValue > rule.maximum) {
+            setError(errorMessage,
+                     "Invalid value for " + rule.id.toString() + ": expected "
+                         + juce::String(rule.minimum) + " to " + juce::String(rule.maximum) + ".");
+            return false;
+        }
+    }
+
+    for (const auto& pathId : pathParameterIds) {
+        const auto* value = values.getVarPointer(pathId);
+        if (value != nullptr && !value->isVoid() && !value->isString()) {
+            setError(errorMessage, "Invalid value for " + pathId.toString() + ": expected a file path.");
+            return false;
+        }
+    }
+
+    if (const auto* value = values.getVarPointer(profileNameId)) {
+        if (!value->isString() || value->toString().trim().isEmpty()) {
+            setError(errorMessage, "Invalid value for profileName: expected a non-empty name.");
+            return false;
+        }
+    }
+
+    return true;
 }
 
 // Stores a caller-visible error message when the caller requested one.
