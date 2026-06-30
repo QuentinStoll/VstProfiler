@@ -536,7 +536,7 @@ bool ProfileManager::writeProfileFile(const Profile& profile,
 
 // Reads and validates a profile JSON file from disk.
 std::optional<Profile> ProfileManager::readProfileFile(const juce::File& file,
-                                                               juce::String* errorMessage) const {
+                                                       juce::String* errorMessage) const {
     auto parsed = juce::JSON::parse(file.loadFileAsString());
     auto* rootObject = parsed.getDynamicObject();
 
@@ -666,8 +666,7 @@ bool ProfileManager::validateProfileValues(const juce::NamedValueSet& values,
         const auto numericValue = static_cast<double>(*value);
         if (!std::isfinite(numericValue) || numericValue < rule.minimum || numericValue > rule.maximum) {
             setError(errorMessage,
-                     "Invalid value for " + rule.id.toString() + ": expected "
-                         + juce::String(rule.minimum) + " to " + juce::String(rule.maximum) + ".");
+                     "Invalid value for " + rule.id.toString() + ": expected " + juce::String(rule.minimum) + " to " + juce::String(rule.maximum) + ".");
             return false;
         }
     }

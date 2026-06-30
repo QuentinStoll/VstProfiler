@@ -191,8 +191,7 @@ void NotificationBanner::timerCallback() {
 }
 
 void NotificationBanner::updateMouseCursor(juce::Point<int> position) {
-    const auto isInteractive = _dismissBounds.contains(position)
-                               || (_actionLabel.isNotEmpty() && _actionBounds.contains(position));
+    const auto isInteractive = _dismissBounds.contains(position) || (_actionLabel.isNotEmpty() && _actionBounds.contains(position));
 
     setMouseCursor(juce::MouseCursor(isInteractive
                                          ? juce::MouseCursor::PointingHandCursor

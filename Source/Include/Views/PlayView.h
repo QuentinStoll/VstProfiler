@@ -1,7 +1,7 @@
 #include <JuceHeader.h>
 
-#include "Components/NotificationBanner.h"
 #include "Components/CustomTabs.h"
+#include "Components/NotificationBanner.h"
 #include "Modules/ExportProfilModule.h"
 #include "Modules/MasterSlidersModule.h"
 #include "Modules/UtilityBarModule.h"
