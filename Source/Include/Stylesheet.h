@@ -3,6 +3,7 @@
 
 namespace ProfilerStyle {
 enum class Theme {
+    Darker,
     Dark,
     Light,
     Orange

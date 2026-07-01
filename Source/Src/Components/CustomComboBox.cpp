@@ -1,14 +1,14 @@
 #include "Components/CustomComboBox.h"
 
-#include "Styles/Stylesheet.h"
+#include "Stylesheet.h"
 
 //=============================================================================
 // CustomLookAndFeelLF Implementation
 //=============================================================================
 
-void CustomComboBoxLF::drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown,
-                                    int buttonX, int buttonY, int buttonW, int buttonH,
-                                    juce::ComboBox& box) {
+void CustomComboBoxLF::drawComboBox(juce::Graphics& g, int width, int height, bool /*isButtonDown*/,
+                                    int /*buttonX*/, int /*buttonY*/, int /*buttonW*/, int /*buttonH*/,
+                                    juce::ComboBox& /*box*/) {
     auto area = juce::Rectangle<int>(0, 0, width, height).toFloat().reduced(1.0f);
     auto cornerSize = 4.0f;
 
@@ -37,7 +37,7 @@ void CustomComboBoxLF::drawComboBox(juce::Graphics& g, int width, int height, bo
 
 void CustomComboBoxLF::positionComboBoxText(juce::ComboBox& box, juce::Label& label) {
     label.setBounds(1, 1, box.getWidth() - 25, box.getHeight() - 2);
-    label.setFont(juce::Font(16.0f));
+    label.setFont(juce::Font(juce::FontOptions(16.0f)));
     label.setJustificationType(juce::Justification::centred);
 }
 
@@ -48,11 +48,11 @@ void CustomComboBoxLF::drawPopupMenuBackground(juce::Graphics& g, int width, int
 }
 
 void CustomComboBoxLF::drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>& area,
-                                         const bool isSeparator, const bool isActive,
+                                         const bool /*isSeparator*/, const bool /*isActive*/,
                                          const bool isHighlighted, const bool isChecked,
-                                         const bool hasSubMenu, const juce::String& text,
-                                         const juce::String& shortcutKeyText,
-                                         const juce::Drawable* icon, const juce::Colour* const textColourToUse) {
+                                         const bool /*hasSubMenu*/, const juce::String& text,
+                                         const juce::String& /*shortcutKeyText*/,
+                                         const juce::Drawable* /*icon*/, const juce::Colour* const /*textColourToUse*/) {
     auto r = area.toFloat().reduced(1.0f);
 
     // If the element is hovered (highlighted)
@@ -63,7 +63,7 @@ void CustomComboBoxLF::drawPopupMenuItem(juce::Graphics& g, const juce::Rectangl
 
     // Text color
     g.setColour(isHighlighted ? juce::Colours::white : juce::Colours::white.withAlpha(0.7f));
-    g.setFont(juce::Font(15.0f));
+    g.setFont(juce::Font(juce::FontOptions(15.0f)));
 
     // Text centered vertically and left aligned with some padding
     auto textRect = r.reduced(10.0f, 0);

@@ -21,22 +21,48 @@ set_target_properties(${PLUGIN_NAME}  PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
+juce_add_binary_data(ProfilerAssets
+    SOURCES
+        Assets/Svg/cross-icon.svg
+        Assets/Svg/music-note.svg
+        Assets/Svg/plus-icon.svg
+)
 
 # Collect source files
 target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomComboBox.cpp
-    Src/Components/CustomSlider.cpp
+    Src/Components/CustomImageButton.cpp
+    Src/Components/CustomKnob.cpp
+    Src/Components/CustomLinearSlider.cpp
+    Src/Components/PathSelector.cpp
     Src/Components/CustomTabBar.cpp
     Src/Components/CustomTabs.cpp
     Src/Components/CustomTextButton.cpp
+    Src/Components/CustomTextEditor.cpp
     Src/Components/CustomToggleButton.cpp
+    Src/Components/FormFields/FormComboField.cpp
+    Src/Components/FormComponent.cpp
+    Src/Components/FormFields/FormField.cpp
+    Src/Components/FormFields/FormPathField.cpp
+    Src/Components/FormFields/FormSliderField.cpp
+    Src/Components/FormFields/FormTextField.cpp
+    Src/Components/FormFields/FormToggleField.cpp
+    Src/Components/ModalOverlay.cpp
+    Src/Components/NotificationBanner.cpp
+    Src/Modules/AddProfilModule.cpp
     Src/Modules/AdvancedEqModule.cpp
     Src/Modules/BasicEqModule.cpp
+    Src/Modules/CardGridModule.cpp
+    Src/Modules/CreateProfilModule.cpp
+    Src/Modules/DeleteProfileConfirmationModule.cpp
+    Src/Modules/EditProfilModule.cpp
+    Src/Modules/ExportProfilModule.cpp
     Src/Modules/MasterSlidersModule.cpp
     Src/Modules/UtilityBarModule.cpp
     Src/Views/CloneView.cpp
     Src/Views/PlayView.cpp
     Src/Views/ProfilView.cpp
+    Src/ProfileManager.cpp
     Src/PluginEditor.cpp
     Src/PluginProcessor.cpp
     Src/AmpEngine.cpp
@@ -50,9 +76,9 @@ add_compile_definitions(JUCE_VST3_CAN_REPLACE_VST2=0)
 
 # Link JUCE modules from juce_setup.cmake
 if(NOT WIN32)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} curl simdjson)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets curl simdjson)
 else()
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} simdjson)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets simdjson)
 endif()
 
 # Include directories

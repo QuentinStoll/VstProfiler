@@ -1,4 +1,12 @@
-#include "JuceHeader.h"
+#pragma once
+
+#include <JuceHeader.h>
+
+#include "Components/ModalOverlay.h"
+#include "Components/NotificationBanner.h"
+#include "Modules/CardGridModule.h"
+#include "Modules/CreateProfilModule.h"
+#include "Modules/EditProfilModule.h"
 #include "PluginProcessor.h"
 
 class ProfilView : public juce::Component {
@@ -10,6 +18,28 @@ class ProfilView : public juce::Component {
     void resized() override;
 
    private:
-    juce::TextButton _sampleButton{"Sample Button"};
+    enum class ContentMode {
+        ProfileGrid,
+        CreateProfil,
+        EditProfil
+    };
+
+    juce::Viewport _viewport;
+    CardGridModule _grid;
+    CreateProfilModule _createProfilModule;
+    EditProfilModule _editProfilModule;
+    ModalOverlay _modalOverlay;
+    NotificationBanner _notificationBanner;
     ProfilerAudioProcessor& _audioProcessor;
+    ContentMode _contentMode = ContentMode::ProfileGrid;
+    std::unique_ptr<juce::FileChooser> _profileFileChooser;
+
+    void showAddProfileModal();
+    void showDeleteProfileModal(int profileNumber);
+    void deleteProfile(int profileNumber);
+    void showProfileGrid();
+    void showCreateProfilModule();
+    void showEditProfilModule(int profileNumber);
+    void importProfil();
+    void refreshProfileGrid();
 };

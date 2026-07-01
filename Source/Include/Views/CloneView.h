@@ -1,6 +1,7 @@
-#include "JuceHeader.h"
+#include <JuceHeader.h>
+
+#include "Components/CustomTextButton.h"
 #include "PluginProcessor.h"
-#include "Styles/CustomButtonLF.h"
 
 class CloneView : public juce::Component {
    public:
@@ -11,10 +12,9 @@ class CloneView : public juce::Component {
     void resized() override;
 
    private:
-    CustomButtonLF _lookAndFeel;
     ProfilerAudioProcessor& _audioProcessor;
 
-    juce::TextButton _sweepButton{"Start Sweep"};
-    juce::TextButton _loadIRButton{"Load IR"};
-    juce::TextButton _loadAmpButton{"Load Amp"};
+    CustomTextButton _sweepButton{"Start Sweep"};
+    CustomTextButton _loadIRButton{"Load IR"};
+    CustomTextButton _loadAmpButton{"Load Amp"};
 };

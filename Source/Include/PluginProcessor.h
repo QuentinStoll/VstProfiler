@@ -4,6 +4,7 @@
 
 #include "AmpEngine.h"
 #include "AmpProfiling.h"
+#include "ProfileManager.h"
 
 //==============================================================================
 /**
@@ -54,8 +55,12 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     // Loading the Impulse responce file
     void loadIRFile();
+    bool loadIRFile(const juce::File& file);
+    bool applyProfile(int profileIndex, juce::String* errorMessage = nullptr);
     void startAmpProfiling();
     void startGainAnalysis();
+    ProfileManager& getProfileManager() noexcept;
+    const ProfileManager& getProfileManager() const noexcept;
 
    private:
     enum ChainPositions {
@@ -105,6 +110,8 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     std::atomic<float>* _isMuteParam{nullptr};
     std::atomic<float>* _isEqEnabledParam{nullptr};
+
+    ProfileManager _profileManager;
 
     void updateEqCoefficients();
 

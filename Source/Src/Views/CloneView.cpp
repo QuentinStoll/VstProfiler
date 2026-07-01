@@ -1,11 +1,9 @@
 #include "Views/CloneView.h"
 
-#include "Styles/Stylesheet.h"
+#include "Stylesheet.h"
 
 CloneView::CloneView(ProfilerAudioProcessor& p)
     : _audioProcessor(p) {
-    setLookAndFeel(&_lookAndFeel);
-
     addAndMakeVisible(_sweepButton);
     _sweepButton.onClick = [this]() {
         _audioProcessor.startAmpProfiling();
@@ -41,18 +39,18 @@ void CloneView::paint(juce::Graphics& g) {
 }
 
 void CloneView::resized() {
-    auto area = getLocalBounds().reduced(getWidth() * 0.1f);
+    auto area = getLocalBounds().reduced(static_cast<int>(getWidth() * 0.1f));
 
     float spacing = getWidth() * 0.01f;
     float buttonWidth = (area.getWidth() - (spacing * 2)) / 3.0f;
 
     float buttonHeight = buttonWidth;
 
-    auto rowArea = area.withHeight(buttonHeight).withCentre(getLocalBounds().getCentre());
+    auto rowArea = area.withHeight(static_cast<int>(buttonHeight)).withCentre(getLocalBounds().getCentre());
 
-    _sweepButton.setBounds(rowArea.removeFromLeft(buttonWidth).toNearestInt());
-    rowArea.removeFromLeft(spacing);
-    _loadIRButton.setBounds(rowArea.removeFromLeft(buttonWidth).toNearestInt());
-    rowArea.removeFromLeft(spacing);
-    _loadAmpButton.setBounds(rowArea.removeFromLeft(buttonWidth).toNearestInt());
+    _sweepButton.setBounds(rowArea.removeFromLeft(static_cast<int>(buttonWidth)).toNearestInt());
+    rowArea.removeFromLeft(static_cast<int>(spacing));
+    _loadIRButton.setBounds(rowArea.removeFromLeft(static_cast<int>(buttonWidth)).toNearestInt());
+    rowArea.removeFromLeft(static_cast<int>(spacing));
+    _loadAmpButton.setBounds(rowArea.removeFromLeft(static_cast<int>(buttonWidth)).toNearestInt());
 }

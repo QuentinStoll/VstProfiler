@@ -7,9 +7,13 @@
       <GROUP id="{1067897D-12FB-92DD-7738-E02416E4000A}" name="Components">
         <FILE id="hssDtW" name="CustomComboBox.h" compile="0" resource="0"
               file="Source/Include/Components/CustomComboBox.h"/>
+        <FILE id="CibH01" name="CustomImageButton.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomImageButton.h"/>
         <FILE id="ftiu49" name="CustomTextButton.h" compile="0" resource="0"
               file="Source/Include/Components/CustomTextButton.h"/>
-        <FILE id="up6Ar1" name="CustomSlider.h" compile="0" resource="0" file="Source/Include/Components/CustomSlider.h"/>
+        <FILE id="up6Ar1" name="CustomKnob.h" compile="0" resource="0" file="Source/Include/Components/CustomKnob.h"/>
+        <FILE id="LinSlH" name="CustomLinearSlider.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomLinearSlider.h"/>
         <FILE id="GdUZQl" name="CustomTabs.h" compile="0" resource="0" file="Source/Include/Components/CustomTabs.h"/>
         <FILE id="tcTwa0" name="CustomTabBar.h" compile="0" resource="0" file="Source/Include/Components/CustomTabBar.h"/>
         <FILE id="EYUdcH" name="CustomToggleButton.h" compile="0" resource="0"
@@ -24,12 +28,6 @@
         <FILE id="vAKHlH" name="UtilityBarModule.h" compile="0" resource="0"
               file="Source/Include/Modules/UtilityBarModule.h"/>
       </GROUP>
-      <GROUP id="{1B93253F-00A0-983E-66B4-86703E82CAD3}" name="Styles">
-        <FILE id="miSdqm" name="CustomButtonLF.h" compile="0" resource="0"
-              file="Source/Include/Styles/CustomButtonLF.h"/>
-        <FILE id="SK15uX" name="CustomTabsLF.h" compile="0" resource="0" file="Source/Include/Styles/CustomTabsLF.h"/>
-        <FILE id="oeWtYH" name="Stylesheet.h" compile="0" resource="0" file="Source/Include/Styles/Stylesheet.h"/>
-      </GROUP>
       <GROUP id="{419AB495-F068-27D4-A555-0CE15B1FA834}" name="Views">
         <FILE id="K4sqrq" name="CloneView.h" compile="0" resource="0" file="Source/Include/Views/CloneView.h"/>
         <FILE id="IN4JHx" name="PlayView.h" compile="0" resource="0" file="Source/Include/Views/PlayView.h"/>
@@ -37,6 +35,7 @@
       </GROUP>
       <FILE id="WeqCms" name="ProfilerConstantValues.h" compile="0" resource="0"
             file="Source/Include/ProfilerConstantValues.h"/>
+      <FILE id="oeWtYH" name="Stylesheet.h" compile="0" resource="0" file="Source/Include/Stylesheet.h"/>
       <FILE id="BQk8Z4" name="AmpEngine.h" compile="0" resource="0" file="Source/Include/AmpEngine.h"/>
       <FILE id="JjJUYx" name="AmpProfiling.h" compile="0" resource="0" file="Source/Include/AmpProfiling.h"/>
       <FILE id="dEQ4CG" name="PluginEditor.h" compile="0" resource="0" file="Source/Include/PluginEditor.h"/>
@@ -51,10 +50,14 @@
       <GROUP id="{AA97C183-8D39-580E-1626-3283C80FFCDE}" name="Components">
         <FILE id="aHd87L" name="CustomComboBox.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomComboBox.cpp"/>
+        <FILE id="CibC01" name="CustomImageButton.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomImageButton.cpp"/>
         <FILE id="Wx776V" name="CustomTextButton.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomTextButton.cpp"/>
-        <FILE id="RR5QUf" name="CustomSlider.cpp" compile="1" resource="0"
-              file="Source/Src/Components/CustomSlider.cpp"/>
+        <FILE id="RR5QUf" name="CustomKnob.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomKnob.cpp"/>
+        <FILE id="LinSlC" name="CustomLinearSlider.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomLinearSlider.cpp"/>
         <FILE id="XkxKqA" name="CustomTabs.cpp" compile="1" resource="0" file="Source/Src/Components/CustomTabs.cpp"/>
         <FILE id="ClPX26" name="CustomTabBar.cpp" compile="1" resource="0"
               file="Source/Src/Components/CustomTabBar.cpp"/>

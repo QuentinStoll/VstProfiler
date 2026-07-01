@@ -1,14 +1,23 @@
-#include "Components/CustomTextButton.h";
+#include "Components/CustomTextButton.h"
 
 //=============================================================================
 // CustomTextButtonLF Implementation
 //=============================================================================
+
+void CustomTextButtonLF::setOutlineVisible(bool shouldShowOutline) {
+    _outlineVisible = shouldShowOutline;
+}
+
+void CustomTextButtonLF::setOutlineColour(juce::Colour outlineColour) {
+    _outlineColour = outlineColour;
+}
 
 void CustomTextButtonLF::drawButtonBackground(juce::Graphics& g, juce::Button& button,
                                               const juce::Colour& backgroundColour,
                                               bool isMouseOverButton, bool isButtonDown) {
     auto area = button.getLocalBounds().toFloat();
     auto cornerSize = 4.0f;
+    auto fillArea = _outlineVisible ? area.reduced(2.0f) : area;
 
     auto baseColour = backgroundColour;
     if (isButtonDown)
@@ -21,13 +30,18 @@ void CustomTextButtonLF::drawButtonBackground(juce::Graphics& g, juce::Button& b
         baseColour.brighter(0.2f),
         baseColour.darker(0.2f),
         0.9f));
-    g.fillRoundedRectangle(area.reduced(1.0f), cornerSize);
+    g.fillRoundedRectangle(fillArea, cornerSize);
+
+    if (_outlineVisible) {
+        g.setColour(_outlineColour);
+        g.drawRoundedRectangle(area, cornerSize + 2.0f, 3.0f);
+    }
 }
 
 void CustomTextButtonLF::drawButtonText(juce::Graphics& g, juce::TextButton& button,
-                                        bool isMouseOverButton, bool isButtonDown) {
+                                        bool /*isMouseOverButton*/, bool /*isButtonDown*/) {
     g.setColour(button.findColour(juce::TextButton::textColourOffId));
-    g.setFont(juce::Font(16.0f));
+    g.setFont(juce::Font(juce::FontOptions(16.0f)));
     g.drawText(button.getButtonText(), button.getLocalBounds(),
                juce::Justification::centred, true);
 }
@@ -36,7 +50,8 @@ void CustomTextButtonLF::drawButtonText(juce::Graphics& g, juce::TextButton& but
 // CustomTextButton Implementation
 //=============================================================================
 
-CustomTextButton::CustomTextButton(const juce::String& buttonName, ProfilerStyle::Theme theme) : juce::TextButton(buttonName) {
+CustomTextButton::CustomTextButton(const juce::String& buttonName,
+                                   ProfilerStyle::Theme theme) : juce::TextButton(buttonName) {
     setTheme(theme);
     setLookAndFeel(&_customLF);
 }
@@ -47,6 +62,11 @@ CustomTextButton::~CustomTextButton() {
 
 void CustomTextButton::setTheme(ProfilerStyle::Theme theme) {
     switch (theme) {
+        case ProfilerStyle::Theme::Darker:
+            setColour(juce::TextButton::buttonColourId, ProfilerStyle::Colors::darkestGrey);
+            setColour(juce::TextButton::textColourOffId, ProfilerStyle::Colors::white);
+            setOutlineVisible(true);
+            break;
         case ProfilerStyle::Theme::Dark:
             setColour(juce::TextButton::buttonColourId, ProfilerStyle::Colors::darkerGrey);
             setColour(juce::TextButton::textColourOffId, ProfilerStyle::Colors::white);
@@ -60,6 +80,16 @@ void CustomTextButton::setTheme(ProfilerStyle::Theme theme) {
             setColour(juce::TextButton::textColourOffId, ProfilerStyle::Colors::white);
             break;
     }
+}
+
+void CustomTextButton::setOutlineVisible(bool shouldShowOutline) {
+    _customLF.setOutlineVisible(shouldShowOutline);
+    repaint();
+}
+
+void CustomTextButton::setOutlineColour(juce::Colour outlineColour) {
+    _customLF.setOutlineColour(outlineColour);
+    repaint();
 }
 
 void CustomTextButton::paint(juce::Graphics& g) {

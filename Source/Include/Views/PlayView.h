@@ -1,10 +1,11 @@
-#include "Components/CustomSlider.h"
-#include "Components/CustomTabBar.h"
-#include "JuceHeader.h"
+#include <JuceHeader.h>
+
+#include "Components/CustomTabs.h"
+#include "Components/NotificationBanner.h"
+#include "Modules/ExportProfilModule.h"
 #include "Modules/MasterSlidersModule.h"
 #include "Modules/UtilityBarModule.h"
 #include "PluginProcessor.h"
-#include "Styles/CustomButtonLF.h"
 
 class PlayView : public juce::Component {
    public:
@@ -15,15 +16,26 @@ class PlayView : public juce::Component {
     void resized() override;
 
    private:
-    ProfilerAudioProcessor& _audioProcessor;
+    enum class ContentMode {
+        PlayControls,
+        ExportProfil
+    };
 
-    CustomTabBar _eqDisplayBar;
+    ProfilerAudioProcessor& _audioProcessor;
+    CustomTabs _eqDisplay;
 
     UtilityBarModule _utilityBar;
 
-    std::unique_ptr<juce::Component> _currentContent;
-
-    void changeEqModule(int index);
-
     MasterSlidersModule _masterSliders;
+    juce::Viewport _exportViewport;
+    ExportProfilModule _exportProfilModule;
+    NotificationBanner _notificationBanner;
+    ContentMode _contentMode = ContentMode::PlayControls;
+
+    void showPlayControls();
+    void showExportProfilModule();
+    void exportProfil(const juce::NamedValueSet& values, const juce::File& destinationFile);
+    void createProfil(const juce::NamedValueSet& values);
+    juce::String getDefaultExportName() const;
+    juce::File getDefaultExportFile(const juce::String& profileName) const;
 };

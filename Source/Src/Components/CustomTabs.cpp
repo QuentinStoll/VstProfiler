@@ -1,37 +1,27 @@
 #include "Components/CustomTabs.h"
 
-#include "Views/CloneView.h"
-#include "Views/PlayView.h"
-#include "Views/ProfilView.h"
-
-CustomTabs::CustomTabs(ProfilerAudioProcessor& p) : _audioProcessor(p) {
-    setLookAndFeel(&_lookAndFeel);
-
+CustomTabs::CustomTabs(std::vector<TabInfo> tabs, int defaultIndex) : _tabs(std::move(tabs)) {
     addAndMakeVisible(_tabBar);
 
-    _tabBar.addTab("Clone", juce::Colours::darkgrey, 0);
-    _tabBar.addTab("Play", juce::Colours::darkgrey, 1);
-    _tabBar.addTab("Profil", juce::Colours::darkgrey, 2);
+    for (size_t i = 0; i < _tabs.size(); ++i) {
+        _tabBar.addTab(_tabs[static_cast<size_t>(i)].name, juce::Colours::darkgrey, static_cast<int>(i));
+    }
 
     _tabBar.onTabChanged = [this](int index) { changeView(index); };
 
-    _tabBar.setCurrentTabIndex(1);  // Set the initial tab index to 1 (Play)
+    _tabBar.setCurrentTabIndex(defaultIndex);
 }
 
-CustomTabs::~CustomTabs() {
-    setLookAndFeel(nullptr);
-}
-
-void CustomTabs::paint(juce::Graphics& g) {}
+void CustomTabs::paint(juce::Graphics& /*g*/) {}
 
 void CustomTabs::resized() {
     auto area = getLocalBounds();
 
-    auto tabBarHeight = getHeight() * 0.07f;    // 7% of the total height for the tab bar
-    auto tabBarWidth = (tabBarHeight * 5) * 3;  // Calculate the total width needed for 3 tabs, each 5 times the tab bar height
+    auto tabBarHeight = getHeight() * 0.07f;                                   // 7% of the total height for the tab bar
+    auto tabBarWidth = (tabBarHeight * 5) * static_cast<float>(_tabs.size());  // Calculate the total width needed for all tabs, each 5 times the tab bar height
 
-    auto tabBarArea = area.removeFromTop(tabBarHeight)
-                          .withSizeKeepingCentre(tabBarWidth, tabBarHeight);
+    auto tabBarArea = area.removeFromTop(static_cast<int>(tabBarHeight))
+                          .withSizeKeepingCentre(static_cast<int>(tabBarWidth), static_cast<int>(tabBarHeight));
 
     _tabBar.setBounds(tabBarArea);
 
@@ -43,21 +33,9 @@ void CustomTabs::resized() {
 }
 
 void CustomTabs::changeView(int index) {
-    _currentContent = nullptr;  // Clear the current content before creating a new one
+    if (index < 0 || index >= (int)_tabs.size()) return;
 
-    switch (index) {
-        case 0:
-            _currentContent = std::make_unique<CloneView>(_audioProcessor);
-            break;
-        case 1:
-            _currentContent = std::make_unique<PlayView>(_audioProcessor);
-            break;
-        case 2:
-            _currentContent = std::make_unique<ProfilView>(_audioProcessor);
-            break;
-        default:
-            break;
-    }
+    _currentContent = _tabs[static_cast<size_t>(index)].createContent();
 
     if (_currentContent) {
         addAndMakeVisible(_currentContent.get());

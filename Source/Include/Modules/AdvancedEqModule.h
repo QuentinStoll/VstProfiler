@@ -1,4 +1,4 @@
-#include "Components/CustomSlider.h"
+#include "Components/CustomKnob.h"
 #include "JuceHeader.h"
 
 class AdvancedEqModule : public juce::Component {
@@ -10,11 +10,11 @@ class AdvancedEqModule : public juce::Component {
     void resized() override;
 
    private:
-    CustomSlider _bassSlider{"Bass", -24.0f, 24.0f, 0.0f, "dB"};
-    CustomSlider _midSlider{"Mid", -24.0f, 24.0f, 0.0f, "dB"};
-    CustomSlider _trebleSlider{"Treble", -24.0f, 24.0f, 0.0f, "dB"};
-    CustomSlider _presenceSlider{"Presence", -24.0f, 24.0f, 0.0f, "dB"};
-    CustomSlider _depthSlider{"Depth", -24.0f, 24.0f, 0.0f, "dB"};
+    CustomKnob _bassKnob{"Bass", -24.0f, 24.0f, 0.0f, "dB"};
+    CustomKnob _midKnob{"Mid", -24.0f, 24.0f, 0.0f, "dB"};
+    CustomKnob _trebleKnob{"Treble", -24.0f, 24.0f, 0.0f, "dB"};
+    CustomKnob _presenceKnob{"Presence", -24.0f, 24.0f, 0.0f, "dB"};
+    CustomKnob _depthKnob{"Depth", -24.0f, 24.0f, 0.0f, "dB"};
 
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     std::unique_ptr<SliderAttachment> _bassAttachment;

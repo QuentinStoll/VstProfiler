@@ -1,30 +1,28 @@
 #include "Modules/BasicEqModule.h"
 
 BasicEqModule::BasicEqModule(juce::AudioProcessorValueTreeState& apvts) {
-    addAndMakeVisible(_bassSlider);
-    addAndMakeVisible(_midSlider);
-    addAndMakeVisible(_trebleSlider);
-    addAndMakeVisible(_presenceSlider);
-    addAndMakeVisible(_depthSlider);
+    addAndMakeVisible(_bassKnob);
+    addAndMakeVisible(_midKnob);
+    addAndMakeVisible(_trebleKnob);
+    addAndMakeVisible(_presenceKnob);
+    addAndMakeVisible(_depthKnob);
 
-    _bassAttachment = std::make_unique<SliderAttachment>(apvts, "bass", _bassSlider.getSlider());
-    _midAttachment = std::make_unique<SliderAttachment>(apvts, "mid", _midSlider.getSlider());
-    _trebleAttachment = std::make_unique<SliderAttachment>(apvts, "treble", _trebleSlider.getSlider());
-    _presenceAttachment = std::make_unique<SliderAttachment>(apvts, "presence", _presenceSlider.getSlider());
-    _depthAttachment = std::make_unique<SliderAttachment>(apvts, "depth", _depthSlider.getSlider());
+    _bassAttachment = std::make_unique<SliderAttachment>(apvts, "bass", _bassKnob.getSlider());
+    _midAttachment = std::make_unique<SliderAttachment>(apvts, "mid", _midKnob.getSlider());
+    _trebleAttachment = std::make_unique<SliderAttachment>(apvts, "treble", _trebleKnob.getSlider());
+    _presenceAttachment = std::make_unique<SliderAttachment>(apvts, "presence", _presenceKnob.getSlider());
+    _depthAttachment = std::make_unique<SliderAttachment>(apvts, "depth", _depthKnob.getSlider());
 }
 
-BasicEqModule::~BasicEqModule() {
-}
+BasicEqModule::~BasicEqModule() {}
 
-void BasicEqModule::paint(juce::Graphics& g) {
-}
+void BasicEqModule::paint(juce::Graphics& /*g*/) {}
 
 void BasicEqModule::resized() {
     auto area = getLocalBounds();
     auto areaWidth = area.getWidth();
 
-    auto topArea = area.removeFromTop(getHeight() * 0.5f);
+    auto topArea = area.removeFromTop(static_cast<int>(getHeight() * 0.5f));
 
     auto bassArea = topArea.removeFromLeft(areaWidth / 3);
     auto midArea = topArea.removeFromLeft(areaWidth / 3);
@@ -35,9 +33,9 @@ void BasicEqModule::resized() {
     auto presenceArea = area.removeFromLeft(bassArea.getWidth());
     auto depthArea = area.removeFromLeft(bassArea.getWidth());
 
-    _bassSlider.setBounds(bassArea);
-    _midSlider.setBounds(midArea);
-    _trebleSlider.setBounds(trebleArea);
-    _presenceSlider.setBounds(presenceArea);
-    _depthSlider.setBounds(depthArea);
+    _bassKnob.setBounds(bassArea);
+    _midKnob.setBounds(midArea);
+    _trebleKnob.setBounds(trebleArea);
+    _presenceKnob.setBounds(presenceArea);
+    _depthKnob.setBounds(depthArea);
 }
