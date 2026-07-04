@@ -1,7 +1,10 @@
+#pragma once
+
 #include <JuceHeader.h>
 
-#include "Components/CustomTextButton.h"
-#include "PluginProcessor.h"
+#include "Modules/FileAssetsModule.h"
+
+class ProfilerAudioProcessor;
 
 class CloneView : public juce::Component {
    public:
@@ -12,9 +15,5 @@ class CloneView : public juce::Component {
     void resized() override;
 
    private:
-    ProfilerAudioProcessor& _audioProcessor;
-
-    CustomTextButton _sweepButton{"Start Sweep"};
-    CustomTextButton _loadIRButton{"Load IR"};
-    CustomTextButton _loadAmpButton{"Load Amp"};
+    FileAssetsModule _fileAssetsModule;
 };
