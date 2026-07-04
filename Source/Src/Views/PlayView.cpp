@@ -29,6 +29,14 @@ PlayView::PlayView(ProfilerAudioProcessor& p)
         showExportProfilModule();
     };
 
+    _utilityBar.onResetCompleted = [this](const juce::String& message) {
+        _notificationBanner.clearAction();
+        _notificationBanner.showMessage(message,
+                                        NotificationBanner::Type::Success,
+                                        5000);
+        resized();
+    };
+
     _exportProfilModule.onExportClicked = [this](const juce::NamedValueSet& values,
                                                  const juce::File& destinationFile) {
         exportProfil(values, destinationFile);

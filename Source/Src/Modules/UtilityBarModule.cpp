@@ -24,7 +24,10 @@ UtilityBarModule::UtilityBarModule(ProfilerAudioProcessor& processor)
     };
 
     _resetButton.onClick = [this]() {
-        resetAllParameters();
+        const auto message = resetAllParameters();
+        if (onResetCompleted) {
+            onResetCompleted(message);
+        }
     };
 
     _exportButton.onClick = [this]() {
@@ -63,7 +66,7 @@ void UtilityBarModule::resized() {
     _eqSwitch.setBounds(eqSwitchArea);
 }
 
-void UtilityBarModule::resetAllParameters() {
+juce::String UtilityBarModule::resetAllParameters() {
     auto& profileManager = _audioProcessor.getProfileManager();
     const auto currentProfileIndex = profileManager.getCurrentProfileIndex();
 
@@ -71,7 +74,7 @@ void UtilityBarModule::resetAllParameters() {
         juce::String errorMessage;
         if (_audioProcessor.applyProfile(currentProfileIndex, &errorMessage)) {
             refreshProfileMenu();
-            return;
+            return "Current profile restored";
         }
     }
 
@@ -82,6 +85,8 @@ void UtilityBarModule::resetAllParameters() {
         profileManager.clearCurrentProfile();
         refreshProfileMenu();
     }
+
+    return "Default settings restored";
 }
 
 void UtilityBarModule::resetParametersToDefaults() {
