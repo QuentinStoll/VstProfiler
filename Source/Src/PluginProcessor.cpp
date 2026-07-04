@@ -394,7 +394,45 @@ bool ProfilerAudioProcessor::loadIRFile(const juce::File& file) {
                                    juce::dsp::Convolution::Trim::no,
                                    0);
     _irLoaded = true;
+    _currentIRFile = file;
     return true;
+}
+
+void ProfilerAudioProcessor::unloadIRFile() {
+    _irLoaded = false;
+    _currentIRFile = {};
+    _convolver.reset();
+}
+
+bool ProfilerAudioProcessor::loadAmpFile(const juce::File& file) {
+    if (!file.existsAsFile()) {
+        return false;
+    }
+
+    _currentAmpFile = file;
+    _ampFileLoaded = true;
+    return true;
+}
+
+void ProfilerAudioProcessor::unloadAmpFile() {
+    _ampFileLoaded = false;
+    _currentAmpFile = {};
+}
+
+bool ProfilerAudioProcessor::isIRLoaded() const noexcept {
+    return _irLoaded;
+}
+
+bool ProfilerAudioProcessor::isAmpFileLoaded() const noexcept {
+    return _ampFileLoaded;
+}
+
+juce::File ProfilerAudioProcessor::getCurrentIRFile() const {
+    return _currentIRFile;
+}
+
+juce::File ProfilerAudioProcessor::getCurrentAmpFile() const {
+    return _currentAmpFile;
 }
 
 bool ProfilerAudioProcessor::applyProfile(int profileIndex, juce::String* errorMessage) {
@@ -404,9 +442,22 @@ bool ProfilerAudioProcessor::applyProfile(int profileIndex, juce::String* errorM
 
     const auto values = _profileManager.getProfileValues(profileIndex);
     if (const auto* irPath = values.getVarPointer("irPath")) {
-        const auto irFile = juce::File(irPath->toString());
-        if (irFile.existsAsFile()) {
+        const auto irPathText = irPath->toString().trim();
+        const auto irFile = juce::File(irPathText);
+        if (irPathText.isEmpty()) {
+            unloadIRFile();
+        } else if (irFile.existsAsFile()) {
             loadIRFile(irFile);
+        }
+    }
+
+    if (const auto* ampPath = values.getVarPointer("ampPath")) {
+        const auto ampPathText = ampPath->toString().trim();
+        const auto ampFile = juce::File(ampPathText);
+        if (ampPathText.isEmpty()) {
+            unloadAmpFile();
+        } else if (ampFile.existsAsFile()) {
+            loadAmpFile(ampFile);
         }
     }
 

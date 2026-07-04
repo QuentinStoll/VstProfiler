@@ -56,6 +56,13 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     // Loading the Impulse responce file
     void loadIRFile();
     bool loadIRFile(const juce::File& file);
+    void unloadIRFile();
+    bool loadAmpFile(const juce::File& file);
+    void unloadAmpFile();
+    bool isIRLoaded() const noexcept;
+    bool isAmpFileLoaded() const noexcept;
+    juce::File getCurrentIRFile() const;
+    juce::File getCurrentAmpFile() const;
     bool applyProfile(int profileIndex, juce::String* errorMessage = nullptr);
     void startAmpProfiling();
     void startGainAnalysis();
@@ -127,6 +134,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     // Is ir loaded bool
     bool _irLoaded = false;
+    juce::File _currentIRFile;
 
     // Convolver object
     juce::dsp::Convolution _convolver;
@@ -134,6 +142,8 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     //================================= Amp load ====================================
     std::vector<float> _ampLUT;
     bool _ampLoaded = true;
+    bool _ampFileLoaded = false;
+    juce::File _currentAmpFile;
 
     AmpProcessor _ampStage;
 
