@@ -33,7 +33,17 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
     };
     _editProfilModule.onSaveClicked = [this](int profileNumber, const juce::NamedValueSet& values) {
         juce::String errorMessage;
-        if (_audioProcessor.getProfileManager().updateProfile(profileNumber - 1, values, &errorMessage)) {
+        auto& profileManager = _audioProcessor.getProfileManager();
+        const auto profileIndex = profileNumber - 1;
+        const auto* profile = profileManager.getProfile(profileIndex);
+        const auto isCurrentProfile = profile != nullptr &&
+                                      profile->id == profileManager.getCurrentProfileId();
+
+        if (profileManager.updateProfile(profileIndex, values, &errorMessage)) {
+            if (isCurrentProfile) {
+                _audioProcessor.syncLoadedFilesWithCurrentProfile();
+            }
+
             refreshProfileGrid();
             _notificationBanner.clearAction();
             _notificationBanner.showMessage("Profile saved successfully",
@@ -158,7 +168,17 @@ void ProfilView::showDeleteProfileModal(int profileNumber) {
 
 void ProfilView::deleteProfile(int profileNumber) {
     juce::String errorMessage;
-    if (_audioProcessor.getProfileManager().deleteProfile(profileNumber - 1, &errorMessage)) {
+    auto& profileManager = _audioProcessor.getProfileManager();
+    const auto profileIndex = profileNumber - 1;
+    const auto* profile = profileManager.getProfile(profileIndex);
+    const auto isCurrentProfile = profile != nullptr &&
+                                  profile->id == profileManager.getCurrentProfileId();
+
+    if (profileManager.deleteProfile(profileIndex, &errorMessage)) {
+        if (isCurrentProfile) {
+            _audioProcessor.syncLoadedFilesWithCurrentProfile();
+        }
+
         refreshProfileGrid();
         _notificationBanner.clearAction();
         _notificationBanner.showMessage("Profile deleted successfully",

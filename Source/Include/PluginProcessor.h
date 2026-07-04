@@ -64,6 +64,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     juce::File getCurrentIRFile() const;
     juce::File getCurrentAmpFile() const;
     bool applyProfile(int profileIndex, juce::String* errorMessage = nullptr);
+    void syncLoadedFilesWithCurrentProfile();
     juce::String getAppliedProfileId() const;
     void clearAppliedProfile();
     void startAmpProfiling();
@@ -124,6 +125,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     juce::String _appliedProfileId;
 
     void updateEqCoefficients();
+    void applyProfileFileValues(const juce::NamedValueSet& values);
 
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

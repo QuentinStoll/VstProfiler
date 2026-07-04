@@ -442,6 +442,28 @@ bool ProfilerAudioProcessor::applyProfile(int profileIndex, juce::String* errorM
 
     const auto* profile = _profileManager.getProfile(profileIndex);
     const auto values = _profileManager.getProfileValues(profileIndex);
+    applyProfileFileValues(values);
+
+    _appliedProfileId = profile != nullptr ? profile->id : juce::String{};
+    return true;
+}
+
+void ProfilerAudioProcessor::syncLoadedFilesWithCurrentProfile() {
+    const auto currentProfileIndex = _profileManager.getCurrentProfileIndex();
+    const auto* profile = _profileManager.getProfile(currentProfileIndex);
+
+    if (profile == nullptr) {
+        unloadIRFile();
+        unloadAmpFile();
+        clearAppliedProfile();
+        return;
+    }
+
+    applyProfileFileValues(_profileManager.getProfileValues(currentProfileIndex));
+    _appliedProfileId = profile->id;
+}
+
+void ProfilerAudioProcessor::applyProfileFileValues(const juce::NamedValueSet& values) {
     if (const auto* irPath = values.getVarPointer("irPath")) {
         const auto irPathText = irPath->toString().trim();
         const auto irFile = juce::File(irPathText);
@@ -471,9 +493,6 @@ bool ProfilerAudioProcessor::applyProfile(int profileIndex, juce::String* errorM
     } else {
         unloadAmpFile();
     }
-
-    _appliedProfileId = profile != nullptr ? profile->id : juce::String{};
-    return true;
 }
 
 juce::String ProfilerAudioProcessor::getAppliedProfileId() const {
