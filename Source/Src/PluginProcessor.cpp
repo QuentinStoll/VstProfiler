@@ -400,7 +400,7 @@ bool ProfilerAudioProcessor::loadIRFile(const juce::File& file) {
 
 void ProfilerAudioProcessor::unloadIRFile() {
     _irLoaded = false;
-    _currentIRFile = {};
+    _currentIRFile = juce::File{};
     _convolver.reset();
 }
 
@@ -416,7 +416,7 @@ bool ProfilerAudioProcessor::loadAmpFile(const juce::File& file) {
 
 void ProfilerAudioProcessor::unloadAmpFile() {
     _ampFileLoaded = false;
-    _currentAmpFile = {};
+    _currentAmpFile = juce::File{};
 }
 
 bool ProfilerAudioProcessor::isIRLoaded() const noexcept {
