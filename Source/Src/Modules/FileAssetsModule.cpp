@@ -34,15 +34,35 @@ FileAssetsModule::FileAssetsModule(juce::String title,
         _cards.push_back(std::move(card));
     }
 
+    addChildComponent(_notificationBanner);
     refreshFileState();
 }
 
 void FileAssetsModule::refreshFileState() {
+    juce::String issueMessage;
+    auto issueType = NotificationBanner::Type::Info;
+
     for (size_t index = 0; index < _cards.size(); ++index) {
         const auto& slot = _fileSlots[index];
         const auto isLoaded = slot.isLoaded ? slot.isLoaded() : false;
         const auto file = slot.getCurrentFile ? slot.getCurrentFile() : juce::File{};
-        _cards[index]->setFileState(isLoaded, file);
+        const auto status = getStatusForFile(isLoaded, file);
+
+        _cards[index]->setFileState(status, file);
+
+        if (issueMessage.isEmpty() && status == FileStatusCard::Status::Error) {
+            issueMessage = slot.cardOptions.title + " file does not exist: " + file.getFullPathName();
+            issueType = NotificationBanner::Type::Error;
+        } else if (issueMessage.isEmpty() && status == FileStatusCard::Status::Warning) {
+            issueMessage = slot.cardOptions.title + " file is referenced but not loaded: " + file.getFullPathName();
+            issueType = NotificationBanner::Type::Warning;
+        }
+    }
+
+    if (issueMessage.isNotEmpty()) {
+        showIssue(issueMessage, issueType);
+    } else {
+        clearIssue();
     }
 }
 
@@ -77,6 +97,14 @@ void FileAssetsModule::resized() {
 
         _cards[static_cast<size_t>(index)]->setBounds(x, y, cardWidth, cardHeight);
     }
+
+    const auto bannerWidth = juce::jmin(_notificationBanner.getIdealWidth(),
+                                        juce::jmax(220, getWidth() - 50));
+    _notificationBanner.setBounds(getLocalBounds()
+                                      .withSizeKeepingCentre(bannerWidth,
+                                                             _notificationBanner.getIdealHeight())
+                                      .withRightX(getWidth() - 25)
+                                      .withY(25));
 }
 
 void FileAssetsModule::configureHeaderLabel(juce::Label& label,
@@ -117,7 +145,10 @@ void FileAssetsModule::chooseFile(size_t slotIndex) {
                                   const auto file = chooser.getResult();
                                   const auto& selectedSlot = safeThis->_fileSlots[slotIndex];
                                   if (file.existsAsFile() && selectedSlot.loadFile) {
-                                      selectedSlot.loadFile(file);
+                                      if (!selectedSlot.loadFile(file)) {
+                                          safeThis->showIssue("Could not load file: " + file.getFullPathName(),
+                                                              NotificationBanner::Type::Error);
+                                      }
                                   }
 
                                   safeThis->refreshFileState();
@@ -137,6 +168,24 @@ void FileAssetsModule::unloadFile(size_t slotIndex) {
     refreshFileState();
 }
 
+void FileAssetsModule::showIssue(const juce::String& message,
+                                 NotificationBanner::Type type) {
+    if (_currentIssueMessage == message && _notificationBanner.isVisible()) {
+        return;
+    }
+
+    _currentIssueMessage = message;
+    _notificationBanner.clearAction();
+    _notificationBanner.showMessage(message, type, 0);
+    resized();
+}
+
+void FileAssetsModule::clearIssue() {
+    _currentIssueMessage.clear();
+    _notificationBanner.clearAction();
+    _notificationBanner.dismiss();
+}
+
 int FileAssetsModule::getColumnCount(int availableWidth) const {
     const auto cardCount = static_cast<int>(_cards.size());
     if (cardCount <= 1 || availableWidth < 520) {
@@ -148,4 +197,18 @@ int FileAssetsModule::getColumnCount(int availableWidth) const {
     }
 
     return juce::jmin(cardCount, 3);
+}
+
+FileStatusCard::Status FileAssetsModule::getStatusForFile(bool isLoaded,
+                                                          const juce::File& file) {
+    if (isLoaded) {
+        return FileStatusCard::Status::Loaded;
+    }
+
+    if (file.getFullPathName().trim().isEmpty()) {
+        return FileStatusCard::Status::Empty;
+    }
+
+    return file.existsAsFile() ? FileStatusCard::Status::Warning
+                               : FileStatusCard::Status::Error;
 }

@@ -70,16 +70,18 @@ void UtilityBarModule::resetAllParameters() {
     if (currentProfileIndex >= 0) {
         juce::String errorMessage;
         if (_audioProcessor.applyProfile(currentProfileIndex, &errorMessage)) {
+            refreshProfileMenu();
             return;
         }
     }
+
+    resetParametersToDefaults();
+    resetLoadedFiles();
 
     if (profileManager.getCurrentProfileId().isNotEmpty()) {
         profileManager.clearCurrentProfile();
         refreshProfileMenu();
     }
-
-    resetParametersToDefaults();
 }
 
 void UtilityBarModule::resetParametersToDefaults() {
@@ -99,6 +101,12 @@ void UtilityBarModule::resetParametersToDefaults() {
     resetParam("treble");
     resetParam("isMute");
     resetParam("isEqEnabled");
+}
+
+void UtilityBarModule::resetLoadedFiles() {
+    _audioProcessor.unloadIRFile();
+    _audioProcessor.unloadAmpFile();
+    _audioProcessor.clearAppliedProfile();
 }
 
 void UtilityBarModule::refreshProfileMenu() {
@@ -130,9 +138,16 @@ void UtilityBarModule::restoreLastUsedProfile() {
 
     const auto currentProfileIndex = profileManager.getCurrentProfileIndex();
     if (currentProfileIndex < 0) {
-        profileManager.clearCurrentProfile();
         resetParametersToDefaults();
+        resetLoadedFiles();
+        profileManager.clearCurrentProfile();
         refreshProfileMenu();
+        return;
+    }
+
+    if (_audioProcessor.getAppliedProfileId() == profileManager.getCurrentProfileId()) {
+        const juce::ScopedValueSetter<bool> updatingProfileMenu(_isUpdatingProfileMenu, true);
+        _profilMenu.setSelectedId(currentProfileIndex + 2, juce::dontSendNotification);
         return;
     }
 
@@ -141,8 +156,9 @@ void UtilityBarModule::restoreLastUsedProfile() {
         const juce::ScopedValueSetter<bool> updatingProfileMenu(_isUpdatingProfileMenu, true);
         _profilMenu.setSelectedId(currentProfileIndex + 2, juce::dontSendNotification);
     } else {
-        profileManager.clearCurrentProfile();
         resetParametersToDefaults();
+        resetLoadedFiles();
+        profileManager.clearCurrentProfile();
         refreshProfileMenu();
     }
 }
@@ -155,8 +171,9 @@ void UtilityBarModule::selectProfileFromMenu() {
     auto& profileManager = _audioProcessor.getProfileManager();
     const auto selectedId = _profilMenu.getSelectedId();
     if (selectedId == 1) {
-        profileManager.clearCurrentProfile();
         resetParametersToDefaults();
+        resetLoadedFiles();
+        profileManager.clearCurrentProfile();
         return;
     }
 

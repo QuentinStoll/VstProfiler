@@ -7,10 +7,21 @@
 
 class FileStatusCard : public juce::Component {
    public:
+    enum class Status {
+        Empty,
+        Loaded,
+        Warning,
+        Error
+    };
+
     struct Options {
         juce::String title;
         juce::String loadButtonText;
         juce::String unloadButtonText{"Unload"};
+        juce::String emptyStatusText{"Not loaded"};
+        juce::String loadedStatusText{"Loaded"};
+        juce::String warningStatusText{"Warning"};
+        juce::String errorStatusText{"Missing"};
         juce::String emptyFileText;
         juce::String emptyPathText;
         ProfilerStyle::Theme loadButtonTheme = ProfilerStyle::Theme::Dark;
@@ -21,6 +32,7 @@ class FileStatusCard : public juce::Component {
     ~FileStatusCard() override = default;
 
     void setFileState(bool isLoaded, const juce::File& file);
+    void setFileState(Status status, const juce::File& file);
 
     std::function<void()> onLoadClicked;
     std::function<void()> onUnloadClicked;
@@ -37,7 +49,7 @@ class FileStatusCard : public juce::Component {
     juce::Label _fileLabel;
     juce::Label _pathLabel;
     juce::File _file;
-    bool _isLoaded = false;
+    Status _status = Status::Empty;
 
     void configureLabel(juce::Label& label,
                         const juce::String& text,
@@ -46,12 +58,15 @@ class FileStatusCard : public juce::Component {
                         juce::Justification justification = juce::Justification::centredLeft,
                         bool isBold = false);
     void updateLabels();
-    static juce::Colour getStatusColour(bool isLoaded);
+    bool isLoaded() const noexcept;
+    bool canUnload() const noexcept;
+    juce::String getStatusText() const;
+    static juce::Colour getStatusColour(Status status);
     static juce::String getFileNameOrFallback(const juce::File& file,
-                                              bool isLoaded,
+                                              Status status,
                                               const juce::String& fallback);
     static juce::String getPathOrFallback(const juce::File& file,
-                                          bool isLoaded,
+                                          Status status,
                                           const juce::String& fallback);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FileStatusCard)

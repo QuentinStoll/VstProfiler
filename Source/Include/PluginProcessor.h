@@ -64,6 +64,8 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     juce::File getCurrentIRFile() const;
     juce::File getCurrentAmpFile() const;
     bool applyProfile(int profileIndex, juce::String* errorMessage = nullptr);
+    juce::String getAppliedProfileId() const;
+    void clearAppliedProfile();
     void startAmpProfiling();
     void startGainAnalysis();
     ProfileManager& getProfileManager() noexcept;
@@ -119,6 +121,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     std::atomic<float>* _isEqEnabledParam{nullptr};
 
     ProfileManager _profileManager;
+    juce::String _appliedProfileId;
 
     void updateEqCoefficients();
 

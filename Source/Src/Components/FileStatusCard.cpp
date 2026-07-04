@@ -49,7 +49,11 @@ FileStatusCard::FileStatusCard(Options options)
 }
 
 void FileStatusCard::setFileState(bool isLoaded, const juce::File& file) {
-    _isLoaded = isLoaded;
+    setFileState(isLoaded ? Status::Loaded : Status::Empty, file);
+}
+
+void FileStatusCard::setFileState(Status status, const juce::File& file) {
+    _status = status;
     _file = file;
     updateLabels();
     resized();
@@ -58,6 +62,7 @@ void FileStatusCard::setFileState(bool isLoaded, const juce::File& file) {
 
 void FileStatusCard::paint(juce::Graphics& g) {
     const auto card = getLocalBounds().toFloat();
+    const auto accent = getStatusColour(_status);
 
     g.setGradientFill(ProfilerStyle::Gradients::vertical(
         card,
@@ -66,10 +71,10 @@ void FileStatusCard::paint(juce::Graphics& g) {
         0.85f));
     g.fillRoundedRectangle(card, 5.0f);
 
-    g.setColour(getStatusColour(_isLoaded).withAlpha(_isLoaded ? 0.75f : 0.28f));
+    g.setColour(accent.withAlpha(_status == Status::Empty ? 0.28f : 0.75f));
     g.fillRoundedRectangle(card.withWidth(4.0f), 2.0f);
 
-    g.setColour(ProfilerStyle::Colors::lightestGrey.withAlpha(0.34f));
+    g.setColour(accent.withAlpha(_status == Status::Empty ? 0.34f : 0.5f));
     g.drawRoundedRectangle(card, 5.0f, 1.0f);
 }
 
@@ -89,7 +94,7 @@ void FileStatusCard::resized() {
     auto buttonArea = content.removeFromBottom(38);
     const auto loadButtonWidth = juce::jmin(148, buttonArea.getWidth());
 
-    if (_isLoaded) {
+    if (canUnload()) {
         constexpr auto gap = 10;
         const auto unloadButtonWidth = juce::jmin(112, juce::jmax(0, buttonArea.getWidth() - loadButtonWidth - gap));
         _loadButton.setBounds(buttonArea.removeFromLeft(loadButtonWidth));
@@ -119,32 +124,62 @@ void FileStatusCard::configureLabel(juce::Label& label,
 }
 
 void FileStatusCard::updateLabels() {
-    _statusLabel.setText(_isLoaded ? "Loaded" : "Not loaded",
-                         juce::dontSendNotification);
-    _statusLabel.setColour(juce::Label::textColourId, getStatusColour(_isLoaded));
+    _statusLabel.setText(getStatusText(), juce::dontSendNotification);
+    _statusLabel.setColour(juce::Label::textColourId, getStatusColour(_status));
 
-    _fileLabel.setText(getFileNameOrFallback(_file, _isLoaded, _options.emptyFileText),
+    _fileLabel.setText(getFileNameOrFallback(_file, _status, _options.emptyFileText),
                        juce::dontSendNotification);
-    _pathLabel.setText(getPathOrFallback(_file, _isLoaded, _options.emptyPathText),
+    _pathLabel.setText(getPathOrFallback(_file, _status, _options.emptyPathText),
                        juce::dontSendNotification);
 
-    const auto tooltip = _isLoaded ? _file.getFullPathName() : juce::String{};
+    const auto tooltip = _status == Status::Empty ? juce::String{} : _file.getFullPathName();
     _fileLabel.setTooltip(tooltip);
     _pathLabel.setTooltip(tooltip);
 
-    _unloadButton.setEnabled(_isLoaded);
-    _unloadButton.setVisible(_isLoaded);
+    _unloadButton.setEnabled(canUnload());
+    _unloadButton.setVisible(canUnload());
 }
 
-juce::Colour FileStatusCard::getStatusColour(bool isLoaded) {
-    return isLoaded ? juce::Colour(0xff38d17a)
-                    : ProfilerStyle::Colors::white.withAlpha(0.58f);
+bool FileStatusCard::isLoaded() const noexcept {
+    return _status == Status::Loaded;
+}
+
+bool FileStatusCard::canUnload() const noexcept {
+    return _status != Status::Empty;
+}
+
+juce::String FileStatusCard::getStatusText() const {
+    switch (_status) {
+        case Status::Loaded:
+            return _options.loadedStatusText;
+        case Status::Warning:
+            return _options.warningStatusText;
+        case Status::Error:
+            return _options.errorStatusText;
+        case Status::Empty:
+        default:
+            return _options.emptyStatusText;
+    }
+}
+
+juce::Colour FileStatusCard::getStatusColour(Status status) {
+    switch (status) {
+        case Status::Loaded:
+            return juce::Colour(0xff38d17a);
+        case Status::Warning:
+            return juce::Colour(0xffffb020);
+        case Status::Error:
+            return juce::Colour(0xffff4d4f);
+        case Status::Empty:
+        default:
+            return ProfilerStyle::Colors::white.withAlpha(0.58f);
+    }
 }
 
 juce::String FileStatusCard::getFileNameOrFallback(const juce::File& file,
-                                                   bool isLoaded,
+                                                   Status status,
                                                    const juce::String& fallback) {
-    if (!isLoaded) {
+    if (status == Status::Empty) {
         return fallback;
     }
 
@@ -153,9 +188,9 @@ juce::String FileStatusCard::getFileNameOrFallback(const juce::File& file,
 }
 
 juce::String FileStatusCard::getPathOrFallback(const juce::File& file,
-                                               bool isLoaded,
+                                               Status status,
                                                const juce::String& fallback) {
-    if (!isLoaded) {
+    if (status == Status::Empty) {
         return fallback;
     }
 

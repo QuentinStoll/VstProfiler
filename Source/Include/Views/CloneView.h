@@ -6,7 +6,8 @@
 
 class ProfilerAudioProcessor;
 
-class CloneView : public juce::Component {
+class CloneView : public juce::Component,
+                  private juce::ChangeListener {
    public:
     CloneView(ProfilerAudioProcessor& p);
     ~CloneView();
@@ -15,5 +16,8 @@ class CloneView : public juce::Component {
     void resized() override;
 
    private:
+    ProfilerAudioProcessor& _audioProcessor;
     FileAssetsModule _fileAssetsModule;
+
+    void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 };

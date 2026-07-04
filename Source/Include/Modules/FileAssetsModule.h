@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 
 #include "Components/FileStatusCard.h"
+#include "Components/NotificationBanner.h"
 
 class FileAssetsModule : public juce::Component {
    public:
@@ -33,6 +34,8 @@ class FileAssetsModule : public juce::Component {
     std::vector<std::unique_ptr<FileStatusCard>> _cards;
     juce::Label _titleLabel;
     juce::Label _summaryLabel;
+    NotificationBanner _notificationBanner;
+    juce::String _currentIssueMessage;
     std::unique_ptr<juce::FileChooser> _fileChooser;
 
     void configureHeaderLabel(juce::Label& label,
@@ -42,7 +45,11 @@ class FileAssetsModule : public juce::Component {
                               bool isBold = false);
     void chooseFile(size_t slotIndex);
     void unloadFile(size_t slotIndex);
+    void showIssue(const juce::String& message, NotificationBanner::Type type);
+    void clearIssue();
     int getColumnCount(int availableWidth) const;
+    static FileStatusCard::Status getStatusForFile(bool isLoaded,
+                                                   const juce::File& file);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FileAssetsModule)
 };

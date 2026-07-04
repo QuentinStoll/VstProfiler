@@ -54,13 +54,16 @@ std::vector<FileAssetsModule::FileSlot> createCloneFileSlots(ProfilerAudioProces
 }  // namespace
 
 CloneView::CloneView(ProfilerAudioProcessor& p)
-    : _fileAssetsModule("Clone Assets",
+    : _audioProcessor(p),
+      _fileAssetsModule("Clone Assets",
                         "External clone files currently selected for the plugin.",
                         createCloneFileSlots(p)) {
     addAndMakeVisible(_fileAssetsModule);
+    _audioProcessor.getProfileManager().addChangeListener(this);
 }
 
 CloneView::~CloneView() {
+    _audioProcessor.getProfileManager().removeChangeListener(this);
     setLookAndFeel(nullptr);
 }
 
@@ -80,4 +83,10 @@ void CloneView::paint(juce::Graphics& g) {
 
 void CloneView::resized() {
     _fileAssetsModule.setBounds(getLocalBounds());
+}
+
+void CloneView::changeListenerCallback(juce::ChangeBroadcaster* source) {
+    if (source == &_audioProcessor.getProfileManager()) {
+        _fileAssetsModule.refreshFileState();
+    }
 }

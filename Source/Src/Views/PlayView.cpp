@@ -119,7 +119,13 @@ void PlayView::showExportProfilModule() {
     _notificationBanner.dismiss();
 
     const auto exportName = getDefaultExportName();
-    const auto values = _audioProcessor.getProfileManager().getCurrentProfileValues(exportName);
+    auto values = _audioProcessor.getProfileManager().getCurrentProfileValues(exportName);
+    values.set("irPath", _audioProcessor.isIRLoaded()
+                             ? _audioProcessor.getCurrentIRFile().getFullPathName()
+                             : juce::String{});
+    values.set("ampPath", _audioProcessor.isAmpFileLoaded()
+                              ? _audioProcessor.getCurrentAmpFile().getFullPathName()
+                              : juce::String{});
 
     _exportProfilModule.setExportValues(values, getDefaultExportFile(exportName));
     _contentMode = ContentMode::ExportProfil;

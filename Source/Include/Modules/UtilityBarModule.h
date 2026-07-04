@@ -35,6 +35,7 @@ class UtilityBarModule : public juce::Component,
 
     void resetAllParameters();
     void resetParametersToDefaults();
+    void resetLoadedFiles();
     void refreshProfileMenu();
     void restoreLastUsedProfile();
     void selectProfileFromMenu();
