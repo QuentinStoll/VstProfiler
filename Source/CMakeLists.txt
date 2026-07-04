@@ -47,6 +47,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/FormFields/FormSliderField.cpp
     Src/Components/FormFields/FormTextField.cpp
     Src/Components/FormFields/FormToggleField.cpp
+    Src/Components/FileStatusCard.cpp
     Src/Components/ModalOverlay.cpp
     Src/Components/NotificationBanner.cpp
     Src/Modules/AddProfilModule.cpp
@@ -57,6 +58,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Modules/DeleteProfileConfirmationModule.cpp
     Src/Modules/EditProfilModule.cpp
     Src/Modules/ExportProfilModule.cpp
+    Src/Modules/FileAssetsModule.cpp
     Src/Modules/MasterSlidersModule.cpp
     Src/Modules/UtilityBarModule.cpp
     Src/Views/CloneView.cpp

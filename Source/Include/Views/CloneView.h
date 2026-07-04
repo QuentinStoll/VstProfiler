@@ -1,9 +1,13 @@
+#pragma once
+
 #include <JuceHeader.h>
 
-#include "Components/CustomTextButton.h"
-#include "PluginProcessor.h"
+#include "Modules/FileAssetsModule.h"
 
-class CloneView : public juce::Component {
+class ProfilerAudioProcessor;
+
+class CloneView : public juce::Component,
+                  private juce::ChangeListener {
    public:
     CloneView(ProfilerAudioProcessor& p);
     ~CloneView();
@@ -13,8 +17,7 @@ class CloneView : public juce::Component {
 
    private:
     ProfilerAudioProcessor& _audioProcessor;
+    FileAssetsModule _fileAssetsModule;
 
-    CustomTextButton _sweepButton{"Start Sweep"};
-    CustomTextButton _loadIRButton{"Load IR"};
-    CustomTextButton _loadAmpButton{"Load Amp"};
+    void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 };

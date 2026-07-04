@@ -17,6 +17,7 @@ class UtilityBarModule : public juce::Component,
     void resized() override;
 
     std::function<void()> onExportClicked;
+    std::function<void(const juce::String&)> onResetCompleted;
 
    private:
     ProfilerAudioProcessor& _audioProcessor;
@@ -33,8 +34,9 @@ class UtilityBarModule : public juce::Component,
 
     bool _isUpdatingProfileMenu = false;
 
-    void resetAllParameters();
+    juce::String resetAllParameters();
     void resetParametersToDefaults();
+    void resetLoadedFiles();
     void refreshProfileMenu();
     void restoreLastUsedProfile();
     void selectProfileFromMenu();

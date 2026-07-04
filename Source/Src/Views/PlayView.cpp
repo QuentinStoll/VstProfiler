@@ -29,6 +29,14 @@ PlayView::PlayView(ProfilerAudioProcessor& p)
         showExportProfilModule();
     };
 
+    _utilityBar.onResetCompleted = [this](const juce::String& message) {
+        _notificationBanner.clearAction();
+        _notificationBanner.showMessage(message,
+                                        NotificationBanner::Type::Success,
+                                        5000);
+        resized();
+    };
+
     _exportProfilModule.onExportClicked = [this](const juce::NamedValueSet& values,
                                                  const juce::File& destinationFile) {
         exportProfil(values, destinationFile);
@@ -119,7 +127,13 @@ void PlayView::showExportProfilModule() {
     _notificationBanner.dismiss();
 
     const auto exportName = getDefaultExportName();
-    const auto values = _audioProcessor.getProfileManager().getCurrentProfileValues(exportName);
+    auto values = _audioProcessor.getProfileManager().getCurrentProfileValues(exportName);
+    values.set("irPath", _audioProcessor.isIRLoaded()
+                             ? _audioProcessor.getCurrentIRFile().getFullPathName()
+                             : juce::String{});
+    values.set("ampPath", _audioProcessor.isAmpFileLoaded()
+                              ? _audioProcessor.getCurrentAmpFile().getFullPathName()
+                              : juce::String{});
 
     _exportProfilModule.setExportValues(values, getDefaultExportFile(exportName));
     _contentMode = ContentMode::ExportProfil;
