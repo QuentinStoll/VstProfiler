@@ -121,8 +121,6 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     _dcBlocker.prepare(spec);
     _dcBlocker.reset();
     
-    // Si tu utilises l'oversampling, la fréquence change pour l'ampli !
-    // Exemple : si le host est à 44.1kHz, l'oversampler x2 envoie du 88.2kHz à l'ampli.
     oversampler.initProcessing(samplesPerBlock);
 
     // MAYBE DELETE THIS, IT'S NOT USED
@@ -174,6 +172,11 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported(
 void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     juce::ScopedNoDenormals noDenormals;
 
+    // Handle Mute
+    if (_isMuteParam->load() > 0.5f) {
+        buffer.clear();
+        return;
+    }
     const int numSamples = buffer.getNumSamples();
     const int totalNumInputChannels = getTotalNumInputChannels();
     const int totalNumOutputChannels = getTotalNumOutputChannels();
@@ -182,8 +185,11 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 
-    // updateFilterCoefficients();
+    _chain.get<Gain>().setGainDecibels(_gainParam->load());
+    _chain.get<NoiseGate>().setThreshold(_noiseParam->load() - 60.0f);
+    _chain.get<MasterVolume>().setGainLinear(_masterParam->load() / 100.0f);
 
+    // updateFilterCoefficients();
     float inputFactor = juce::Decibels::decibelsToGain(_apvts.getRawParameterValue("input")->load());
     float outputFactor = juce::Decibels::decibelsToGain(_apvts.getRawParameterValue("output")->load());
 
@@ -288,88 +294,47 @@ void ProfilerAudioProcessor::setStateInformation(const void* data, int sizeInByt
             _apvts.replaceState(juce::ValueTree::fromXml(*xml));
 }
 
-//==============================================================================
 juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::createParameterLayout() {
-    // Create parameter layout here and add parameters to it
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    //==============================================================================
+    // ==============================================================================
     // Master parameters
-    //==============================================================================
-
-    // Master Volume (0 to 100 %)
+    // ==============================================================================
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"master", 1},
-        "Master Volume",
-        juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f),
-        50.0f));
+        juce::ParameterID{"master", 1}, "Master Volume", juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f), 50.0f));
 
-    // Input Gain (-12 to +12 dB)
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"gain", 1},
-        "Gain",
-        juce::NormalisableRange<float>(-12.0f, 12.0f, 0.1f),
-        0.0f));
+        juce::ParameterID{"gain", 1}, "Gain", juce::NormalisableRange<float>(-12.0f, 12.0f, 0.1f), 0.0f));
 
-    // Noise Gate Threshold (-12 to +12 dB)
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"noise", 1},
-        "Noise Gate",
-        juce::NormalisableRange<float>(0.0f, 60.0f, 0.1f),
-        10.0f));
+        juce::ParameterID{"noise", 1}, "Noise Gate", juce::NormalisableRange<float>(0.0f, 60.0f, 0.1f), 10.0f));
 
-    //==============================================================================
+    // Fix P0: Add missing Input and Output parameters
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"input", 1}, "Input Trim", juce::NormalisableRange<float>(-12.0f, 12.0f, 0.1f), 0.0f));
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"output", 1}, "Output Trim", juce::NormalisableRange<float>(-12.0f, 12.0f, 0.1f), 0.0f));
+
+    // ==============================================================================
     // EQ parameters
-    //==============================================================================
-
-    // Bass Gain (-24 to +24 dB)
+    // ==============================================================================
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"bass", 1},
-        "Bass",
-        juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f),
-        0.0f));
-
-    // Mid Gain (-24 to +24 dB)
+        juce::ParameterID{"bass", 1}, "Bass", juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f), 0.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"mid", 1},
-        "Mid",
-        juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f),
-        0.0f));
-
-    // Treble Gain (-24 to +24 dB)
+        juce::ParameterID{"mid", 1}, "Mid", juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f), 0.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"treble", 1},
-        "Treble",
-        juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f),
-        0.0f));
-
-    // Presence Gain (-24 to +24 dB)
+        juce::ParameterID{"treble", 1}, "Treble", juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f), 0.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"presence", 1},
-        "Presence",
-        juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f),
-        0.0f));
-
-    // Depth Gain (-24 to +24 dB)
+        juce::ParameterID{"presence", 1}, "Presence", juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f), 0.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"depth", 1},
-        "Depth",
-        juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f),
-        0.0f));
+        juce::ParameterID{"depth", 1}, "Depth", juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f), 0.0f));
 
-    //==============================================================================
-    // Other parameters (e.g. Mute)
-    //==============================================================================
-
-    layout.add(std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{"isMute", 1},
-        "Mute",
-        false));
-
-    layout.add(std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{"isEqEnabled", 1},
-        "EQ",
-        true));
+    // ==============================================================================
+    // Other parameters
+    // ==============================================================================
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isMute", 1}, "Mute", false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isEqEnabled", 1}, "EQ", true));
 
     return layout;
 }
@@ -400,31 +365,50 @@ void ProfilerAudioProcessor::unloadIRFile() {
     _convolver.reset();
 }
 
-// MAYBE DELETE THIS FUNCTION, IT'S NOT USED
-bool ProfilerAudioProcessor::loadAmpFile(const juce::File& file) {}
+bool ProfilerAudioProcessor::loadAmpFile(const juce::File& file) {
+    if (!file.existsAsFile()) {
+        return false;
+    }
+    _ampLoaded = false;
+    std::ifstream jsonStream(file.getFullPathName().toStdString());              
+    if (jsonStream.is_open()) {
+        try {
+            _neuralAmp = RTNeural::json_parser::parseJson<float>(jsonStream);
+            
+            if (_neuralAmp != nullptr) {
+                _neuralAmp->reset();
+                _ampLoaded = true;
+            }
+        }
+        catch (const std::exception& e) {
+            juce::Logger::writeToLog("RTNeural Load Error: " + juce::String(e.what()));
+            _ampLoaded = false;
+            _neuralAmp = nullptr;
+            return false;
+        }
+    }
+    _currentAmpFile = file;
+    _ampFileLoaded = true;
+    return true;
+}
 
-// MAYBE DELETE THIS FUNCTION, IT'S NOT USED
 void ProfilerAudioProcessor::unloadAmpFile() {
     _ampFileLoaded = false;
     _currentAmpFile = juce::File{};
 }
 
-// MAYBE DELETE THIS FUNCTION, IT'S NOT USED
 bool ProfilerAudioProcessor::isIRLoaded() const noexcept {
     return _irLoaded;
 }
 
-// MAYBE DELETE THIS FUNCTION, IT'S NOT USED
 bool ProfilerAudioProcessor::isAmpFileLoaded() const noexcept {
     return _ampFileLoaded;
 }
 
-// MAYBE DELETE THIS FUNCTION, IT'S NOT USED
 juce::File ProfilerAudioProcessor::getCurrentIRFile() const {
     return _currentIRFile;
 }
 
-// MAYBE DELETE THIS FUNCTION, IT'S NOT USED
 juce::File ProfilerAudioProcessor::getCurrentAmpFile() const {
     return _currentAmpFile;
 }
@@ -495,36 +479,6 @@ juce::String ProfilerAudioProcessor::getAppliedProfileId() const {
 
 void ProfilerAudioProcessor::clearAppliedProfile() {
     _appliedProfileId.clear();
-}
-
-void ProfilerAudioProcessor::loadJsonFile() {
-    auto chooser = new juce::FileChooser("Select a config file", {}, "*.json");
-    chooser->launchAsync(juce::FileBrowserComponent::openMode |
-                         juce::FileBrowserComponent::canSelectFiles,
-                         [this, chooser](const juce::FileChooser& fc) {
-                             auto file = fc.getResult();
-                             if (file.existsAsFile()) {
-                                 _ampLoaded = false;
-                                 std::ifstream jsonStream(file.getFullPathName().toStdString());
-                                 
-                                 if (jsonStream.is_open()) {
-                                     try {
-                                         _neuralAmp = RTNeural::json_parser::parseJson<float>(jsonStream);
-                                         
-                                         if (_neuralAmp != nullptr) {
-                                            _neuralAmp->reset();
-                                             _ampLoaded = true;
-                                         }
-                                     }
-                                     catch (const std::exception& e) {
-                                         juce::Logger::writeToLog("RTNeural Load Error: " + juce::String(e.what()));
-                                         _ampLoaded = false;
-                                         _neuralAmp = nullptr;
-                                     }
-                                 }
-                             }
-                             delete chooser;
-                         });
 }
 
 void ProfilerAudioProcessor::startAmpProfiling() {

@@ -45,7 +45,6 @@ std::vector<FileAssetsModule::FileSlot> createCloneFileSlots(ProfilerAudioProces
     ampSlot.getCurrentFile = [&processor]() {
         return processor.getCurrentAmpFile();
     };
-
     std::vector<FileAssetsModule::FileSlot> slots;
     slots.push_back(std::move(irSlot));
     slots.push_back(std::move(ampSlot));

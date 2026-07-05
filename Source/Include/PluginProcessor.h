@@ -74,7 +74,6 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void syncLoadedFilesWithCurrentProfile();
     juce::String getAppliedProfileId() const;
     void clearAppliedProfile();
-    void loadJsonFile();
     void startAmpProfiling();
     void startGainAnalysis();
     ProfileManager& getProfileManager() noexcept;
