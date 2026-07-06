@@ -4,44 +4,88 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
   <MAINGROUP id="np7PK7" name="Profiler">
     <GROUP id="{008EAF89-8325-0CC2-E0EB-0C4D8EFBEC65}" name="Include">
-      <FILE id="CmffLj" name="RotarySliderParameter.h" compile="0" resource="0"
-            file="Source/RotarySliderParameter.h"/>
-      <FILE id="bDvz3Y" name="AmpLoaderSection.h" compile="0" resource="0"
-            file="Source/AmpLoaderSection.h"/>
-      <FILE id="mKWck8" name="EqNormalizeSection.h" compile="0" resource="0"
-            file="Source/EqNormalizeSection.h"/>
-      <FILE id="PdN7XT" name="RotarySlider.h" compile="0" resource="0" file="Source/RotarySlider.h"/>
-      <FILE id="jRdUDu" name="MainSettingsSection.h" compile="0" resource="0"
-            file="Source/MainSettingsSection.h"/>
-      <FILE id="XxaZ7z" name="CloningScreen.h" compile="0" resource="0" file="Source/CloningScreen.h"/>
-      <FILE id="GcxOQ1" name="ScreenID.h" compile="0" resource="0" file="Source/ScreenID.h"/>
-      <FILE id="xLENtC" name="UsingScreen.h" compile="0" resource="0" file="Source/UsingScreen.h"/>
-      <FILE id="wdVMyS" name="SelectionScreen.h" compile="0" resource="0"
-            file="Source/SelectionScreen.h"/>
-      <FILE id="YxFIPj" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
-      <FILE id="lkON4L" name="PluginProcessor.h" compile="0" resource="0"
-            file="Source/PluginProcessor.h"/>
-      <FILE id="JtVCwW" name="ViewManager.h" compile="0" resource="0" file="Source/ViewManager.h"/>
+      <GROUP id="{1067897D-12FB-92DD-7738-E02416E4000A}" name="Components">
+        <FILE id="hssDtW" name="CustomComboBox.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomComboBox.h"/>
+        <FILE id="CibH01" name="CustomImageButton.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomImageButton.h"/>
+        <FILE id="ftiu49" name="CustomTextButton.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomTextButton.h"/>
+        <FILE id="up6Ar1" name="CustomKnob.h" compile="0" resource="0" file="Source/Include/Components/CustomKnob.h"/>
+        <FILE id="LinSlH" name="CustomLinearSlider.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomLinearSlider.h"/>
+        <FILE id="GdUZQl" name="CustomTabs.h" compile="0" resource="0" file="Source/Include/Components/CustomTabs.h"/>
+        <FILE id="tcTwa0" name="CustomTabBar.h" compile="0" resource="0" file="Source/Include/Components/CustomTabBar.h"/>
+        <FILE id="EYUdcH" name="CustomToggleButton.h" compile="0" resource="0"
+              file="Source/Include/Components/CustomToggleButton.h"/>
+      </GROUP>
+      <GROUP id="{8789495B-6AA2-883E-889B-35A707BE144B}" name="Modules">
+        <FILE id="FjiNh8" name="AdvancedEqModule.h" compile="0" resource="0"
+              file="Source/Include/Modules/AdvancedEqModule.h"/>
+        <FILE id="b3hI26" name="BasicEqModule.h" compile="0" resource="0" file="Source/Include/Modules/BasicEqModule.h"/>
+        <FILE id="WqGNut" name="MasterSlidersModule.h" compile="0" resource="0"
+              file="Source/Include/Modules/MasterSlidersModule.h"/>
+        <FILE id="vAKHlH" name="UtilityBarModule.h" compile="0" resource="0"
+              file="Source/Include/Modules/UtilityBarModule.h"/>
+      </GROUP>
+      <GROUP id="{419AB495-F068-27D4-A555-0CE15B1FA834}" name="Views">
+        <FILE id="K4sqrq" name="CloneView.h" compile="0" resource="0" file="Source/Include/Views/CloneView.h"/>
+        <FILE id="IN4JHx" name="PlayView.h" compile="0" resource="0" file="Source/Include/Views/PlayView.h"/>
+        <FILE id="wnIw1S" name="ProfilView.h" compile="0" resource="0" file="Source/Include/Views/ProfilView.h"/>
+      </GROUP>
+      <FILE id="WeqCms" name="ProfilerConstantValues.h" compile="0" resource="0"
+            file="Source/Include/ProfilerConstantValues.h"/>
+      <FILE id="oeWtYH" name="Stylesheet.h" compile="0" resource="0" file="Source/Include/Stylesheet.h"/>
+      <FILE id="BQk8Z4" name="AmpEngine.h" compile="0" resource="0" file="Source/Include/AmpEngine.h"/>
+      <FILE id="JjJUYx" name="AmpProfiling.h" compile="0" resource="0" file="Source/Include/AmpProfiling.h"/>
+      <FILE id="dEQ4CG" name="PluginEditor.h" compile="0" resource="0" file="Source/Include/PluginEditor.h"/>
+      <FILE id="DnsYDd" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/Include/PluginProcessor.h"/>
+      <FILE id="Tq16GP" name="SelectionScreen.h" compile="0" resource="0"
+            file="Source/Include/SelectionScreen.h"/>
+      <FILE id="kpnwSI" name="SweepGenerator.h" compile="0" resource="0"
+            file="Source/Include/SweepGenerator.h"/>
     </GROUP>
-    <GROUP id="{3842B737-32C2-E9C6-BA17-6825D882BBB8}" name="Source">
-      <FILE id="yxg2mg" name="AmpLoaderSection.cpp" compile="1" resource="0"
-            file="Source/AmpLoaderSection.cpp"/>
-      <FILE id="rl8HU6" name="EqNormalizeSection.cpp" compile="1" resource="0"
-            file="Source/EqNormalizeSection.cpp"/>
-      <FILE id="b1KTIL" name="RotarySlider.cpp" compile="1" resource="0"
-            file="Source/RotarySlider.cpp"/>
-      <FILE id="J4IO3A" name="MainSettingsSection.cpp" compile="1" resource="0"
-            file="Source/MainSettingsSection.cpp"/>
-      <FILE id="LZDkXf" name="CloningScreen.cpp" compile="1" resource="0"
-            file="Source/CloningScreen.cpp"/>
-      <FILE id="QJTBvA" name="SelectionScreen.cpp" compile="1" resource="0"
-            file="Source/SelectionScreen.cpp"/>
-      <FILE id="R5vYPR" name="UsingScreen.cpp" compile="1" resource="0" file="Source/UsingScreen.cpp"/>
-      <FILE id="laIhTn" name="PluginEditor.cpp" compile="1" resource="0"
-            file="Source/PluginEditor.cpp"/>
-      <FILE id="MBImqJ" name="PluginProcessor.cpp" compile="1" resource="0"
-            file="Source/PluginProcessor.cpp"/>
-      <FILE id="WkwAWX" name="ViewManager.cpp" compile="1" resource="0" file="Source/ViewManager.cpp"/>
+    <GROUP id="{3842B737-32C2-E9C6-BA17-6825D882BBB8}" name="Src">
+      <GROUP id="{AA97C183-8D39-580E-1626-3283C80FFCDE}" name="Components">
+        <FILE id="aHd87L" name="CustomComboBox.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomComboBox.cpp"/>
+        <FILE id="CibC01" name="CustomImageButton.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomImageButton.cpp"/>
+        <FILE id="Wx776V" name="CustomTextButton.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomTextButton.cpp"/>
+        <FILE id="RR5QUf" name="CustomKnob.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomKnob.cpp"/>
+        <FILE id="LinSlC" name="CustomLinearSlider.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomLinearSlider.cpp"/>
+        <FILE id="XkxKqA" name="CustomTabs.cpp" compile="1" resource="0" file="Source/Src/Components/CustomTabs.cpp"/>
+        <FILE id="ClPX26" name="CustomTabBar.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomTabBar.cpp"/>
+        <FILE id="n2THk1" name="CustomToggleButton.cpp" compile="1" resource="0"
+              file="Source/Src/Components/CustomToggleButton.cpp"/>
+      </GROUP>
+      <GROUP id="{4E4AD594-4741-D111-D468-4CF8E50F7F65}" name="Modules">
+        <FILE id="bTAvt1" name="AdvancedEqModule.cpp" compile="1" resource="0"
+              file="Source/Src/Modules/AdvancedEqModule.cpp"/>
+        <FILE id="TWJOUM" name="BasicEqModule.cpp" compile="1" resource="0"
+              file="Source/Src/Modules/BasicEqModule.cpp"/>
+        <FILE id="SXfd7b" name="MasterSlidersModule.cpp" compile="1" resource="0"
+              file="Source/Src/Modules/MasterSlidersModule.cpp"/>
+        <FILE id="f3QBdf" name="UtilityBarModule.cpp" compile="1" resource="0"
+              file="Source/Src/Modules/UtilityBarModule.cpp"/>
+      </GROUP>
+      <GROUP id="{2EA2EB0B-10FB-7D6F-D672-5B75D9E39AC5}" name="Views">
+        <FILE id="ryZlwB" name="CloneView.cpp" compile="1" resource="0" file="Source/Src/Views/CloneView.cpp"/>
+        <FILE id="dMY8H7" name="PlayView.cpp" compile="1" resource="0" file="Source/Src/Views/PlayView.cpp"/>
+        <FILE id="Ngw0KX" name="ProfilView.cpp" compile="1" resource="0" file="Source/Src/Views/ProfilView.cpp"/>
+      </GROUP>
+      <FILE id="YuLaMY" name="PluginEditor.cpp" compile="1" resource="0"
+            file="Source/Src/PluginEditor.cpp"/>
+      <FILE id="KQ9tZq" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/Src/PluginProcessor.cpp"/>
+      <FILE id="xNJlRd" name="AmpEngine.cpp" compile="1" resource="0" file="Source/Src/AmpEngine.cpp"/>
+      <FILE id="Njb4db" name="AmpProfiling.cpp" compile="1" resource="0"
+            file="Source/Src/AmpProfiling.cpp"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
@@ -64,8 +108,8 @@
   <EXPORTFORMATS>
     <VS2022 targetFolder="Builds/VisualStudio2022">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="Profiler"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="Profiler"/>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="Profiler" headerPath="../../Source/Include"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="Profiler" headerPath="../../Source/Include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="../../JUCE/modules"/>

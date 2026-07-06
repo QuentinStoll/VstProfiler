@@ -2,7 +2,7 @@
     "presets": [
         {
             "name": "default",
-            "buildType": "Debug",
+            "buildType": "Release",
             "formats": {
                 "vst3": true,
                 "au": false,
@@ -47,7 +47,7 @@
         },
         {
             "name": "dev",
-            "buildType": "Debug",
+            "buildType": "Release",
             "formats": {
                 "vst3": true,
                 "au": false,
