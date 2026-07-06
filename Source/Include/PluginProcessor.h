@@ -160,13 +160,13 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     AmpProfiling _ampProfiling;
 
     //================================= RTNeural Load ====================================
-    // Déclaration du type de modèle (par exemple, un modèle séquentiel générique)
-    // Tu peux ajuster le type selon l'architecture de ton modèle (LSTM, Dense, Conv, etc.)
+    // Declaration of the model type (for example, a generic sequential model)
+    // You can adjust the type according to your model architecture (LSTM, Dense, Conv, etc.)
     std::unique_ptr<RTNeural::Model<float>> _neuralAmp;
 
-    bool _ampLoaded = false;  // Initialisé à false tant que le JSON n'est pas chargé
+    bool _ampLoaded = false;  // Initialized to false until the JSON is loaded
 
-    // Garde l'oversampler si nécessaire, mais attention à la fréquence d'entraînement du modèle !
+    // Keep the oversampler if needed, but be careful with the model's training sample rate!
     juce::dsp::Oversampling<float> oversampler{2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true};
 
     juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> _dcBlocker;
