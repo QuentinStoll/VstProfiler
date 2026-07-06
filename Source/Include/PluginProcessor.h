@@ -164,6 +164,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     // You can adjust the type according to your model architecture (LSTM, Dense, Conv, etc.)
     std::unique_ptr<RTNeural::Model<float>> _neuralAmp;
 
+    juce::CriticalSection _ampModelLock;
     bool _ampLoaded = false;  // Initialized to false until the JSON is loaded
 
     // Keep the oversampler if needed, but be careful with the model's training sample rate!

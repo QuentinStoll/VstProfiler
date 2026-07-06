@@ -128,9 +128,12 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
     //     spec.maximumBlockSize = samplesPerBlock;
     //     spec.numChannels = getTotalNumOutputChannels();
-    if (_neuralAmp != nullptr) {
-        _neuralAmp->reset();
-        _ampLoaded = true;
+    {
+        const juce::ScopedLock ampLock(_ampModelLock);
+        if (_neuralAmp != nullptr) {
+            _neuralAmp->reset();
+            _ampLoaded = true;
+        }
     }
 }
 
@@ -209,34 +212,37 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     juce::dsp::ProcessContextReplacing<float> context(block);
     _chain.process(context);
 
-    if (_ampLoaded && _neuralAmp != nullptr) {
-        const int numChans = buffer.getNumChannels();
-        const int numSamps = buffer.getNumSamples();
+    {
+        const juce::ScopedLock ampLock(_ampModelLock);
+        if (_ampLoaded && _neuralAmp != nullptr) {
+            const int numChans = buffer.getNumChannels();
+            const int numSamps = buffer.getNumSamples();
 
-        auto* channel0Data = buffer.getWritePointer(0);
+            auto* channel0Data = buffer.getWritePointer(0);
 
-        for (int i = 0; i < numSamps; ++i) {
-            // 1. Protection entrée : on évite d'envoyer un signal trop fort qui ferait exploser le réseau
-            float input = juce::jlimit(-1.0f, 1.0f, channel0Data[i]);
+            for (int i = 0; i < numSamps; ++i) {
+                // 1. Protection entrée : on évite d'envoyer un signal trop fort qui ferait exploser le réseau
+                float input = juce::jlimit(-1.0f, 1.0f, channel0Data[i]);
 
-            // 2. Traitement par RTNeural
-            float inputSample[] = {input};
-            _neuralAmp->forward(inputSample);
-            float output = _neuralAmp->getOutputs()[0];
+                // 2. Traitement par RTNeural
+                float inputSample[] = {input};
+                _neuralAmp->forward(inputSample);
+                float output = _neuralAmp->getOutputs()[0];
 
-            if (std::isnan(output) || std::isinf(output)) {
-                _neuralAmp->reset();
-                output = 0.0f;
+                if (std::isnan(output) || std::isinf(output)) {
+                    _neuralAmp->reset();
+                    output = 0.0f;
+                }
+
+                // 4. On applique le signal traité au buffer (avec une limite de sécurité à 1.0)
+                channel0Data[i] = juce::jlimit(-1.0f, 1.0f, output);
             }
 
-            // 4. On applique le signal traité au buffer (avec une limite de sécurité à 1.0)
-            channel0Data[i] = juce::jlimit(-1.0f, 1.0f, output);
-        }
-
-        // 5. Duplication stricte sur le canal droit (Stéréo)
-        if (numChans > 1) {
-            auto* channel1Data = buffer.getWritePointer(1);
-            juce::FloatVectorOperations::copy(channel1Data, channel0Data, numSamps);
+            // 5. Duplication stricte sur le canal droit (Stéréo)
+            if (numChans > 1) {
+                auto* channel1Data = buffer.getWritePointer(1);
+                juce::FloatVectorOperations::copy(channel1Data, channel0Data, numSamps);
+            }
         }
     }
 
@@ -367,29 +373,41 @@ bool ProfilerAudioProcessor::loadAmpFile(const juce::File& file) {
     if (!file.existsAsFile()) {
         return false;
     }
-    _ampLoaded = false;
-    std::ifstream jsonStream(file.getFullPathName().toStdString());
-    if (jsonStream.is_open()) {
-        try {
-            _neuralAmp = RTNeural::json_parser::parseJson<float>(jsonStream);
 
-            if (_neuralAmp != nullptr) {
-                _neuralAmp->reset();
-                _ampLoaded = true;
-            }
-        } catch (const std::exception& e) {
-            juce::Logger::writeToLog("RTNeural Load Error: " + juce::String(e.what()));
-            _ampLoaded = false;
-            _neuralAmp = nullptr;
-            return false;
-        }
+    std::unique_ptr<RTNeural::Model<float>> loadedAmp;
+    std::ifstream jsonStream(file.getFullPathName().toStdString());
+    if (!jsonStream.is_open()) {
+        return false;
     }
-    _currentAmpFile = file;
-    _ampFileLoaded = true;
+
+    try {
+        loadedAmp = RTNeural::json_parser::parseJson<float>(jsonStream);
+    } catch (const std::exception& e) {
+        juce::Logger::writeToLog("RTNeural Load Error: " + juce::String(e.what()));
+        return false;
+    }
+
+    if (loadedAmp == nullptr) {
+        return false;
+    }
+
+    loadedAmp->reset();
+
+    {
+        const juce::ScopedLock ampLock(_ampModelLock);
+        _neuralAmp = std::move(loadedAmp);
+        _ampLoaded = true;
+        _currentAmpFile = file;
+        _ampFileLoaded = true;
+    }
+
     return true;
 }
 
 void ProfilerAudioProcessor::unloadAmpFile() {
+    const juce::ScopedLock ampLock(_ampModelLock);
+    _ampLoaded = false;
+    _neuralAmp = nullptr;
     _ampFileLoaded = false;
     _currentAmpFile = juce::File{};
 }
@@ -399,6 +417,7 @@ bool ProfilerAudioProcessor::isIRLoaded() const noexcept {
 }
 
 bool ProfilerAudioProcessor::isAmpFileLoaded() const noexcept {
+    const juce::ScopedLock ampLock(_ampModelLock);
     return _ampFileLoaded;
 }
 
@@ -407,6 +426,7 @@ juce::File ProfilerAudioProcessor::getCurrentIRFile() const {
 }
 
 juce::File ProfilerAudioProcessor::getCurrentAmpFile() const {
+    const juce::ScopedLock ampLock(_ampModelLock);
     return _currentAmpFile;
 }
 
