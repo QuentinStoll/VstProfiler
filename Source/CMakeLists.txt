@@ -79,14 +79,17 @@ add_compile_definitions(JUCE_VST3_CAN_REPLACE_VST2=0)
 # Link JUCE modules from juce_setup.cmake
 if(NOT WIN32)
     target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets curl simdjson)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} curl simdjson RTNeural)
 else()
     target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets simdjson)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} simdjson RTNeural)
 endif()
 
 # Include directories
 target_include_directories(${PLUGIN_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/../JuceLibraryCode
+    ${rtneural_SOURCE_DIR}
 )
 
 # Apply compiler options and preset-based defines

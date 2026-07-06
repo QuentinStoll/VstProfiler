@@ -2,6 +2,13 @@
 
 #include <JuceHeader.h>
 
+#define RTNEURAL_DEFAULT_STATIC 1
+#define RTNEURAL_ENABLE_LSTM 1
+#define RTNEURAL_ENABLE_GRU 1
+#define RTNEURAL_ENABLE_DENSE 1
+
+#include <RTNeural/RTNeural.h>
+
 #include "AmpEngine.h"
 #include "AmpProfiling.h"
 #include "ProfileManager.h"
@@ -86,7 +93,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     using Filter = juce::dsp::ProcessorDuplicator<
         juce::dsp::IIR::Filter<float>,
-        juce::dsp::IIR::Coefficients<float> >;
+        juce::dsp::IIR::Coefficients<float>>;
 
     using Chain = juce::dsp::ProcessorChain<
         juce::dsp::Gain<float>,
@@ -144,15 +151,24 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     // Convolver object
     juce::dsp::Convolution _convolver;
 
+    // MAYBE DELETE THIS PART, IT'S NOT USED
     //================================= Amp load ====================================
     std::vector<float> _ampLUT;
-    bool _ampLoaded = true;
     bool _ampFileLoaded = false;
     juce::File _currentAmpFile;
-
     AmpProcessor _ampStage;
-
     AmpProfiling _ampProfiling;
 
+    //================================= RTNeural Load ====================================
+    // Declaration of the model type (for example, a generic sequential model)
+    // You can adjust the type according to your model architecture (LSTM, Dense, Conv, etc.)
+    std::unique_ptr<RTNeural::Model<float>> _neuralAmp;
+
+    juce::CriticalSection _ampModelLock;
+    bool _ampLoaded = false;  // Initialized to false until the JSON is loaded
+
+    // Keep the oversampler if needed, but be careful with the model's training sample rate!
     juce::dsp::Oversampling<float> oversampler{2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true};
+
+    juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> _dcBlocker;
 };
