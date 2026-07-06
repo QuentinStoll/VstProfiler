@@ -74,10 +74,10 @@ bool ProfilerAudioProcessor::isMidiEffect() const {
 }
 
 double ProfilerAudioProcessor::getTailLengthSeconds() const { return 0.0; }
-int ProfilerAudioProcessor::getNumPrograms() {return 1;}
+int ProfilerAudioProcessor::getNumPrograms() { return 1; }
 int ProfilerAudioProcessor::getCurrentProgram() { return 0; }
 void ProfilerAudioProcessor::setCurrentProgram(int index) {}
-const juce::String ProfilerAudioProcessor::getProgramName(int index) {return {};}
+const juce::String ProfilerAudioProcessor::getProgramName(int index) { return {}; }
 void ProfilerAudioProcessor::changeProgramName(int index, const juce::String& newName) {}
 
 //==============================================================================
@@ -120,7 +120,7 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     *_dcBlocker.state = *juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 35.0f);
     _dcBlocker.prepare(spec);
     _dcBlocker.reset();
-    
+
     oversampler.initProcessing(samplesPerBlock);
 
     // MAYBE DELETE THIS, IT'S NOT USED
@@ -215,18 +215,16 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
         auto* channel0Data = buffer.getWritePointer(0);
 
-        for (int i = 0; i < numSamps; ++i) 
-        {
+        for (int i = 0; i < numSamps; ++i) {
             // 1. Protection entrée : on évite d'envoyer un signal trop fort qui ferait exploser le réseau
             float input = juce::jlimit(-1.0f, 1.0f, channel0Data[i]);
 
             // 2. Traitement par RTNeural
-            float inputSample[] = { input };
+            float inputSample[] = {input};
             _neuralAmp->forward(inputSample);
             float output = _neuralAmp->getOutputs()[0];
 
-            if (std::isnan(output) || std::isinf(output)) 
-            {
+            if (std::isnan(output) || std::isinf(output)) {
                 _neuralAmp->reset();
                 output = 0.0f;
             }
@@ -270,7 +268,7 @@ void ProfilerAudioProcessor::updateEqCoefficients() {
 }
 
 //==============================================================================
-bool ProfilerAudioProcessor::hasEditor() const {return true;}
+bool ProfilerAudioProcessor::hasEditor() const { return true; }
 
 juce::AudioProcessorEditor* ProfilerAudioProcessor::createEditor() {
     return new ProfilerAudioProcessorEditor(*this);
@@ -370,17 +368,16 @@ bool ProfilerAudioProcessor::loadAmpFile(const juce::File& file) {
         return false;
     }
     _ampLoaded = false;
-    std::ifstream jsonStream(file.getFullPathName().toStdString());              
+    std::ifstream jsonStream(file.getFullPathName().toStdString());
     if (jsonStream.is_open()) {
         try {
             _neuralAmp = RTNeural::json_parser::parseJson<float>(jsonStream);
-            
+
             if (_neuralAmp != nullptr) {
                 _neuralAmp->reset();
                 _ampLoaded = true;
             }
-        }
-        catch (const std::exception& e) {
+        } catch (const std::exception& e) {
             juce::Logger::writeToLog("RTNeural Load Error: " + juce::String(e.what()));
             _ampLoaded = false;
             _neuralAmp = nullptr;

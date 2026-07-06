@@ -93,7 +93,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     using Filter = juce::dsp::ProcessorDuplicator<
         juce::dsp::IIR::Filter<float>,
-        juce::dsp::IIR::Coefficients<float> >;
+        juce::dsp::IIR::Coefficients<float>>;
 
     using Chain = juce::dsp::ProcessorChain<
         juce::dsp::Gain<float>,
@@ -151,7 +151,6 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     // Convolver object
     juce::dsp::Convolution _convolver;
 
-
     // MAYBE DELETE THIS PART, IT'S NOT USED
     //================================= Amp load ====================================
     std::vector<float> _ampLUT;
@@ -160,16 +159,15 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     AmpProcessor _ampStage;
     AmpProfiling _ampProfiling;
 
-
     //================================= RTNeural Load ====================================
     // Déclaration du type de modèle (par exemple, un modèle séquentiel générique)
     // Tu peux ajuster le type selon l'architecture de ton modèle (LSTM, Dense, Conv, etc.)
     std::unique_ptr<RTNeural::Model<float>> _neuralAmp;
-    
-    bool _ampLoaded = false; // Initialisé à false tant que le JSON n'est pas chargé
-    
+
+    bool _ampLoaded = false;  // Initialisé à false tant que le JSON n'est pas chargé
+
     // Garde l'oversampler si nécessaire, mais attention à la fréquence d'entraînement du modèle !
     juce::dsp::Oversampling<float> oversampler{2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true};
-    
+
     juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> _dcBlocker;
 };
