@@ -2,7 +2,7 @@ name: Mirror to Epitech
 
 on:
   push:
-    branches: [ main ]
+    branches: [ feat/mirror-epitech-repository ]
 
 jobs:
   mirror:
