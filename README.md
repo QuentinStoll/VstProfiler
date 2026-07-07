@@ -145,7 +145,7 @@ to be documented
 
 <!-- CONTRIBUTING -->
 ## Contributing
-see [CONTRIBUTING.md](CONTRIBUTING.md)
+see [CONTRIBUTING.md](contributing.md)
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
