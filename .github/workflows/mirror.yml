@@ -15,10 +15,16 @@ jobs:
 
       - name: Push to Epitech
         env:
-          TARGET_REPO: github.com/EpitechPromo2027/B-PRO-600-PAR-6-1-tech3internship-quentin.stoll.git
-          TOKEN: ${{ secrets.EPITECH_MIRROR_TOKEN }}
+          TOKEN: ${{ secrets.EPITECH_TOKEN }}
         run: |
+          # Vérifier le nom de la branche réelle
+          BRANCH_NAME=$(git branch --show-current)
+          echo "Syncing branch: $BRANCH_NAME"
+          
           git config --global user.name "GitHub Action Mirror"
           git config --global user.email "action@github.com"
-          git remote add epitech https://x-access-token:$TOKEN@$TARGET_REPO
-          git push epitech main --force
+          
+          git remote add epitech https://x-access-token:$TOKEN@github.com/EpitechPromo2027/B-PRO-600-PAR-6-1-tech3internship-quentin.stoll.git
+          
+          # Push de la branche actuelle dynamiquement
+          git push epitech $BRANCH_NAME --force
