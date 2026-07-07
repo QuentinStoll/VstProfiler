@@ -3,24 +3,3 @@ name: Mirror to Epitech
 on:
   push:
     branches: [ feat/mirror-epitech-repository ]
-
-jobs:
-  mirror:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Push to Epitech
-        env:
-          TOKEN: ${{ secrets.EPITECH_MIRROR_TOKEN }}
-        run: |
-          git config --global user.name "GitHub Action Mirror"
-          git config --global user.email "action@github.com"
-          
-          git remote add epitech https://x-access-token:$TOKEN@github.com/EpitechPromo2027/B-PRO-600-PAR-6-1-tech3internship-quentin.stoll.git
-          
-          # Force le push de la branche actuelle
-          git push epitech HEAD:main --force
