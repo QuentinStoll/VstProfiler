@@ -9,8 +9,6 @@
 
 #include <RTNeural/RTNeural.h>
 
-#include "AmpEngine.h"
-#include "AmpProfiling.h"
 #include "ProfileManager.h"
 
 //==============================================================================
@@ -74,8 +72,6 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void syncLoadedFilesWithCurrentProfile();
     juce::String getAppliedProfileId() const;
     void clearAppliedProfile();
-    void startAmpProfiling();
-    void startGainAnalysis();
     ProfileManager& getProfileManager() noexcept;
     const ProfileManager& getProfileManager() const noexcept;
 
@@ -151,13 +147,9 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     // Convolver object
     juce::dsp::Convolution _convolver;
 
-    // MAYBE DELETE THIS PART, IT'S NOT USED
-    //================================= Amp load ====================================
-    std::vector<float> _ampLUT;
+    //================================= Amp file load ====================================
     bool _ampFileLoaded = false;
     juce::File _currentAmpFile;
-    AmpProcessor _ampStage;
-    AmpProfiling _ampProfiling;
 
     //================================= RTNeural Load ====================================
     // Declaration of the model type (for example, a generic sequential model)

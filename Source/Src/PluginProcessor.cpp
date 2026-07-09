@@ -123,11 +123,6 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
     oversampler.initProcessing(samplesPerBlock);
 
-    // MAYBE DELETE THIS, IT'S NOT USED
-    _ampStage.prepare(static_cast<float>(sampleRate));
-
-    //     spec.maximumBlockSize = samplesPerBlock;
-    //     spec.numChannels = getTotalNumOutputChannels();
     {
         const juce::ScopedLock ampLock(_ampModelLock);
         if (_neuralAmp != nullptr) {
@@ -496,15 +491,6 @@ juce::String ProfilerAudioProcessor::getAppliedProfileId() const {
 
 void ProfilerAudioProcessor::clearAppliedProfile() {
     _appliedProfileId.clear();
-}
-
-void ProfilerAudioProcessor::startAmpProfiling() {
-    // _ampProfiling.generateAndSaveGainSignal();
-    // _ampProfiling.generateSaturationProbe();
-}
-
-void ProfilerAudioProcessor::startGainAnalysis() {
-    _ampProfiling.startGainAnalysis(_ampStage);
 }
 
 ProfileManager& ProfilerAudioProcessor::getProfileManager() noexcept {

@@ -36,8 +36,6 @@
       <FILE id="WeqCms" name="ProfilerConstantValues.h" compile="0" resource="0"
             file="Source/Include/ProfilerConstantValues.h"/>
       <FILE id="oeWtYH" name="Stylesheet.h" compile="0" resource="0" file="Source/Include/Stylesheet.h"/>
-      <FILE id="BQk8Z4" name="AmpEngine.h" compile="0" resource="0" file="Source/Include/AmpEngine.h"/>
-      <FILE id="JjJUYx" name="AmpProfiling.h" compile="0" resource="0" file="Source/Include/AmpProfiling.h"/>
       <FILE id="dEQ4CG" name="PluginEditor.h" compile="0" resource="0" file="Source/Include/PluginEditor.h"/>
       <FILE id="DnsYDd" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/Include/PluginProcessor.h"/>
@@ -83,9 +81,6 @@
             file="Source/Src/PluginEditor.cpp"/>
       <FILE id="KQ9tZq" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/Src/PluginProcessor.cpp"/>
-      <FILE id="xNJlRd" name="AmpEngine.cpp" compile="1" resource="0" file="Source/Src/AmpEngine.cpp"/>
-      <FILE id="Njb4db" name="AmpProfiling.cpp" compile="1" resource="0"
-            file="Source/Src/AmpProfiling.cpp"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>

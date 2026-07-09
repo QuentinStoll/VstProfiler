@@ -67,8 +67,6 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/ProfileManager.cpp
     Src/PluginEditor.cpp
     Src/PluginProcessor.cpp
-    Src/AmpEngine.cpp
-    Src/AmpProfiling.cpp
     Src/Logging.cpp
 )
 
