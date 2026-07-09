@@ -12,6 +12,18 @@
 #include "Logging.h"
 #include "PluginEditor.h"
 
+namespace {
+float getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept {
+    return parameter != nullptr ? parameter->load() : fallback;
+}
+
+bool isCompatibleAmpModel(const RTNeural::Model<float>& model) {
+    return !model.layers.empty() &&
+           model.getInSize() == 1 &&
+           model.getOutSize() >= 1;
+}
+}  // namespace
+
 //==============================================================================
 ProfilerAudioProcessor::ProfilerAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -101,18 +113,18 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     _chain.reset();
     _chain.prepare(spec);
 
-    _chain.get<Gain>().setGainDecibels(_gainParam->load());
+    _chain.get<Gain>().setGainDecibels(getParameterValue(_gainParam, 0.0f));
     _chain.get<Gain>().setRampDurationSeconds(0.05);
 
-    _chain.get<NoiseGate>().setThreshold(_noiseParam->load() - 60.0f);
+    _chain.get<NoiseGate>().setThreshold(getParameterValue(_noiseParam, 10.0f) - 60.0f);
     _chain.get<NoiseGate>().setAttack(5.0f);
     _chain.get<NoiseGate>().setRelease(100.0f);
     _chain.get<NoiseGate>().setRatio(10.0f);
 
-    _chain.get<MasterVolume>().setGainDecibels(_masterParam->load() / 100.0f);
+    _chain.get<MasterVolume>().setGainDecibels(getParameterValue(_masterParam, 50.0f) / 100.0f);
     _chain.get<MasterVolume>().setRampDurationSeconds(0.05);
 
-    const bool eqEnabled = _isEqEnabledParam->load() > 0.5f;
+    const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
 
     _chain.setBypassed<Depth>(!eqEnabled);
     _chain.setBypassed<Bass>(!eqEnabled);
@@ -180,21 +192,27 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                           juce::MidiBuffer& /*midiMessages*/) {
     juce::ScopedNoDenormals noDenormals;
 
+    const auto numChannels = buffer.getNumChannels();
+    const auto numSamples = buffer.getNumSamples();
+    if (numChannels <= 0 || numSamples <= 0) {
+        return;
+    }
+
     // Handle Mute
-    if (_isMuteParam->load() > 0.5f) {
+    if (getParameterValue(_isMuteParam, 0.0f) > 0.5f) {
         buffer.clear();
         return;
     }
 
     // Handle any incoming MIDI messages (e.g., for parameter automation)
-    for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
-        buffer.clear(i, 0, buffer.getNumSamples());
+    for (auto i = getTotalNumInputChannels(); i < juce::jmin(getTotalNumOutputChannels(), numChannels); ++i)
+        buffer.clear(i, 0, numSamples);
 
-    _chain.get<Gain>().setGainDecibels(_gainParam->load());
-    _chain.get<NoiseGate>().setThreshold(_noiseParam->load() - 60.0f);
-    _chain.get<MasterVolume>().setGainLinear(_masterParam->load() / 100.0f);
+    _chain.get<Gain>().setGainDecibels(getParameterValue(_gainParam, 0.0f));
+    _chain.get<NoiseGate>().setThreshold(getParameterValue(_noiseParam, 10.0f) - 60.0f);
+    _chain.get<MasterVolume>().setGainLinear(getParameterValue(_masterParam, 50.0f) / 100.0f);
 
-    const bool eqEnabled = _isEqEnabledParam != nullptr && _isEqEnabledParam->load() > 0.5f;
+    const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
 
     _chain.setBypassed<Depth>(!eqEnabled);
     _chain.setBypassed<Bass>(!eqEnabled);
@@ -213,12 +231,9 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     {
         const juce::ScopedLock ampLock(_ampModelLock);
         if (_ampLoaded && _neuralAmp != nullptr) {
-            const int numChans = buffer.getNumChannels();
-            const int numSamps = buffer.getNumSamples();
-
             auto* channel0Data = buffer.getWritePointer(0);
 
-            for (int i = 0; i < numSamps; ++i) {
+            for (int i = 0; i < numSamples; ++i) {
                 // 1. Protection entrée : on évite d'envoyer un signal trop fort qui ferait exploser le réseau
                 float input = juce::jlimit(-1.0f, 1.0f, channel0Data[i]);
 
@@ -237,9 +252,9 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             }
 
             // 5. Duplication stricte sur le canal droit (Stéréo)
-            if (numChans > 1) {
+            if (numChannels > 1) {
                 auto* channel1Data = buffer.getWritePointer(1);
-                juce::FloatVectorOperations::copy(channel1Data, channel0Data, numSamps);
+                juce::FloatVectorOperations::copy(channel1Data, channel0Data, numSamples);
             }
         }
     }
@@ -256,19 +271,19 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
 void ProfilerAudioProcessor::updateEqCoefficients() {
     *_chain.get<Depth>().state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf(
-        getSampleRate(), DEPTH_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_depthParam->load()));
+        getSampleRate(), DEPTH_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(getParameterValue(_depthParam, 0.0f)));
 
     *_chain.get<Bass>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-        getSampleRate(), BASS_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_bassParam->load()));
+        getSampleRate(), BASS_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(getParameterValue(_bassParam, 0.0f)));
 
     *_chain.get<Mid>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-        getSampleRate(), MID_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_midParam->load()));
+        getSampleRate(), MID_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(getParameterValue(_midParam, 0.0f)));
 
     *_chain.get<Treble>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-        getSampleRate(), TREBLE_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_trebleParam->load()));
+        getSampleRate(), TREBLE_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(getParameterValue(_trebleParam, 0.0f)));
 
     *_chain.get<Presence>().state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(
-        getSampleRate(), PRESENCE_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_presenceParam->load()));
+        getSampleRate(), PRESENCE_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(getParameterValue(_presenceParam, 0.0f)));
 }
 
 //==============================================================================
@@ -386,6 +401,11 @@ bool ProfilerAudioProcessor::loadAmpFile(const juce::File& file) {
     }
 
     if (loadedAmp == nullptr) {
+        return false;
+    }
+
+    if (!isCompatibleAmpModel(*loadedAmp)) {
+        juce::Logger::writeToLog("RTNeural Load Error: expected a mono-input model with at least one output.");
         return false;
     }
 
