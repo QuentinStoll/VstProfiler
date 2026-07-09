@@ -71,17 +71,22 @@ void FormPathField::resizedControl(juce::Rectangle<int> controlArea) {
 
 void FormPathField::browseForPath() {
     _fileChooser = std::make_unique<juce::FileChooser>("Select " + getLabelText(), juce::File{}, _filePatterns);
+    const juce::Component::SafePointer<FormPathField> safeThis(this);
     _fileChooser->launchAsync(juce::FileBrowserComponent::openMode |
                                   juce::FileBrowserComponent::canSelectFiles,
-                              [this](const juce::FileChooser& chooser) {
+                              [safeThis](const juce::FileChooser& chooser) {
+                                  if (safeThis == nullptr) {
+                                      return;
+                                  }
+
                                   const auto file = chooser.getResult();
                                   if (file.existsAsFile()) {
-                                      setPath(file.getFullPathName(), juce::sendNotification);
-                                      if (onFileSelected) {
-                                          onFileSelected(file);
+                                      safeThis->setPath(file.getFullPathName(), juce::sendNotification);
+                                      if (safeThis->onFileSelected) {
+                                          safeThis->onFileSelected(file);
                                       }
                                   }
 
-                                  _fileChooser.reset();
+                                  safeThis->_fileChooser.reset();
                               });
 }
