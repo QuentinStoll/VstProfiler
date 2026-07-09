@@ -9,7 +9,11 @@ CustomTabs::CustomTabs(std::vector<TabInfo> tabs, int defaultIndex) : _tabs(std:
 
     _tabBar.onTabChanged = [this](int index) { changeView(index); };
 
-    _tabBar.setCurrentTabIndex(defaultIndex);
+    if (!_tabs.empty()) {
+        const auto initialIndex = juce::jlimit(0, static_cast<int>(_tabs.size()) - 1, defaultIndex);
+        _tabBar.setCurrentTabIndex(initialIndex);
+        changeView(initialIndex);
+    }
 }
 
 void CustomTabs::paint(juce::Graphics& /*g*/) {}
