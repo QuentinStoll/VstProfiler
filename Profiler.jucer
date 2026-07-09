@@ -39,10 +39,6 @@
       <FILE id="dEQ4CG" name="PluginEditor.h" compile="0" resource="0" file="Source/Include/PluginEditor.h"/>
       <FILE id="DnsYDd" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/Include/PluginProcessor.h"/>
-      <FILE id="Tq16GP" name="SelectionScreen.h" compile="0" resource="0"
-            file="Source/Include/SelectionScreen.h"/>
-      <FILE id="kpnwSI" name="SweepGenerator.h" compile="0" resource="0"
-            file="Source/Include/SweepGenerator.h"/>
     </GROUP>
     <GROUP id="{3842B737-32C2-E9C6-BA17-6825D882BBB8}" name="Src">
       <GROUP id="{AA97C183-8D39-580E-1626-3283C80FFCDE}" name="Components">

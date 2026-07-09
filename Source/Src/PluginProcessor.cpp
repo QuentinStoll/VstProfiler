@@ -1,5 +1,14 @@
 #include "PluginProcessor.h"
 
+#include <fstream>
+
+#define RTNEURAL_DEFAULT_STATIC 1
+#define RTNEURAL_ENABLE_LSTM 1
+#define RTNEURAL_ENABLE_GRU 1
+#define RTNEURAL_ENABLE_DENSE 1
+
+#include <RTNeural/RTNeural.h>
+
 #include "Logging.h"
 #include "PluginEditor.h"
 
@@ -76,9 +85,9 @@ bool ProfilerAudioProcessor::isMidiEffect() const {
 double ProfilerAudioProcessor::getTailLengthSeconds() const { return 0.0; }
 int ProfilerAudioProcessor::getNumPrograms() { return 1; }
 int ProfilerAudioProcessor::getCurrentProgram() { return 0; }
-void ProfilerAudioProcessor::setCurrentProgram(int index) {}
-const juce::String ProfilerAudioProcessor::getProgramName(int index) { return {}; }
-void ProfilerAudioProcessor::changeProgramName(int index, const juce::String& newName) {}
+void ProfilerAudioProcessor::setCurrentProgram(int /*index*/) {}
+const juce::String ProfilerAudioProcessor::getProgramName(int /*index*/) { return {}; }
+void ProfilerAudioProcessor::changeProgramName(int /*index*/, const juce::String& /*newName*/) {}
 
 //==============================================================================
 void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
@@ -167,7 +176,8 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported(
     This implementation handles gain scaling, a main Dsp chain,
     an oversampled non-linear amp stage, and an IR convolution stage.
 */
-void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
+void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
+                                          juce::MidiBuffer& /*midiMessages*/) {
     juce::ScopedNoDenormals noDenormals;
 
     // Handle Mute
@@ -175,9 +185,6 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         buffer.clear();
         return;
     }
-    const int numSamples = buffer.getNumSamples();
-    const int totalNumInputChannels = getTotalNumInputChannels();
-    const int totalNumOutputChannels = getTotalNumOutputChannels();
 
     // Handle any incoming MIDI messages (e.g., for parameter automation)
     for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
@@ -186,10 +193,6 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     _chain.get<Gain>().setGainDecibels(_gainParam->load());
     _chain.get<NoiseGate>().setThreshold(_noiseParam->load() - 60.0f);
     _chain.get<MasterVolume>().setGainLinear(_masterParam->load() / 100.0f);
-
-    // updateFilterCoefficients();
-    float inputFactor = juce::Decibels::decibelsToGain(_apvts.getRawParameterValue("input")->load());
-    float outputFactor = juce::Decibels::decibelsToGain(_apvts.getRawParameterValue("output")->load());
 
     const bool eqEnabled = _isEqEnabledParam != nullptr && _isEqEnabledParam->load() > 0.5f;
 

@@ -2,14 +2,12 @@
 
 #include <JuceHeader.h>
 
-#define RTNEURAL_DEFAULT_STATIC 1
-#define RTNEURAL_ENABLE_LSTM 1
-#define RTNEURAL_ENABLE_GRU 1
-#define RTNEURAL_ENABLE_DENSE 1
-
-#include <RTNeural/RTNeural.h>
-
 #include "ProfileManager.h"
+
+namespace RTNeural {
+template <typename T>
+class Model;
+}
 
 //==============================================================================
 /**
