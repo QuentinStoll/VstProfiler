@@ -77,7 +77,6 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     enum ChainPositions {
         Gain = 0,
         NoiseGate,
-        MasterVolume,
         Depth,
         Bass,
         Mid,
@@ -92,7 +91,6 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     using Chain = juce::dsp::ProcessorChain<
         juce::dsp::Gain<float>,
         juce::dsp::NoiseGate<float>,
-        juce::dsp::Gain<float>,
         Filter,
         Filter,
         Filter,
@@ -100,6 +98,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
         Filter>;
 
     Chain _chain;
+    juce::dsp::Gain<float> _masterVolume;
 
     static constexpr float DEPTH_FREQ{60.0f};
     static constexpr float BASS_FREQ{200.0f};
