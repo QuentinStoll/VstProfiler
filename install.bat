@@ -17,6 +17,7 @@ if "%1"=="" goto default
 if /I "%1"=="all" goto default
 if /I "%1"=="config" goto config
 if /I "%1"=="build" goto build
+if /I "%1"=="test" goto test
 if /I "%1"=="re" goto rebuild
 if /I "%1"=="-h" goto usage
 if /I "%1"=="--help" goto usage
@@ -27,6 +28,7 @@ echo Usage:
 echo   install.bat all       config + build (default)
 echo   install.bat config    cmake config only
 echo   install.bat build     cmake build only
+echo   install.bat test      run automated tests
 echo   install.bat re        cache delete + remake
 echo   install.bat -h        show this help
 goto end
@@ -49,6 +51,32 @@ if errorlevel 1 (
     exit /b 1
 )
 echo [OK] Done building project
+goto end
+
+:test
+if not exist "%BUILD_DIR%\CMakeCache.txt" (
+    call :config
+    if errorlevel 1 exit /b 1
+)
+echo [INFO] Building automated tests
+cmake --build "%BUILD_DIR%" --target ProfilerTests --config Release
+if errorlevel 1 (
+    echo [ERROR] Test build failed
+    exit /b 1
+)
+echo [INFO] Running automated tests
+ctest --test-dir "%BUILD_DIR%" -C Release --output-on-failure
+if errorlevel 1 (
+    echo [ERROR] Tests failed
+    exit /b 1
+)
+echo [INFO] Test summary
+"%BUILD_DIR%\Tests\Release\ProfilerTests.exe" --quiet
+if errorlevel 1 (
+    echo [ERROR] Test summary failed
+    exit /b 1
+)
+echo [OK] Tests passed
 goto end
 
 :rebuild

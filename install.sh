@@ -18,6 +18,7 @@ usage() {
 	echo "  ./install.sh all       config + build (default)"
 	echo "  ./install.sh config    cmake config only"
 	echo "  ./install.sh build     cmake build only"
+	echo "  ./install.sh test      run automated tests"
 	echo "  ./install.sh re    	   cache delete + remake"
 }
 
@@ -33,6 +34,26 @@ build() {
 	echo "[OK] Done building project"
 }
 
+test_project() {
+	if [ ! -f "$BUILD_DIR/CMakeCache.txt" ]; then
+		config
+	fi
+	echo "[INFO] Building automated tests"
+	cmake --build "$BUILD_DIR" --target ProfilerTests
+	echo "[INFO] Running automated tests"
+	ctest --test-dir "$BUILD_DIR" --output-on-failure
+	echo "[INFO] Test summary"
+	TEST_EXE="$BUILD_DIR/Tests/ProfilerTests"
+	if [ ! -x "$TEST_EXE" ] && [ -x "$BUILD_DIR/Tests/Release/ProfilerTests" ]; then
+		TEST_EXE="$BUILD_DIR/Tests/Release/ProfilerTests"
+	fi
+	if [ ! -x "$TEST_EXE" ] && [ -x "$BUILD_DIR/Tests/Release/ProfilerTests.exe" ]; then
+		TEST_EXE="$BUILD_DIR/Tests/Release/ProfilerTests.exe"
+	fi
+	"$TEST_EXE" --quiet
+	echo "[OK] Tests passed"
+}
+
 case "$1" in
 	"" | "all")
 		config
@@ -43,6 +64,9 @@ case "$1" in
 		;;
 	build )
 		build
+		;;
+	test )
+		test_project
 		;;
 	re )
 		rm -fr $BUILD_DIR

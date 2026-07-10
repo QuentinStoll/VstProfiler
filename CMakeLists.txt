@@ -14,3 +14,9 @@ include(presets)
 include(compiler_options)
 
 add_subdirectory(Source)
+
+option(PROFILER_BUILD_TESTS "Build Profiler automated tests" ON)
+if(PROFILER_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(Tests)
+endif()

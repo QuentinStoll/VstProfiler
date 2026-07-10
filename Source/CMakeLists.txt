@@ -2,12 +2,27 @@
 
 set(PLUGIN_NAME Profiler)
 
+set(PROFILER_PLUGIN_FORMATS)
+if(PLUGIN_AU)
+    list(APPEND PROFILER_PLUGIN_FORMATS AU)
+endif()
+if(PLUGIN_VST3)
+    list(APPEND PROFILER_PLUGIN_FORMATS VST3)
+endif()
+if(PLUGIN_STANDALONE)
+    list(APPEND PROFILER_PLUGIN_FORMATS Standalone)
+endif()
+
+if(NOT PROFILER_PLUGIN_FORMATS)
+    list(APPEND PROFILER_PLUGIN_FORMATS VST3 Standalone)
+endif()
+
 juce_add_plugin(${PLUGIN_NAME}
     COMPANY_NAME "YourCompany"
     PRODUCT_NAME "Profiler"
     PLUGIN_NAME "Profiler"
 
-    FORMATS AU VST3 Standalone   # pick what you need
+    FORMATS ${PROFILER_PLUGIN_FORMATS}
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
@@ -92,11 +107,3 @@ target_include_directories(${PLUGIN_NAME} PRIVATE
 # Apply compiler options and preset-based defines
 apply_compiler_options(${PLUGIN_NAME})
 
-# Add plugin formats based on presets
-if(APPLE)
-    set(FORMATS AU VST3 Standalone)
-elseif(UNIX)
-    set(FORMATS VST3)
-else()
-    set(FORMATS VST3 Standalone)
-endif()
