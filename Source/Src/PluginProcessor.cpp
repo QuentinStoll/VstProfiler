@@ -10,7 +10,9 @@
 #include <RTNeural/RTNeural.h>
 
 #include "Logging.h"
+#if !PROFILER_HEADLESS_TESTS
 #include "PluginEditor.h"
+#endif
 
 float ProfilerAudioProcessor::getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept {
     return parameter != nullptr ? parameter->load() : fallback;
@@ -303,10 +305,20 @@ void ProfilerAudioProcessor::updateEqCoefficients() {
 }
 
 //==============================================================================
-bool ProfilerAudioProcessor::hasEditor() const { return true; }
+bool ProfilerAudioProcessor::hasEditor() const {
+#if PROFILER_HEADLESS_TESTS
+    return false;
+#else
+    return true;
+#endif
+}
 
 juce::AudioProcessorEditor* ProfilerAudioProcessor::createEditor() {
+#if PROFILER_HEADLESS_TESTS
+    return nullptr;
+#else
     return new ProfilerAudioProcessorEditor(*this);
+#endif
 }
 
 //==============================================================================

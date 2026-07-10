@@ -1,10 +1,13 @@
 set(PROFILER_TEST_SOURCES
     TestRunner.cpp
+    AudioProcessorTests.cpp
     ProfileManagerTests.cpp
 )
 
 add_executable(ProfilerTests
     ${PROFILER_TEST_SOURCES}
+    ../Source/Src/Logging.cpp
+    ../Source/Src/PluginProcessor.cpp
     ../Source/Src/ProfileManager.cpp
 )
 
@@ -18,15 +21,25 @@ target_compile_definitions(ProfilerTests PRIVATE
     JUCE_UNIT_TESTS=1
     JUCE_DISPLAY_SPLASH_SCREEN=0
     JUCE_REPORT_APP_USAGE=0
+    PROFILER_HEADLESS_TESTS=1
+    JucePlugin_IsSynth=0
+    JucePlugin_WantsMidiInput=0
+    JucePlugin_ProducesMidiOutput=0
+    JucePlugin_IsMidiEffect=0
+    JucePlugin_Name="Profiler"
     PROFILER_TEST_TEMP_ROOT="${CMAKE_CURRENT_BINARY_DIR}/tmp"
 )
 
 target_link_libraries(ProfilerTests PRIVATE
     juce::juce_audio_basics
+    juce::juce_audio_formats
     juce::juce_audio_processors
     juce::juce_core
     juce::juce_data_structures
+    juce::juce_dsp
     juce::juce_events
+    RTNeural
+    simdjson
 )
 
 apply_compiler_options(ProfilerTests)
@@ -49,3 +62,21 @@ add_profiler_profile_manager_test(ApplyParameterMapping "apply profile values to
 add_profiler_profile_manager_test(SaveCurrentProfileSetting "save current profile setting")
 add_profiler_profile_manager_test(ClearCurrentProfileSetting "clear current profile setting")
 add_profiler_profile_manager_test(CaptureCurrentValues "capture current APVTS values with profile file paths")
+
+function(add_profiler_audio_processor_test test_name case_name)
+    add_test(NAME ProfilerTests.AudioProcessor.${test_name}
+        COMMAND ProfilerTests --case "${case_name}")
+endfunction()
+
+add_profiler_audio_processor_test(Metadata "audio processor metadata")
+add_profiler_audio_processor_test(BusLayouts "audio processor bus layouts")
+add_profiler_audio_processor_test(ParameterDefaults "audio processor parameter defaults")
+add_profiler_audio_processor_test(StateRoundTrip "audio processor state round trip")
+add_profiler_audio_processor_test(ProcessBlockSmoke "audio processor process block smoke")
+add_profiler_audio_processor_test(MuteClearsBuffer "audio processor mute clears buffer")
+add_profiler_audio_processor_test(MasterZeroSilencesBuffer "audio processor master zero silences buffer")
+add_profiler_audio_processor_test(GainChangesOutputLevel "audio processor gain changes output level")
+add_profiler_audio_processor_test(SilentInputStaysSilent "audio processor silent input stays silent")
+add_profiler_audio_processor_test(PrepareBlockSizes "audio processor handles prepare block sizes")
+add_profiler_audio_processor_test(ReleaseAndReprepare "audio processor release and reprepare")
+add_profiler_audio_processor_test(RejectMissingAssetFiles "audio processor rejects missing asset files")
