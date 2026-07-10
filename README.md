@@ -2,13 +2,9 @@
 
 <!-- PROJECT SHIELDS -->
 [![Epitech](https://img.shields.io/badge/Epitech-Paris-blue)](https://www.epitech.eu/fr/)
+[![OpenSource](https://img.shields.io/badge/Open-Source-red)](https://github.com/QuentinStoll/VstProfiler/tree/feat/documentation-and-contributing)
 [![JUCE](https://img.shields.io/badge/JUCE-8.0.12+-brightgreen)](https://juce.com/)
 [![C++20](https://img.shields.io/badge/C++-20-blue)](https://en.cppreference.com/w/cpp/20)
-[![GitHub stars](https://img.shields.io/github/stars/VOTRE_NOM/VOTRE_PROJET?style=social)](https://github.com/VOTRE_NOM/VOTRE_PROJET/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/VOTRE_NOM/VOTRE_PROJET)](https://github.com/VOTRE_NOM/VOTRE_PROJET/issues)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![GitHub topics](https://img.shields.io/github/topics/VOTRE_NOM/VOTRE_PROJET)
-
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
