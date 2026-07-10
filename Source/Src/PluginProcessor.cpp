@@ -12,17 +12,29 @@
 #include "Logging.h"
 #include "PluginEditor.h"
 
-namespace {
-float getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept {
+float ProfilerAudioProcessor::getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept {
     return parameter != nullptr ? parameter->load() : fallback;
 }
 
-bool isCompatibleAmpModel(const RTNeural::Model<float>& model) {
+bool ProfilerAudioProcessor::isCompatibleAmpModel(const RTNeural::Model<float>& model) {
     return !model.layers.empty() &&
            model.getInSize() == 1 &&
            model.getOutSize() >= 1;
 }
-}  // namespace
+
+float ProfilerAudioProcessor::getMasterGainLinear(float masterPercent) noexcept {
+    const auto percent = juce::jlimit(0.0f, 100.0f, masterPercent);
+
+    if (percent <= 0.0f) {
+        return 0.0f;
+    }
+
+    if (percent <= 50.0f) {
+        return percent / 50.0f;
+    }
+
+    return juce::Decibels::decibelsToGain(juce::jmap(percent, 50.0f, 100.0f, 0.0f, 12.0f));
+}
 
 //==============================================================================
 ProfilerAudioProcessor::ProfilerAudioProcessor()
@@ -116,13 +128,14 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     _chain.get<Gain>().setGainDecibels(getParameterValue(_gainParam, 0.0f));
     _chain.get<Gain>().setRampDurationSeconds(0.05);
 
+    _masterVolume.prepare(spec);
+    _masterVolume.setRampDurationSeconds(0.05);
+    _masterVolume.setGainLinear(getMasterGainLinear(getParameterValue(_masterParam, 50.0f)));
+
     _chain.get<NoiseGate>().setThreshold(getParameterValue(_noiseParam, 10.0f) - 60.0f);
     _chain.get<NoiseGate>().setAttack(5.0f);
     _chain.get<NoiseGate>().setRelease(100.0f);
     _chain.get<NoiseGate>().setRatio(10.0f);
-
-    _chain.get<MasterVolume>().setGainDecibels(getParameterValue(_masterParam, 50.0f) / 100.0f);
-    _chain.get<MasterVolume>().setRampDurationSeconds(0.05);
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
 
@@ -155,6 +168,7 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
 void ProfilerAudioProcessor::releaseResources() {
     _chain.reset();
+    _masterVolume.reset();
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -210,7 +224,6 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     _chain.get<Gain>().setGainDecibels(getParameterValue(_gainParam, 0.0f));
     _chain.get<NoiseGate>().setThreshold(getParameterValue(_noiseParam, 10.0f) - 60.0f);
-    _chain.get<MasterVolume>().setGainLinear(getParameterValue(_masterParam, 50.0f) / 100.0f);
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
 
@@ -265,8 +278,11 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     // 4. Cabinet Simulation
     if (_irLoaded) {
-        _convolver.process(context);
+        _convolver.process(postAmpContext);
     }
+
+    _masterVolume.setGainLinear(getMasterGainLinear(getParameterValue(_masterParam, 50.0f)));
+    _masterVolume.process(postAmpContext);
 }
 
 void ProfilerAudioProcessor::updateEqCoefficients() {
