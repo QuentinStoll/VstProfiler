@@ -2,16 +2,12 @@
 
 #include <JuceHeader.h>
 
-#define RTNEURAL_DEFAULT_STATIC 1
-#define RTNEURAL_ENABLE_LSTM 1
-#define RTNEURAL_ENABLE_GRU 1
-#define RTNEURAL_ENABLE_DENSE 1
-
-#include <RTNeural/RTNeural.h>
-
-#include "AmpEngine.h"
-#include "AmpProfiling.h"
 #include "ProfileManager.h"
+
+namespace RTNeural {
+template <typename T>
+class Model;
+}
 
 //==============================================================================
 /**
@@ -74,8 +70,6 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void syncLoadedFilesWithCurrentProfile();
     juce::String getAppliedProfileId() const;
     void clearAppliedProfile();
-    void startAmpProfiling();
-    void startGainAnalysis();
     ProfileManager& getProfileManager() noexcept;
     const ProfileManager& getProfileManager() const noexcept;
 
@@ -83,7 +77,6 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     enum ChainPositions {
         Gain = 0,
         NoiseGate,
-        MasterVolume,
         Depth,
         Bass,
         Mid,
@@ -98,7 +91,6 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     using Chain = juce::dsp::ProcessorChain<
         juce::dsp::Gain<float>,
         juce::dsp::NoiseGate<float>,
-        juce::dsp::Gain<float>,
         Filter,
         Filter,
         Filter,
@@ -106,6 +98,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
         Filter>;
 
     Chain _chain;
+    juce::dsp::Gain<float> _masterVolume;
 
     static constexpr float DEPTH_FREQ{60.0f};
     static constexpr float BASS_FREQ{200.0f};
@@ -133,6 +126,9 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     void updateEqCoefficients();
     void applyProfileFileValues(const juce::NamedValueSet& values);
+    static float getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept;
+    static bool isCompatibleAmpModel(const RTNeural::Model<float>& model);
+    static float getMasterGainLinear(float masterPercent) noexcept;
 
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
@@ -151,13 +147,9 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     // Convolver object
     juce::dsp::Convolution _convolver;
 
-    // MAYBE DELETE THIS PART, IT'S NOT USED
-    //================================= Amp load ====================================
-    std::vector<float> _ampLUT;
+    //================================= Amp file load ====================================
     bool _ampFileLoaded = false;
     juce::File _currentAmpFile;
-    AmpProcessor _ampStage;
-    AmpProfiling _ampProfiling;
 
     //================================= RTNeural Load ====================================
     // Declaration of the model type (for example, a generic sequential model)
