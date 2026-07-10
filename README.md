@@ -7,7 +7,7 @@
 [![JUCE](https://img.shields.io/badge/JUCE-8.0.12+-red)](https://juce.com/)
 <!-- PROJECT LOGO -->
 
-![Alt text](Souce/Assets/png/ProfilerBanner.png)   
+![Alt text](Source/Assets/png/ProfilerBanner.png)   
 
 <br />
 <div align="center">
