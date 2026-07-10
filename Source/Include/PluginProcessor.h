@@ -126,6 +126,9 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     void updateEqCoefficients();
     void applyProfileFileValues(const juce::NamedValueSet& values);
+    static float getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept;
+    static bool isCompatibleAmpModel(const RTNeural::Model<float>& model);
+    static float getMasterGainLinear(float masterPercent) noexcept;
 
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

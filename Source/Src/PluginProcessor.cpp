@@ -12,18 +12,17 @@
 #include "Logging.h"
 #include "PluginEditor.h"
 
-namespace {
-float getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept {
+float ProfilerAudioProcessor::getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept {
     return parameter != nullptr ? parameter->load() : fallback;
 }
 
-bool isCompatibleAmpModel(const RTNeural::Model<float>& model) {
+bool ProfilerAudioProcessor::isCompatibleAmpModel(const RTNeural::Model<float>& model) {
     return !model.layers.empty() &&
            model.getInSize() == 1 &&
            model.getOutSize() >= 1;
 }
 
-float getMasterGainLinear(float masterPercent) noexcept {
+float ProfilerAudioProcessor::getMasterGainLinear(float masterPercent) noexcept {
     const auto percent = juce::jlimit(0.0f, 100.0f, masterPercent);
 
     if (percent <= 0.0f) {
@@ -36,7 +35,6 @@ float getMasterGainLinear(float masterPercent) noexcept {
 
     return juce::Decibels::decibelsToGain(juce::jmap(percent, 50.0f, 100.0f, 0.0f, 12.0f));
 }
-}  // namespace
 
 //==============================================================================
 ProfilerAudioProcessor::ProfilerAudioProcessor()
