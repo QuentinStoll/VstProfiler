@@ -34,7 +34,6 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomImageButton.cpp
     Src/Components/CustomKnob.cpp
     Src/Components/CustomLinearSlider.cpp
-    Src/Components/PathSelector.cpp
     Src/Components/CustomTabBar.cpp
     Src/Components/CustomTabs.cpp
     Src/Components/CustomTextButton.cpp
@@ -67,8 +66,6 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/ProfileManager.cpp
     Src/PluginEditor.cpp
     Src/PluginProcessor.cpp
-    Src/AmpEngine.cpp
-    Src/AmpProfiling.cpp
     Src/Logging.cpp
 )
 
