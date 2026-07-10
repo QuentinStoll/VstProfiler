@@ -4,7 +4,7 @@
 [![Epitech](https://img.shields.io/badge/Epitech-Paris-blue)](https://www.epitech.eu/fr/)
 [![OpenSource](https://img.shields.io/badge/Open-Source-red)](https://github.com/QuentinStoll/VstProfiler)
 [![C++20](https://img.shields.io/badge/C++-20-blue)](https://en.cppreference.com/w/cpp/20)
-[![JUCE](https://img.shields.io/badge/JUCE-8.0.12+-pink)](https://juce.com/)
+[![JUCE](https://img.shields.io/badge/JUCE-8.0.12+-red)](https://juce.com/)
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
