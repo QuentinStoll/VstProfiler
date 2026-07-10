@@ -1,6 +1,7 @@
 set(PROFILER_TEST_SOURCES
     TestRunner.cpp
     AudioProcessorTests.cpp
+    ProfileProcessorIntegrationTests.cpp
     ProfileManagerTests.cpp
 )
 
@@ -80,3 +81,13 @@ add_profiler_audio_processor_test(SilentInputStaysSilent "audio processor silent
 add_profiler_audio_processor_test(PrepareBlockSizes "audio processor handles prepare block sizes")
 add_profiler_audio_processor_test(ReleaseAndReprepare "audio processor release and reprepare")
 add_profiler_audio_processor_test(RejectMissingAssetFiles "audio processor rejects missing asset files")
+
+function(add_profiler_profile_processor_integration_test test_name case_name)
+    add_test(NAME ProfilerTests.ProfileProcessorIntegration.${test_name}
+        COMMAND ProfilerTests --case "${case_name}")
+endfunction()
+
+add_profiler_profile_processor_integration_test(ApplyMapsProfileValues "profile processor apply maps profile values")
+add_profiler_profile_processor_integration_test(TracksProfileAssetPaths "profile processor tracks profile asset paths")
+add_profiler_profile_processor_integration_test(AppliedProfileAffectsAudio "profile processor applied profile affects audio")
+add_profiler_profile_processor_integration_test(SyncsCurrentProfileSelection "profile processor syncs current profile selection")

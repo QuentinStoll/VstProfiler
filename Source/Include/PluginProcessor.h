@@ -15,7 +15,8 @@ class Model;
 class ProfilerAudioProcessor : public juce::AudioProcessor {
    public:
     //==============================================================================
-    ProfilerAudioProcessor();
+    ProfilerAudioProcessor(juce::File profileDirectory = {},
+                           juce::File playViewSettingsFile = {});
     ~ProfilerAudioProcessor() override;
 
     //==============================================================================
