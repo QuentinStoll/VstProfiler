@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "Components/CustomComboBox.h"
 
 class SettingsView : public juce::Component {
 public:
@@ -14,7 +15,7 @@ public:
 private:
     juce::Label _titleLabel;
     juce::Label _backgroundLabel;
-    juce::ComboBox _backgroundMenu;
+    CustomComboBox _backgroundMenu;
 
     void applyBackgroundColour();
     void refreshColours();
