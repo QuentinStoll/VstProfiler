@@ -76,7 +76,7 @@ struct ScopedTestFolder {
 
     ScopedTestFolder(ScopedTestFolder&& other) noexcept
         : folder(other.folder) {
-        other.folder = {};
+        other.folder = juce::File{};
     }
 
     ~ScopedTestFolder() {
