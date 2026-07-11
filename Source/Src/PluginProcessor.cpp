@@ -283,6 +283,12 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     _masterVolume.setGainLinear(getMasterGainLinear(getParameterValue(_masterParam, 50.0f)));
     _masterVolume.process(postAmpContext);
+    _rmsLevelOutput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
+                          std::memory_order_relaxed);
+}
+
+float ProfilerAudioProcessor::getRmsLevelOutput() const noexcept {
+    return _rmsLevelOutput.load(std::memory_order_relaxed);
 }
 
 void ProfilerAudioProcessor::updateEqCoefficients() {
