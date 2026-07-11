@@ -6,6 +6,9 @@
 [![C++20](https://img.shields.io/badge/C++-20-blue)](https://en.cppreference.com/w/cpp/20)
 [![JUCE](https://img.shields.io/badge/JUCE-8.0.12+-red)](https://juce.com/)
 <!-- PROJECT LOGO -->
+
+![Alt text](Source/Assets/png/ProfilerBanner.png)   
+
 <br />
 <div align="center">
 <!--
