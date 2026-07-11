@@ -63,7 +63,9 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Views/CloneView.cpp
     Src/Views/PlayView.cpp
     Src/Views/ProfilView.cpp
+    Src/Views/SettingsView.cpp
     Src/ProfileManager.cpp
+    Src/UiSettings.cpp
     Src/PluginEditor.cpp
     Src/PluginProcessor.cpp
     Src/Logging.cpp
