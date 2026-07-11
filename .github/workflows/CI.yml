@@ -40,7 +40,6 @@ jobs:
   unit-tests:
     name: Unit Tests (${{ matrix.os-name }})
     needs: lint-check
-    continue-on-error: true   # Failures are reported but do NOT block full-build
     strategy:
       fail-fast: false
       matrix:
@@ -59,13 +58,11 @@ jobs:
         uses: actions/checkout@v4
 
       # ── Dependencies (Linux only) ──────────────────
-      - name: Install Clang, gcovr & JUCE dependencies
+      - name: Install JUCE dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            clang \
-            gcovr \
             pkg-config \
             libx11-dev \
             libxrandr-dev \
@@ -77,53 +74,25 @@ jobs:
             libasound2-dev \
             libcurl4-openssl-dev \
             libssl-dev \
-            webkit2gtk-4.1 \
+            libwebkit2gtk-4.1-dev \
             libgtk-3-dev \
             libglib2.0-dev \
             mesa-common-dev \
             libjack-jackd2-dev \
             libdbus-1-dev
 
-      # ── Build ──────────────────────────────────────
-      - name: Build unit tests (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: install.bat all debug
-
-      - name: Build unit tests (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: ./install.sh all debug
-
-      # ── Run tests ─────────────────────────────────
+      # ── Build and run tests ───────────────────────
       - name: Run unit tests (Windows)
         if: runner.os == 'Windows'
         shell: cmd
-        run: |
-          for /r build %%f in (*_test.exe) do (
-            echo Running %%f
-            %%f || exit /b 1
-          )
+        run: install.bat test
 
       - name: Run unit tests (Linux)
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          find build/ -name "*_test" -executable | while read test; do
-            echo "Running $test"
-            "$test"
-          done
-
-      # ── Coverage (Linux only) ──────────────────────
-      - name: Collect gcov data
-        if: matrix.os-name == 'linux-x86'
-        shell: bash
-        run: gcovr --root . --exclude 'build/' --xml coverage.xml --txt coverage.txt
-
-      - name: Print coverage summary
-        if: matrix.os-name == 'linux-x86'
-        shell: bash
-        run: cat coverage.txt
+          chmod +x ./install.sh
+          ./install.sh test
 
       # ── Artifacts ─────────────────────────────────
       - name: Upload test artifacts
@@ -133,17 +102,40 @@ jobs:
           name: test-results-${{ matrix.os-name }}
           retention-days: 7
           path: |
-            build/
-            coverage.xml
-            coverage.txt
+            build/Testing/
 
 # ─────────────────────────────────────────────
-# STAGE 3 — FULL RELEASE BUILD
+# STAGE 3 — COVERAGE
+# ─────────────────────────────────────────────
+  coverage:
+    name: Coverage
+    needs: unit-tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tests with coverage
+        shell: cmd
+        run: install.bat test --coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          retention-days: 14
+          path: |
+            build/coverage/coverage.xml
+            build/coverage/html/
+
+# ─────────────────────────────────────────────
+# STAGE 4 — FULL PROJECT BUILD
 # ─────────────────────────────────────────────
   full-build:
-    name: Full Build (${{ matrix.os-name }})
-    needs: lint-check
-    if: always() # Runs even when unit-tests fail
+    name: Full Project Build (${{ matrix.os-name }})
+    needs: [unit-tests, coverage]
     strategy:
       fail-fast: false
       matrix:
@@ -162,10 +154,10 @@ jobs:
         uses: actions/checkout@v4
 
       # ── Build ──────────────────────────────────────
-      - name: Build release (Windows)
+      - name: Build project (Windows)
         if: runner.os == 'Windows'
         shell: cmd
-        run: install.bat all release
+        run: install.bat build
 
       - name: Install JUCE dependencies (Linux)
         if: runner.os == 'Linux'
@@ -183,17 +175,19 @@ jobs:
             libasound2-dev \
             libcurl4-openssl-dev \
             libssl-dev \
-            webkit2gtk-4.1 \
+            libwebkit2gtk-4.1-dev \
             libgtk-3-dev \
             libglib2.0-dev \
             mesa-common-dev \
             libjack-jackd2-dev \
             libdbus-1-dev
 
-      - name: Build release (Linux)
+      - name: Build project (Linux)
         if: runner.os == 'Linux'
         shell: bash
-        run: ./install.sh all release
+        run: |
+          chmod +x ./install.sh
+          ./install.sh build
 
       # ── Collect & upload artifacts ─────────────────
       - name: Upload build artifacts (Windows — .exe / .dll)
@@ -215,7 +209,7 @@ jobs:
           path: build/**
 
 # ─────────────────────────────────────────────
-# STAGE 4 — RELEASE
+# STAGE 5 — RELEASE
 # ─────────────────────────────────────────────
   release:
     name: Publish Release
