@@ -4,7 +4,6 @@
 
 #include "Components/CustomComboBox.h"
 
-
 class SettingsView : public juce::Component {
    public:
     SettingsView();
