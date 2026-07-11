@@ -43,6 +43,10 @@ target_link_libraries(ProfilerTests PRIVATE
     simdjson
 )
 
+if(NOT WIN32)
+    target_link_libraries(ProfilerTests PRIVATE CURL::libcurl)
+endif()
+
 apply_compiler_options(ProfilerTests)
 
 if(PROFILER_ENABLE_COVERAGE)
