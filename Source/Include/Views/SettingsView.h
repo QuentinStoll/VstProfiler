@@ -1,10 +1,12 @@
 #pragma once
 
 #include <JuceHeader.h>
+
 #include "Components/CustomComboBox.h"
 
+
 class SettingsView : public juce::Component {
-public:
+   public:
     SettingsView();
 
     static void applySavedBackgroundColour();
@@ -12,7 +14,7 @@ public:
     void paint(juce::Graphics& g) override;
     void resized() override;
 
-private:
+   private:
     juce::Label _titleLabel;
     juce::Label _backgroundLabel;
     CustomComboBox _backgroundMenu;

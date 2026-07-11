@@ -3,7 +3,7 @@
 #include <JuceHeader.h>
 
 namespace UiSettings {
-    int loadBackgroundColourPreset();
-    void saveBackgroundColourPreset(int presetId);
-    int normaliseBackgroundColourPreset(int presetId);
+int loadBackgroundColourPreset();
+void saveBackgroundColourPreset(int presetId);
+int normaliseBackgroundColourPreset(int presetId);
 }  // namespace UiSettings
