@@ -5,7 +5,7 @@ set(PROFILER_TEST_SOURCES
     ProfileManagerTests.cpp
 )
 
-add_executable(ProfilerTests
+add_executable(ProfilerTests EXCLUDE_FROM_ALL
     ${PROFILER_TEST_SOURCES}
     ../Source/Src/Logging.cpp
     ../Source/Src/PluginProcessor.cpp
@@ -44,6 +44,71 @@ target_link_libraries(ProfilerTests PRIVATE
 )
 
 apply_compiler_options(ProfilerTests)
+
+if(PROFILER_ENABLE_COVERAGE)
+    set(PROFILER_COVERAGE_DIR "${CMAKE_BINARY_DIR}/coverage")
+
+    target_compile_definitions(ProfilerTests PRIVATE
+        JUCE_DISABLE_ASSERTIONS=1
+        JUCE_LOG_ASSERTIONS=0
+    )
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        target_compile_options(ProfilerTests PRIVATE -O0 -g --coverage)
+        target_link_options(ProfilerTests PRIVATE --coverage)
+    endif()
+
+    if(MSVC)
+        target_compile_options(ProfilerTests PRIVATE /Od /Zi /FS)
+        target_link_options(ProfilerTests PRIVATE /DEBUG:FULL /INCREMENTAL:NO)
+    endif()
+
+    if(WIN32)
+        file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/Source" PROFILER_COVERAGE_SOURCE_DIR)
+        file(TO_NATIVE_PATH "${PROFILER_COVERAGE_DIR}/html" PROFILER_COVERAGE_HTML_DIR)
+        file(TO_NATIVE_PATH "${PROFILER_COVERAGE_DIR}/coverage.xml" PROFILER_COVERAGE_XML)
+
+        add_custom_target(ProfilerCoverage
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${PROFILER_COVERAGE_DIR}"
+            COMMAND "${PROFILER_OPENCPPCOVERAGE_EXE}"
+                --quiet
+                --cover_children
+                --modules "*ProfilerTests.exe"
+                --sources "${PROFILER_COVERAGE_SOURCE_DIR}"
+                --export_type "html:${PROFILER_COVERAGE_HTML_DIR}"
+                --export_type "cobertura:${PROFILER_COVERAGE_XML}"
+                -- "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}" -C "$<CONFIG>" --output-on-failure
+            COMMAND "$<TARGET_FILE:ProfilerTests>" --quiet
+            COMMAND "${CMAKE_COMMAND}"
+                -DPROFILER_COVERAGE_XML="${PROFILER_COVERAGE_DIR}/coverage.xml"
+                -P "${CMAKE_SOURCE_DIR}/cmake/PrintCoverageSummary.cmake"
+            COMMAND "${CMAKE_COMMAND}" -E echo "Coverage report: ${PROFILER_COVERAGE_DIR}/html/index.html"
+            DEPENDS ProfilerTests
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+            USES_TERMINAL
+        )
+    else()
+        add_custom_target(ProfilerCoverage
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${PROFILER_COVERAGE_DIR}"
+            COMMAND "${PROFILER_LCOV_EXE}" --directory "${CMAKE_BINARY_DIR}" --zerocounters
+            COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}" --output-on-failure
+            COMMAND "$<TARGET_FILE:ProfilerTests>" --quiet
+            COMMAND "${PROFILER_LCOV_EXE}" --directory "${CMAKE_BINARY_DIR}" --capture --output-file "${PROFILER_COVERAGE_DIR}/coverage.info"
+            COMMAND "${PROFILER_LCOV_EXE}" --remove "${PROFILER_COVERAGE_DIR}/coverage.info"
+                "*/Tests/*"
+                "*/build/*"
+                "*/_deps/*"
+                "*/JuceLibraryCode/*"
+                --output-file "${PROFILER_COVERAGE_DIR}/coverage.filtered.info"
+            COMMAND "${PROFILER_LCOV_EXE}" --summary "${PROFILER_COVERAGE_DIR}/coverage.filtered.info"
+            COMMAND "${PROFILER_GENHTML_EXE}" "${PROFILER_COVERAGE_DIR}/coverage.filtered.info" --output-directory "${PROFILER_COVERAGE_DIR}/html"
+            COMMAND "${CMAKE_COMMAND}" -E echo "Coverage report: ${PROFILER_COVERAGE_DIR}/html/index.html"
+            DEPENDS ProfilerTests
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+            USES_TERMINAL
+        )
+    endif()
+endif()
 
 function(add_profiler_profile_manager_test test_name case_name)
     add_test(NAME ProfilerTests.ProfileManager.${test_name}

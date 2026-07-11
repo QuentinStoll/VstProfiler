@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(PROFILER_BUILD_TESTS "Build Profiler automated tests" ON)
+option(PROFILER_ENABLE_COVERAGE "Run Profiler tests with coverage reporting" OFF)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(dependencies)
@@ -15,7 +18,6 @@ include(compiler_options)
 
 add_subdirectory(Source)
 
-option(PROFILER_BUILD_TESTS "Build Profiler automated tests" ON)
 if(PROFILER_BUILD_TESTS)
     enable_testing()
     add_subdirectory(Tests)
