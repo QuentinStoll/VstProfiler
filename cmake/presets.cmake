@@ -30,6 +30,7 @@ foreach(idx RANGE ${PRESET_MAX})
 
         string(JSON ENABLE_ASSERTIONS ERROR_VARIABLE err GET "${PRESETS_JSON}" presets ${idx} features assertions)
         string(JSON ENABLE_LOGGING ERROR_VARIABLE err GET "${PRESETS_JSON}" presets ${idx} features logging)
+        string(JSON ENABLE_TRACY_CLIENT ERROR_VARIABLE err GET "${PRESETS_JSON}" presets ${idx} features tracyEnabled)
         string(JSON ENABLE_DSP_TRACE ERROR_VARIABLE err GET "${PRESETS_JSON}" presets ${idx} features dspTrace)
 
         message(STATUS "Loaded preset: ${PRESET_NAME}")
@@ -45,4 +46,5 @@ set(PLUGIN_AAX false)
 set(PLUGIN_STANDALONE true)
 set(ENABLE_ASSERTIONS false)
 set(ENABLE_LOGGING true)
+set(ENABLE_TRACY_CLIENT false)
 set(ENABLE_DSP_TRACE false)
