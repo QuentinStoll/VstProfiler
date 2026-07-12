@@ -63,19 +63,16 @@ void FileStatusCard::setFileState(Status status, const juce::File& file) {
 void FileStatusCard::paint(juce::Graphics& g) {
     const auto card = getLocalBounds().toFloat();
     const auto accent = getStatusColour(_status);
+    const bool isFilled = (_status != Status::Empty);
 
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        card,
-        ProfilerStyle::Colors::lighterGrey.withAlpha(0.78f),
-        ProfilerStyle::Colors::darkerGrey.withAlpha(0.72f),
-        0.85f));
+    g.setColour(ProfilerStyle::Colors::lighterGrey);
     g.fillRoundedRectangle(card, 5.0f);
 
-    g.setColour(accent.withAlpha(_status == Status::Empty ? 0.28f : 0.75f));
-    g.fillRoundedRectangle(card.withWidth(4.0f), 2.0f);
-
-    g.setColour(accent.withAlpha(_status == Status::Empty ? 0.34f : 0.5f));
-    g.drawRoundedRectangle(card, 5.0f, 1.0f);
+    auto outlineColour = isFilled ? ProfilerStyle::Colors::orange : accent;
+    float outlineAlpha  = isFilled ? 8.0f : 0.0f;
+    
+    g.setColour(outlineColour.withAlpha(outlineAlpha));
+    g.drawRoundedRectangle(card.reduced(0.5f), 5.0f, 1.0f);
 }
 
 void FileStatusCard::resized() {

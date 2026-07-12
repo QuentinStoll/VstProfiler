@@ -18,7 +18,7 @@ class CardGridModule : public juce::Component {
     void resized() override;
 
    private:
-    static constexpr int minColumns = 3;
+    static constexpr int minColumns = 4;
     static constexpr int maxColumns = 6;
     static constexpr int preferredButtonSize = 200;
     static constexpr int buttonGap = 20;

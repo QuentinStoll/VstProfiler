@@ -82,16 +82,30 @@ ProfilView::~ProfilView() {
 
 void ProfilView::paint(juce::Graphics& g) {
     auto area = getLocalBounds().toFloat();
-    juce::Path path;
+    const float cornerSize = 5.0f;
+    const float thickness = 8.0f;
+    g.setColour(ProfilerStyle::Colors::darkerGrey);
+    g.fillRoundedRectangle(area, cornerSize);
 
-    path.addRoundedRectangle(area, 5.0f);
+    juce::Path cavityPath;
+    cavityPath.addRoundedRectangle(area, cornerSize);
+    g.reduceClipRegion(cavityPath);
 
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        area,
-        ProfilerStyle::Colors::darkestGrey,
-        ProfilerStyle::Colors::darkestGrey.brighter(0.1f),
-        0.8f));
-    g.fillPath(path);
+    // 2. TOP BORDER
+    juce::ColourGradient topGradient(
+        juce::Colours::black.withAlpha(0.5f), 0.0f, area.getY(),
+        juce::Colours::transparentBlack, 0.0f, area.getY() + thickness, false);
+    
+    g.setGradientFill(topGradient);
+    g.fillRect(area.getX(), area.getY(), area.getWidth(), thickness);
+
+    // 3. LEFT BORDER
+    juce::ColourGradient leftGradient(
+        juce::Colours::black.withAlpha(0.5f), area.getX(), 0.0f,
+        juce::Colours::transparentBlack, area.getX() + thickness, 0.0f, false);
+    
+    g.setGradientFill(leftGradient);
+    g.fillRect(area.getX(), area.getY(), thickness, area.getHeight());
 }
 
 void ProfilView::resized() {

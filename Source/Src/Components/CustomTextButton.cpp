@@ -25,15 +25,12 @@ void CustomTextButtonLF::drawButtonBackground(juce::Graphics& g, juce::Button& b
     else if (isMouseOverButton)
         baseColour = baseColour.brighter(0.1f);
 
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        area,
-        baseColour.brighter(0.2f),
-        baseColour.darker(0.2f),
-        0.9f));
+    g.setColour(baseColour);
     g.fillRoundedRectangle(fillArea, cornerSize);
 
     if (_outlineVisible) {
         g.setColour(_outlineColour);
+        g.fillRect(0.0f, area.getHeight() - 1.5f, area.getWidth(), 1.5f);
         g.drawRoundedRectangle(area, cornerSize + 2.0f, 3.0f);
     }
 }

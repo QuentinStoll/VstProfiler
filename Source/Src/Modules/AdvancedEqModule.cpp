@@ -20,8 +20,14 @@ AdvancedEqModule::~AdvancedEqModule() {
 }
 
 void AdvancedEqModule::paint(juce::Graphics& g) {
+    auto area = _bandLabelsZone.getBounds().toFloat();
+    const float cornerSize = 8.0f;
+
     g.setColour(juce::Colours::blue.withAlpha(0.2f));
-    g.fillRect(_bandLabelsZone.getBounds());
+    g.fillRoundedRectangle(area, cornerSize);
+
+    g.setColour(juce::Colours::black.withAlpha(0.4f));
+    g.drawRoundedRectangle(area.reduced(0.5f), cornerSize, 1.0f);
 }
 
 void AdvancedEqModule::resized() {

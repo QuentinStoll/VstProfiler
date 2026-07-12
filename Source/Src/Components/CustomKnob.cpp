@@ -20,12 +20,14 @@ void CustomKnobLF::drawRotarySlider(juce::Graphics& g, int x, int y, int width, 
     const auto arcRadius = radius - lineW * 1.5f;
     const auto knobRadius = arcRadius - lineW * 2.4f;
 
+    // 1. Background Track Arc
     juce::Path backgroundArc;
     backgroundArc.addCentredArc(centre.x, centre.y, arcRadius, arcRadius, 0.0f,
                                 rotaryStartAngle, rotaryEndAngle, true);
     g.setColour(ProfilerStyle::Colors::darkGrey.withAlpha(enabledAlpha));
     g.strokePath(backgroundArc, juce::PathStrokeType(lineW, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
+    // 2. Value Fill Arc (Orange)
     if (slider.isEnabled()) {
         juce::Path valueArc;
         valueArc.addCentredArc(centre.x, centre.y, arcRadius, arcRadius, 0.0f,
@@ -37,12 +39,16 @@ void CustomKnobLF::drawRotarySlider(juce::Graphics& g, int x, int y, int width, 
         g.strokePath(valueArc, juce::PathStrokeType(lineW, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
     }
 
+    // 3. Main Outer Cylinder Body
     juce::Rectangle<float> knobBounds(centre.x - knobRadius, centre.y - knobRadius,
                                       knobRadius * 2.0f, knobRadius * 2.0f);
 
-    g.setColour(ProfilerStyle::Colors::darkestGrey.withAlpha(enabledAlpha * 0.7f));
-    g.fillEllipse(knobBounds.translated(0.0f, 2.0f).expanded(1.0f));
+    // Dark outer rim to simulate a cavity around the main knob
+    auto outerCavityBounds = knobBounds.expanded(2.0f);
+    g.setColour(ProfilerStyle::Colors::darkestGrey.withAlpha(enabledAlpha));
+    g.drawEllipse(outerCavityBounds, 1.5f);
 
+    // Outer cylinder gradient
     juce::ColourGradient knobGrad(
         ProfilerStyle::Colors::lighterGrey.withAlpha(enabledAlpha), centre.x, centre.y - knobRadius,
         ProfilerStyle::Colors::darkestGrey.withAlpha(enabledAlpha), centre.x, centre.y + knobRadius, false);
@@ -52,25 +58,29 @@ void CustomKnobLF::drawRotarySlider(juce::Graphics& g, int x, int y, int width, 
     g.setColour(ProfilerStyle::Colors::darkerGrey.withAlpha(enabledAlpha));
     g.drawEllipse(knobBounds, 1.0f);
 
+    // 4. Center Concave Cap Effect
     auto capBounds = knobBounds.reduced(knobRadius * 0.28f);
-    g.setColour(ProfilerStyle::Colors::darkGrey.withAlpha(enabledAlpha * 0.55f));
+    
+    juce::ColourGradient capGrad(
+        ProfilerStyle::Colors::darkestGrey.withAlpha(enabledAlpha), centre.x, capBounds.getY(),
+        ProfilerStyle::Colors::darkGrey.brighter(0.1f).withAlpha(enabledAlpha), centre.x, capBounds.getBottom(), false);
+    g.setGradientFill(capGrad);
     g.fillEllipse(capBounds);
 
-    const auto indicatorStart = knobRadius * 0.18f;
-    const auto indicatorEnd = knobRadius * 0.76f;
-    const auto startX = centre.x + indicatorStart * std::sin(toAngle);
-    const auto startY = centre.y - indicatorStart * std::cos(toAngle);
+    // 5. Indicator Dot
+    const auto indicatorEnd = knobRadius * 0.72f; 
     const auto endX = centre.x + indicatorEnd * std::sin(toAngle);
     const auto endY = centre.y - indicatorEnd * std::cos(toAngle);
 
+    const float dotRadius = juce::jlimit(2.0f, 3.5f, knobRadius * 0.10f);
+    
     g.setColour(ProfilerStyle::Colors::orange.withAlpha(enabledAlpha));
-    g.drawLine(startX, startY, endX, endY, juce::jlimit(2.0f, 3.0f, knobRadius * 0.12f));
-    g.fillEllipse(endX - 2.5f, endY - 2.5f, 5.0f, 5.0f);
+    g.fillEllipse(endX - dotRadius, endY - dotRadius, dotRadius * 2.0f, dotRadius * 2.0f);
 }
 
 void CustomKnobLF::drawLabel(juce::Graphics& g, juce::Label& label) {
     auto area = label.getLocalBounds().toFloat();
-    g.setColour(label.findColour(juce::Label::textColourId));
+    g.setColour(juce::Colour(0xffafafaf));
     g.setFont(juce::Font(juce::FontOptions().withHeight(14.0f)));
     g.drawFittedText(label.getText(), area.toNearestInt(), label.getJustificationType(), 1);
 }
@@ -82,7 +92,8 @@ void CustomKnobLF::drawLabel(juce::Graphics& g, juce::Label& label) {
 CustomKnob::CustomKnob(const juce::String& name, float min, float max, float defaultValue, const juce::String& suffix, float step) {
     setLookAndFeel(&_customLF);
 
-    _slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    _slider.setSliderStyle(juce::Slider::Rotary);
+    // _slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     _slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 64, 16);
     _slider.setRange(min, max, step);
     _slider.setValue(defaultValue);
@@ -90,7 +101,7 @@ CustomKnob::CustomKnob(const juce::String& name, float min, float max, float def
 
     _label.setText(name, juce::dontSendNotification);
     _label.setJustificationType(juce::Justification::centred);
-    _label.setColour(juce::Label::textColourId, juce::Colours::white);
+    _label.setColour(juce::Label::textColourId, juce::Colour(0xffafafaf));
 
     addAndMakeVisible(_slider);
     addAndMakeVisible(_label);

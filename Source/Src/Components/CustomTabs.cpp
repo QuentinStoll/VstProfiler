@@ -21,8 +21,10 @@ void CustomTabs::paint(juce::Graphics& /*g*/) {}
 void CustomTabs::resized() {
     auto area = getLocalBounds();
 
-    auto tabBarHeight = getHeight() * 0.07f;                                   // 7% of the total height for the tab bar
+    auto tabBarHeight = getHeight() * 0.05f;                                   // 5% of the total height for the tab bar
     auto tabBarWidth = (tabBarHeight * 5) * static_cast<float>(_tabs.size());  // Calculate the total width needed for all tabs, each 5 times the tab bar height
+
+    area.removeFromTop(5);
 
     auto tabBarArea = area.removeFromTop(static_cast<int>(tabBarHeight))
                           .withSizeKeepingCentre(static_cast<int>(tabBarWidth), static_cast<int>(tabBarHeight));

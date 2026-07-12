@@ -101,11 +101,7 @@ void NotificationBanner::paint(juce::Graphics& g) {
     const auto accent = getAccentColour();
     const auto baseColour = ProfilerStyle::Colors::darkerGrey;
 
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        bounds,
-        baseColour.brighter(0.18f),
-        baseColour.darker(0.18f),
-        0.85f));
+    g.setColour(baseColour);
     g.fillRoundedRectangle(bounds, 5.0f);
 
     g.setColour(accent);

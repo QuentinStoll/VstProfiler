@@ -9,29 +9,19 @@
 void CustomComboBoxLF::drawComboBox(juce::Graphics& g, int width, int height, bool /*isButtonDown*/,
                                     int /*buttonX*/, int /*buttonY*/, int /*buttonW*/, int /*buttonH*/,
                                     juce::ComboBox& /*box*/) {
-    auto area = juce::Rectangle<int>(0, 0, width, height).toFloat().reduced(1.0f);
-    auto cornerSize = 4.0f;
+    auto area = juce::Rectangle<int>(0, 0, width, height).toFloat();
 
-    // Draw the background with a slight vertical gradient
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        area,
-        ProfilerStyle::Colors::darkerGrey.brighter(0.2f),
-        ProfilerStyle::Colors::darkerGrey.darker(0.2f),
-        0.9f));
-    g.fillRoundedRectangle(area, cornerSize);
+    const float lineThickness = 1.5f;
+    g.setColour(ProfilerStyle::Colors::lightestGrey);
+    g.fillRect(0.0f, area.getHeight() - lineThickness, area.getWidth(), lineThickness);
 
-    // Draw a very thin border
-    g.setColour(ProfilerStyle::Colors::darkerGrey);
-    g.drawRoundedRectangle(area, cornerSize, 1.0f);
-
-    // Draw the small arrow on the right
     auto arrowZone = juce::Rectangle<int>(width - 25, 0, 20, height).toFloat();
     auto path = juce::Path();
     path.addTriangle(arrowZone.getCentreX() - 4.0f, arrowZone.getCentreY() - 2.0f,
                      arrowZone.getCentreX() + 4.0f, arrowZone.getCentreY() - 2.0f,
                      arrowZone.getCentreX(), arrowZone.getCentreY() + 4.0f);
 
-    g.setColour(juce::Colours::white.withAlpha(0.7f));
+    g.setColour(ProfilerStyle::Colors::lightestGrey);
     g.fillPath(path);
 }
 

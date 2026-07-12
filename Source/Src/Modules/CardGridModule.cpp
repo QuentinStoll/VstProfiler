@@ -7,7 +7,7 @@ CardGridModule::CardGridModule() {
     auto imageFile = juce::File::getCurrentWorkingDirectory().getChildFile("Source/Assets/Svg/plus-icon.svg");
     jassert(imageFile.existsAsFile());
 
-    _addProfileImageButton = std::make_unique<CustomImageButton>("Add profile", BinaryData::plusicon_svg, BinaryData::plusicon_svgSize, ProfilerStyle::Theme::Darker);
+    _addProfileImageButton = std::make_unique<CustomImageButton>("Add profile", BinaryData::plusicon_svg, BinaryData::plusicon_svgSize, ProfilerStyle::Theme::Dark);
     _addProfileImageButton->onClick = [this]() {
         if (onAddProfileClicked)
             onAddProfileClicked();

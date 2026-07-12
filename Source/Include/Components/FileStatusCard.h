@@ -25,7 +25,7 @@ class FileStatusCard : public juce::Component {
         juce::String emptyFileText;
         juce::String emptyPathText;
         ProfilerStyle::Theme loadButtonTheme = ProfilerStyle::Theme::Dark;
-        ProfilerStyle::Theme unloadButtonTheme = ProfilerStyle::Theme::Darker;
+        ProfilerStyle::Theme unloadButtonTheme = ProfilerStyle::Theme::Dark;
     };
 
     explicit FileStatusCard(Options options);

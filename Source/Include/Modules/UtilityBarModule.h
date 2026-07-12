@@ -24,7 +24,7 @@ class UtilityBarModule : public juce::Component,
     juce::AudioProcessorValueTreeState& _apvts;
 
     CustomComboBox _profilMenu;
-    CustomTextButton _resetButton{"Reset", ProfilerStyle::Theme::Orange};
+    CustomTextButton _resetButton{"Reset", ProfilerStyle::Theme::Dark};
     CustomTextButton _exportButton{"Export", ProfilerStyle::Theme::Dark};
     CustomToggleButton _muteSwitch{"Mute"};
     CustomToggleButton _eqSwitch{"EQ"};

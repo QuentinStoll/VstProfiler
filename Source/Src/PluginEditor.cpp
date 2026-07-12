@@ -35,12 +35,7 @@ void ProfilerAudioProcessorEditor::paint(juce::Graphics& g) {
     auto area = getLocalBounds().toFloat();
 
     // Set the background color of the plugin
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        area,
-        ProfilerStyle::Colors::darkGrey.brighter(0.2f),
-        ProfilerStyle::Colors::darkGrey.darker(0.4f),
-        0.2f));
-
+    g.setColour(ProfilerStyle::Colors::darkerGrey);
     g.fillAll();
 }
 

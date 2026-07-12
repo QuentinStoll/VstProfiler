@@ -49,12 +49,13 @@ void UtilityBarModule::resized() {
     auto areaWidth = area.getWidth();
     const auto gap = juce::jmax(4, static_cast<int>(areaWidth * 0.01f));
 
-    auto profilMenuArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.42f));
-    area.removeFromLeft(juce::jmin(gap, area.getWidth()));
-    auto resetButtonArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.15f));
-    area.removeFromLeft(juce::jmin(gap, area.getWidth()));
-    auto exportButtonArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.15f));
-    area.removeFromLeft(juce::jmin(gap, area.getWidth()));
+    auto profilMenuArea = area.removeFromRight(static_cast<int>(areaWidth * 0.42f));
+    area.removeFromRight(juce::jmin(gap, area.getWidth()));
+    auto resetButtonArea = area.removeFromRight(static_cast<int>(areaWidth * 0.15f));
+    area.removeFromRight(juce::jmin(gap, area.getWidth()));
+    auto exportButtonArea = area.removeFromRight(static_cast<int>(areaWidth * 0.15f));
+    area.removeFromRight(juce::jmin(gap, area.getWidth()));
+
     auto muteSwitchArea = area.removeFromLeft(static_cast<int>(areaWidth * 0.1f));
     area.removeFromLeft(juce::jmin(gap, area.getWidth()));
     auto eqSwitchArea = area;

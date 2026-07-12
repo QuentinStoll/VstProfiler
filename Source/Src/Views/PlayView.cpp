@@ -60,17 +60,32 @@ PlayView::~PlayView() {
 
 void PlayView::paint(juce::Graphics& g) {
     auto area = getLocalBounds().toFloat();
-    juce::Path path;
+    const float cornerSize = 5.0f;
+    const float strokeThickness = 2.0f; // Thickness of the inner shadow/light cuts
 
-    // Draw a rounded rectangle as the background
-    path.addRoundedRectangle(area, 5.0f);
+    // 1. Solid cavity background
+    g.setColour(ProfilerStyle::Colors::darkerGrey);
+    g.fillRoundedRectangle(area, cornerSize);
 
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        area,
-        ProfilerStyle::Colors::darkestGrey,
-        ProfilerStyle::Colors::darkestGrey.brighter(0.1f),
-        0.8f));
-    g.fillPath(path);
+    juce::Path cavityPath;
+    cavityPath.addRoundedRectangle(area, cornerSize);
+    g.reduceClipRegion(cavityPath);
+
+    // 2. TOP HORIZONTAL SHADOW
+    g.setColour(juce::Colours::black.withAlpha(0.5f));
+    g.drawHorizontalLine(static_cast<int>(area.getY()), area.getX(), area.getRight());
+    if (strokeThickness > 1.0f) {
+        g.setColour(juce::Colours::black.withAlpha(0.25f));
+        g.drawHorizontalLine(static_cast<int>(area.getY() + 1.0f), area.getX(), area.getRight());
+    }
+
+    // 3. BOTTOM HORIZONTAL LIGHT
+    g.setColour(ProfilerStyle::Colors::lighterGrey.withAlpha(0.4f));
+    g.drawHorizontalLine(static_cast<int>(area.getBottom() - 1.0f), area.getX(), area.getRight());
+
+    // 4. OUTER SHARP EDGE
+    g.setColour(juce::Colours::black.withAlpha(0.2f));
+    g.drawRoundedRectangle(area, cornerSize, 4.0f);
 }
 
 void PlayView::resized() {
@@ -103,12 +118,12 @@ void PlayView::resized() {
     }
 
     const auto bannerWidth = juce::jmin(_notificationBanner.getIdealWidth(),
-                                        juce::jmax(220, getWidth() - 50));
+                                    juce::jmax(220, getWidth() - 50));
+
     _notificationBanner.setBounds(getLocalBounds()
-                                      .withSizeKeepingCentre(bannerWidth,
-                                                             _notificationBanner.getIdealHeight())
-                                      .withRightX(getWidth() - 25)
-                                      .withY(25));
+                              .withSizeKeepingCentre(bannerWidth, _notificationBanner.getIdealHeight())
+                              .withRightX(getWidth() - 25)
+                              .withBottomY(getHeight() - 25));
 }
 
 void PlayView::showPlayControls() {

@@ -23,6 +23,7 @@ void CustomImageButton::setTheme(ProfilerStyle::Theme theme) {
             break;
         case ProfilerStyle::Theme::Dark:
             _backgroundColour = ProfilerStyle::Colors::darkerGrey;
+            setOutlineVisible(true);
             break;
         case ProfilerStyle::Theme::Light:
             _backgroundColour = ProfilerStyle::Colors::darkGrey;
@@ -35,8 +36,13 @@ void CustomImageButton::setTheme(ProfilerStyle::Theme theme) {
 
 void CustomImageButton::paintButton(juce::Graphics& g, bool isMouseOverButton, bool isButtonDown) {
     auto area = getLocalBounds();
-    auto cornerSize = 4.0f;
-    auto fillArea = _outlineVisible ? area.reduced(2) : area;
+    auto cornerSize = 8.0f;
+    
+    // Define a native JUCE border size (2.0f pixels thick on all sides)
+    const juce::BorderSize<float> buttonBorder { 2.0f };
+    
+    // 1. Calculate the background fill area (reduced if outline is visible to prevent overlap)
+    auto fillArea = _outlineVisible ? area.reduced(static_cast<int>(buttonBorder.getTop())) : area;
 
     auto buttonText = getButtonText();
     auto hasImage = (_drawable != nullptr);
@@ -57,24 +63,27 @@ void CustomImageButton::paintButton(juce::Graphics& g, bool isMouseOverButton, b
         imageArea = contentArea;
     }
 
+    // 2. Button Background Color Logic
     auto baseColour = _backgroundColour;
     if (isButtonDown)
         baseColour = baseColour.darker(0.2f);
     else if (isMouseOverButton)
         baseColour = baseColour.brighter(0.1f);
 
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        area.toFloat(),
-        baseColour.brighter(0.2f),
-        baseColour.darker(0.2f),
-        0.9f));
+    g.setColour(baseColour);
     g.fillRoundedRectangle(fillArea.toFloat(), cornerSize);
 
+    // 3. NATIVE BORDER DRAWING (Method 1)
     if (_outlineVisible) {
         g.setColour(_outlineColour);
-        g.drawRoundedRectangle(area.toFloat(), cornerSize + 2.0f, 3.0f);
+        
+        // Native JUCE method to shrink the area by the border thickness 
+        // to ensure the stroke is drawn perfectly inside the button bounds
+        auto outlineArea = buttonBorder.subtractedFrom(area.toFloat());
+        g.drawRoundedRectangle(outlineArea, cornerSize, buttonBorder.getTop());
     }
 
+    // 4. Content Alpha & Rendering
     auto alpha = (isEnabled() ? 1.0f : 0.5f) * (isButtonDown ? 0.8f : 1.0f);
 
     if (hasImage) {
