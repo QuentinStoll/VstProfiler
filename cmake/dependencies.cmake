@@ -145,7 +145,9 @@ else()
     FetchContent_MakeAvailable(simdjson)
 endif()
 
-# RTNeural 
+
+# RTNeural ------------------
+
 if(NOT TARGET RTNeural)
     message(STATUS "Fetching RTNeural")
     FetchContent_Declare(
@@ -155,11 +157,39 @@ if(NOT TARGET RTNeural)
     )
 
     set(RTNEURAL_BACKEND "STL" CACHE STRING "" FORCE)
-    set(RTNEURAL_XSIMD OFF CACHE BOOL "" FORCE) 
+    set(RTNEURAL_XSIMD OFF CACHE BOOL "" FORCE)
     set(RTNEURAL_USE_JSON ON CACHE BOOL "" FORCE)
 
     FetchContent_MakeAvailable(rtneural)
 endif()
+
+
+# tracy ---------------------
+
+option(USE_SYSTEM_TRACY "Use system-installed Tracy via find_package" OFF) # local builds only
+if (TARGET Tracy::TracyClient)
+    message(STATUS "Tracy: using existing target")
+elseif (USE_SYSTEM_TRACY)
+    message(STATUS "Tracy: using system package")
+    find_package(Tracy CONFIG REQUIRED)
+else()
+    include(FetchContent)
+    FetchContent_Declare(
+        tracy
+        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+        GIT_TAG 0350df1 # v0.13.4 do change at your own risk if you have a protocol missmatch with the tracy binaries
+    )
+
+    if(ENABLE_TRACY_CLIENT)
+        set(TRACY_ENABLE ON CACHE BOOL "" FORCE)
+    endif()
+    set(TRACY_ON_DEMAND ON CACHE BOOL "" FORCE)
+    set(TRACY_ONLY_LOCALHOST OFF CACHE BOOL "" FORCE)
+    set(TRACY_NO_EXIT OFF CACHE BOOL "" FORCE)
+
+    FetchContent_MakeAvailable(tracy)
+endif()
+
 
 # gtk workaround (linux) ----
 
