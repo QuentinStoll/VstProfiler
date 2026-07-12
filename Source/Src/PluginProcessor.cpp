@@ -8,6 +8,7 @@
 #define RTNEURAL_ENABLE_DENSE 1
 
 #include <RTNeural/RTNeural.h>
+#include <tracy/Tracy.hpp>
 
 #include "Logging.h"
 #include "PluginEditor.h"
