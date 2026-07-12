@@ -88,8 +88,8 @@ void ProfilView::paint(juce::Graphics& g) {
 
     g.setGradientFill(ProfilerStyle::Gradients::vertical(
         area,
-        ProfilerStyle::Colors::darkestGrey,
-        ProfilerStyle::Colors::darkestGrey.brighter(0.1f),
+        ProfilerStyle::Colors::appBackground,
+        ProfilerStyle::Colors::appBackground.brighter(0.1f),
         0.8f));
     g.fillPath(path);
 }

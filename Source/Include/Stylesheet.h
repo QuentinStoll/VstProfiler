@@ -21,6 +21,7 @@ inline const juce::Colour darkerGrey = juce::Colour(0xff2b2b2b);
 inline const juce::Colour darkestGrey = juce::Colour(0xff1f1f1f);
 
 inline const juce::Colour orange = juce::Colour(0xffff4500);
+inline juce::Colour appBackground = darkestGrey;
 }  // namespace Colors
 
 namespace Gradients {
