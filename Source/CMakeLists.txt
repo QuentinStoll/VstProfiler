@@ -3,11 +3,13 @@
 set(PLUGIN_NAME Profiler)
 
 juce_add_plugin(${PLUGIN_NAME}
-    COMPANY_NAME "YourCompany"
+    COMPANY_NAME "Profiler"
     PRODUCT_NAME "Profiler"
     PLUGIN_NAME "Profiler"
 
     FORMATS AU VST3 Standalone   # pick what you need
+    ICON_BIG   "${CMAKE_CURRENT_SOURCE_DIR}/Assets/png/ProfilerPP.png"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/Assets/png/ProfilerPP.png"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
