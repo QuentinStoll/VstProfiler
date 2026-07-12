@@ -43,7 +43,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
           BusesProperties()
 #if !JucePlugin_IsMidiEffect
 #if !JucePlugin_IsSynth
-              .withInput("Input", juce::AudioChannelSet::stereo(), true)
+              .withInput("Input", juce::AudioChannelSet::mono(), true)
 #endif
               .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
@@ -136,6 +136,7 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     _chain.get<NoiseGate>().setAttack(5.0f);
     _chain.get<NoiseGate>().setRelease(100.0f);
     _chain.get<NoiseGate>().setRatio(10.0f);
+    _chain.setBypassed<NoiseGate>(getParameterValue(_noiseParam, 0.0f) <= 0.0f);
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
 
@@ -186,9 +187,11 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported(
         return false;
     }
 
-    // This checks if the input layout matches the output layout
+    // The processor accepts one mono input and exposes a stereo output so the
+    // processed mono amp signal can be heard identically on both sides.
 #if !JucePlugin_IsSynth
-    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
+    if (layouts.getMainInputChannelSet() != juce::AudioChannelSet::mono() ||
+        layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 #endif
 
@@ -223,7 +226,10 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         buffer.clear(i, 0, numSamples);
 
     _chain.get<Gain>().setGainDecibels(getParameterValue(_gainParam, 0.0f));
-    _chain.get<NoiseGate>().setThreshold(getParameterValue(_noiseParam, 10.0f) - 60.0f);
+    const auto noiseGateValue = getParameterValue(_noiseParam, 0.0f);
+    _chain.get<NoiseGate>().setThreshold(noiseGateValue - 60.0f);
+    // A zero control value is a true bypass, rather than a -60 dB gate.
+    _chain.setBypassed<NoiseGate>(noiseGateValue <= 0.0f);
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
 
@@ -263,13 +269,13 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                 // 4. On applique le signal traité au buffer (avec une limite de sécurité à 1.0)
                 channel0Data[i] = juce::jlimit(-1.0f, 1.0f, output);
             }
-
-            // 5. Duplication stricte sur le canal droit (Stéréo)
-            if (numChannels > 1) {
-                auto* channel1Data = buffer.getWritePointer(1);
-                juce::FloatVectorOperations::copy(channel1Data, channel0Data, numSamples);
-            }
         }
+    }
+
+    // The amp is intentionally mono; duplicate its completed mono signal to
+    // the stereo output so it is audible in both headphones/speakers.
+    if (numChannels > 1) {
+        juce::FloatVectorOperations::copy(buffer.getWritePointer(1), buffer.getReadPointer(0), numSamples);
     }
 
     juce::dsp::AudioBlock<float> postAmpBlock(buffer);
