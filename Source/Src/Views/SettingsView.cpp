@@ -77,14 +77,31 @@ SettingsView::SettingsView() {
 
     addAndMakeVisible(_backgroundMenu);
 
-    _troubleshootingLabel.setText("Allow troubleshooting", juce::dontSendNotification);
+    _troubleshootingLabel.setText("Allow troubleshooting logs", juce::dontSendNotification);
     _troubleshootingLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::white);
     addAndMakeVisible(_troubleshootingLabel);
 
     _troubleshootingMenu.addItem("Don't allow", 1);
     _troubleshootingMenu.addItem("Allow", 2);
-    _troubleshootingMenu.setSelectedId(1, juce::dontSendNotification);
+    _troubleshootingMenu.setSelectedId(UiSettings::loadTroubleshootingSetting(),
+                                       juce::dontSendNotification);
+    _troubleshootingMenu.onChange = [this]() {
+        UiSettings::saveTroubleshootingSetting(_troubleshootingMenu.getSelectedId());
+    };
     addAndMakeVisible(_troubleshootingMenu);
+
+    _hardwareInfoLabel.setText("Hardware info in logs", juce::dontSendNotification);
+    _hardwareInfoLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::white);
+    addAndMakeVisible(_hardwareInfoLabel);
+
+    _hardwareInfoMenu.addItem("Don't allow", 1);
+    _hardwareInfoMenu.addItem("Allow", 2);
+    _hardwareInfoMenu.setSelectedId(UiSettings::loadHardwareInfoSetting(),
+                                    juce::dontSendNotification);
+    _hardwareInfoMenu.onChange = [this]() {
+        UiSettings::saveHardwareInfoSetting(_hardwareInfoMenu.getSelectedId());
+    };
+    addAndMakeVisible(_hardwareInfoMenu);
 }
 
 void SettingsView::applySavedBackgroundColour() {
@@ -127,6 +144,16 @@ void SettingsView::resized() {
     settingLine.removeFromLeft(20);
 
     _troubleshootingMenu.setBounds(settingLine.removeFromLeft(220));
+
+    area.removeFromTop(20);
+
+    settingLine = area.removeFromTop(40);
+
+    _hardwareInfoLabel.setBounds(settingLine.removeFromLeft(180));
+
+    settingLine.removeFromLeft(20);
+
+    _hardwareInfoMenu.setBounds(settingLine.removeFromLeft(220));
 }
 
 void SettingsView::applyBackgroundColour() {

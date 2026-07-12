@@ -19,6 +19,8 @@ class SettingsView : public juce::Component {
     CustomComboBox _backgroundMenu;
     juce::Label _troubleshootingLabel;
     CustomComboBox _troubleshootingMenu;
+    juce::Label _hardwareInfoLabel;
+    CustomComboBox _hardwareInfoMenu;
 
     void applyBackgroundColour();
     void refreshColours();
