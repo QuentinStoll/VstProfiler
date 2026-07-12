@@ -59,7 +59,7 @@ goto end
 
 :build
 echo [INFO] Building project
-cmake --build "%BUILD_DIR%"
+cmake --build "%BUILD_DIR%" -j8
 if errorlevel 1 (
     echo [ERROR] Build failed
     exit /b 1

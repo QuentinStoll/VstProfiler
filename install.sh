@@ -69,7 +69,7 @@ config() {
 
 build() {
 	echo "[INFO] Building project"
-	cmake --build $BUILD_DIR
+	cmake --build $BUILD_DIR -j8
 	echo "[OK] Done building project"
 }
 
