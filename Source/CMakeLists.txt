@@ -86,10 +86,13 @@ else()
     target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} simdjson RTNeural)
 endif()
 
+# Generate the aggregate header consumed by the existing source files.  Unlike
+# Projucer, the CMake workflow writes it to the target's build artefacts.
+juce_generate_juce_header(${PLUGIN_NAME})
+
 # Include directories
 target_include_directories(${PLUGIN_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../JuceLibraryCode
     ${rtneural_SOURCE_DIR}
 )
 
