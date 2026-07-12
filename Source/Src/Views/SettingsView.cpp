@@ -76,6 +76,15 @@ SettingsView::SettingsView() {
     };
 
     addAndMakeVisible(_backgroundMenu);
+
+    _troubleshootingLabel.setText("Allow troubleshooting", juce::dontSendNotification);
+    _troubleshootingLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::white);
+    addAndMakeVisible(_troubleshootingLabel);
+
+    _troubleshootingMenu.addItem("Don't allow", 1);
+    _troubleshootingMenu.addItem("Allow", 2);
+    _troubleshootingMenu.setSelectedId(1, juce::dontSendNotification);
+    addAndMakeVisible(_troubleshootingMenu);
 }
 
 void SettingsView::applySavedBackgroundColour() {
@@ -108,6 +117,16 @@ void SettingsView::resized() {
     settingLine.removeFromLeft(20);
 
     _backgroundMenu.setBounds(settingLine.removeFromLeft(220));
+
+    area.removeFromTop(20);
+
+    settingLine = area.removeFromTop(40);
+
+    _troubleshootingLabel.setBounds(settingLine.removeFromLeft(180));
+
+    settingLine.removeFromLeft(20);
+
+    _troubleshootingMenu.setBounds(settingLine.removeFromLeft(220));
 }
 
 void SettingsView::applyBackgroundColour() {
