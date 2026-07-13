@@ -85,6 +85,7 @@ if(PROFILER_ENABLE_COVERAGE)
             COMMAND "$<TARGET_FILE:ProfilerTests>" --quiet
             COMMAND "${CMAKE_COMMAND}"
                 -DPROFILER_COVERAGE_XML="${PROFILER_COVERAGE_DIR}/coverage.xml"
+                -DPROFILER_COVERAGE_MINIMUM=${PROFILER_COVERAGE_MINIMUM}
                 -P "${CMAKE_SOURCE_DIR}/cmake/PrintCoverageSummary.cmake"
             COMMAND "${CMAKE_COMMAND}" -E echo "Coverage report: ${PROFILER_COVERAGE_DIR}/html/index.html"
             DEPENDS ProfilerTests
@@ -106,6 +107,10 @@ if(PROFILER_ENABLE_COVERAGE)
                 --output-file "${PROFILER_COVERAGE_DIR}/coverage.filtered.info"
             COMMAND "${PROFILER_LCOV_EXE}" --summary "${PROFILER_COVERAGE_DIR}/coverage.filtered.info"
             COMMAND "${PROFILER_GENHTML_EXE}" "${PROFILER_COVERAGE_DIR}/coverage.filtered.info" --output-directory "${PROFILER_COVERAGE_DIR}/html"
+            COMMAND "${CMAKE_COMMAND}"
+                -DPROFILER_COVERAGE_LCOV="${PROFILER_COVERAGE_DIR}/coverage.filtered.info"
+                -DPROFILER_COVERAGE_MINIMUM=${PROFILER_COVERAGE_MINIMUM}
+                -P "${CMAKE_SOURCE_DIR}/cmake/PrintCoverageSummary.cmake"
             COMMAND "${CMAKE_COMMAND}" -E echo "Coverage report: ${PROFILER_COVERAGE_DIR}/html/index.html"
             DEPENDS ProfilerTests
             WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
