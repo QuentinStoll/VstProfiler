@@ -166,15 +166,16 @@ jobs:
             libjack-jackd2-dev \
             libdbus-1-dev
 
-      - name: Configure Release build
-        run: >-
-          cmake -S . -B ${{ env.BUILD_DIR }}
-          -DPROFILER_BUILD_TESTS=OFF
-          -DPROFILER_ENABLE_COVERAGE=OFF
-          -DCMAKE_BUILD_TYPE=Release
+      - name: Build project (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: install.bat build
 
-      - name: Build Release
-        run: cmake --build ${{ env.BUILD_DIR }} --config Release --parallel
+      - name: Build project (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          chmod +x ./install.sh
+          ./install.sh build
 
       - name: Upload plugin artifacts
         uses: actions/upload-artifact@v4
