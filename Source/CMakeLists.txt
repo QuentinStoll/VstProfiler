@@ -18,11 +18,13 @@ if(NOT PROFILER_PLUGIN_FORMATS)
 endif()
 
 juce_add_plugin(${PLUGIN_NAME}
-    COMPANY_NAME "YourCompany"
+    COMPANY_NAME "Profiler"
     PRODUCT_NAME "Profiler"
     PLUGIN_NAME "Profiler"
 
-    FORMATS ${PROFILER_PLUGIN_FORMATS}
+    FORMATS AU VST3 Standalone   # pick what you need
+    ICON_BIG   "${CMAKE_CURRENT_SOURCE_DIR}/Assets/png/ProfilerPP.png"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/Assets/png/ProfilerPP.png"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
@@ -78,7 +80,9 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Views/CloneView.cpp
     Src/Views/PlayView.cpp
     Src/Views/ProfilView.cpp
+    Src/Views/SettingsView.cpp
     Src/ProfileManager.cpp
+    Src/UiSettings.cpp
     Src/PluginEditor.cpp
     Src/PluginProcessor.cpp
     Src/Logging.cpp
@@ -97,10 +101,13 @@ else()
     target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} simdjson RTNeural)
 endif()
 
+# Generate the aggregate header consumed by the existing source files.  Unlike
+# Projucer, the CMake workflow writes it to the target's build artefacts.
+juce_generate_juce_header(${PLUGIN_NAME})
+
 # Include directories
 target_include_directories(${PLUGIN_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../JuceLibraryCode
     ${rtneural_SOURCE_DIR}
 )
 
