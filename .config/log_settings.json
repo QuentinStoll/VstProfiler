@@ -1,7 +1,9 @@
 {
-    "log_level": "TRACE",
+    "name": "MainLogger",
+    "log_level": "Info",
     "show_in_ui": false,
-    "write_to_file": true,
-    "write_to_debug": true,
-    "log_directory": "/home/krt/dev/EIP/Profiler/.cache"
+    "write_to_file": false,
+    "write_to_debug": false,
+    "write_to_tracy": true,
+    "log_directory": "/home/krt/dev/EIP/VstProfiler/.cache"
 }
