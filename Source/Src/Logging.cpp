@@ -2,12 +2,11 @@
 
 #include <simdjson.h>
 
-
 #include "SettingsPath.h"
 #include "juce_core/juce_core.h"
 
 #ifdef TRACY_ENABLE
-    #include <tracy/Tracy.hpp>
+#include <tracy/Tracy.hpp>
 #endif
 
 namespace Log {
@@ -50,7 +49,7 @@ const char* toString(LogCategory category) noexcept {
             return "[Other]";
     }
 }
-}  // namespace Log
+
 
 //  LogConfig factory methods
 LogConfig LogConfig::fromDefaultPath() {
@@ -118,7 +117,7 @@ LogConfig LogConfig::fromFile(const juce::File& file) {
             config.logDirectory = dir;
     }
     // Derive log file path from directory
-    if (config.logDirectory.exists()) {
+    if (config.logDirectory.exists() && config.writeToFile) {
         juce::Time now = juce::Time::getCurrentTime();
         juce::String dateStr = now.formatted("%Y%m%d");
         juce::String timeStr = now.formatted("%H%M%S");
@@ -296,3 +295,4 @@ void Logger::error(LogCategory c, const juce::String& m) {
 void Logger::fatal(LogCategory c, const juce::String& m) {
     log(LogLevel::Fatal, c, m);
 }
+}  // namespace Log

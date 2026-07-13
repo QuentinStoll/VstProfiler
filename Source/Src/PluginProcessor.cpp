@@ -55,8 +55,8 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
     : _profileManager(_apvts)
 #endif
 {
-    LogConfig config = LogConfig::fromFile((juce::File)("/home/krt/dev/EIP/VstProfiler/.config/log_settings.json"));
-    Logger& logger = LogRegistry::create(config.name, config);
+    Log::LogConfig config = Log::LogConfig::fromFile((juce::File)("/home/krt/dev/EIP/VstProfiler/.config/log_settings.json"));
+    Log::Logger& logger = Log::LogRegistry::create(config.name, config);
 
     _masterParam = _apvts.getRawParameterValue("master");
     _gainParam = _apvts.getRawParameterValue("gain");
@@ -73,7 +73,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() {
-    LogRegistry::shutdownAll();
+    Log::LogRegistry::shutdownAll();
 }
 
 //==============================================================================
@@ -206,7 +206,7 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported(
 */
 void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                           juce::MidiBuffer& /*midiMessages*/) {
-    LogRegistry::get("MainLogger").warn(LogCategory::Other, "test warning");
+    Log::LogRegistry::get("MainLogger").warn(Log::LogCategory::Other, "test warning");
     ZoneScopedNC("test2", tracy::Color::Purple)
 
     juce::ScopedNoDenormals noDenormals;

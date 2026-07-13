@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 
+namespace Log {
 enum class LogLevel { Trace,
                       Debug,
                       Info,
@@ -23,10 +24,8 @@ enum class LogCategory { Init,
                          Other };
 
 //  Log helpers
-namespace Log {
 const char* toString(LogLevel level) noexcept;
 const char* toString(LogCategory category) noexcept;
-}  // namespace Log
 
 //  LogConfig
 struct LogConfig {
@@ -86,3 +85,4 @@ class LogRegistry final {
     LogRegistry() = delete;
     static std::map<std::string, std::unique_ptr<Logger>> registry_;
 };
+}  // namespace Log
