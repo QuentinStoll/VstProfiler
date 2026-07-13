@@ -1,5 +1,3 @@
-#include "TestRunner.h"
-
 #include <JuceHeader.h>
 
 #include <cmath>
@@ -7,6 +5,7 @@
 #include <utility>
 
 #include "ProfileManager.h"
+#include "TestRunner.h"
 
 namespace profiler_tests {
 namespace {
