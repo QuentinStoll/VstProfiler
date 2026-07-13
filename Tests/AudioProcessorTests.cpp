@@ -184,14 +184,14 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         ProfilerAudioProcessor processor;
 
         expect(processor.isBusesLayoutSupported(makeLayout(juce::AudioChannelSet::mono(),
-                                                           juce::AudioChannelSet::mono())),
-               "Mono input/output should be supported.");
-        expect(processor.isBusesLayoutSupported(makeLayout(juce::AudioChannelSet::stereo(),
                                                            juce::AudioChannelSet::stereo())),
-               "Stereo input/output should be supported.");
+               "Mono input with stereo output should be supported.");
         expect(!processor.isBusesLayoutSupported(makeLayout(juce::AudioChannelSet::mono(),
+                                                            juce::AudioChannelSet::mono())),
+               "Mono output should be rejected.");
+        expect(!processor.isBusesLayoutSupported(makeLayout(juce::AudioChannelSet::stereo(),
                                                             juce::AudioChannelSet::stereo())),
-               "Mismatched input/output layouts should be rejected.");
+               "Stereo input should be rejected.");
         expect(!processor.isBusesLayoutSupported(makeLayout(juce::AudioChannelSet::create5point1(),
                                                             juce::AudioChannelSet::create5point1())),
                "Surround layouts should be rejected.");
