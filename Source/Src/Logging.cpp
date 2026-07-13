@@ -49,7 +49,7 @@ const char* toString(LogCategory category) noexcept {
             return "[Other]";
     }
 }
-
+}  // namespace Log
 
 //  LogConfig factory methods
 LogConfig LogConfig::fromDefaultPath() {
@@ -159,7 +159,6 @@ uint32_t tracyColorForLevel(LogLevel level) noexcept {
             return 0xFFFFFF;  // white
     }
 }
-}  // namespace
 #endif
 
 //  LogRegistry
