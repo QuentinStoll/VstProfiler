@@ -6,6 +6,7 @@
 #include "Views/CloneView.h"
 #include "Views/PlayView.h"
 #include "Views/ProfilView.h"
+#include "Views/SettingsView.h"
 
 //==============================================================================
 ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcessor& p)
@@ -13,8 +14,11 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
       _audioProcessor(p),
       _tabs({{"Clone", [&p] { return std::make_unique<CloneView>(p); }},
              {"Play", [&p] { return std::make_unique<PlayView>(p); }},
-             {"Profil", [&p] { return std::make_unique<ProfilView>(p); }}},
+             {"Profil", [&p] { return std::make_unique<ProfilView>(p); }},
+             {"Settings", [] { return std::make_unique<SettingsView>(); }}},
             1) {
+    SettingsView::applySavedBackgroundColour();
+
     // Define the initial size of the plugin window
     setResizable(true, true);
     getConstrainer()->setFixedAspectRatio(windowHeight / (double)windowWidth);
@@ -37,8 +41,8 @@ void ProfilerAudioProcessorEditor::paint(juce::Graphics& g) {
     // Set the background color of the plugin
     g.setGradientFill(ProfilerStyle::Gradients::vertical(
         area,
-        ProfilerStyle::Colors::darkGrey.brighter(0.2f),
-        ProfilerStyle::Colors::darkGrey.darker(0.4f),
+        ProfilerStyle::Colors::appBackground.brighter(0.2f),
+        ProfilerStyle::Colors::appBackground.darker(0.4f),
         0.2f));
 
     g.fillAll();

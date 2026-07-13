@@ -10,7 +10,7 @@ PlayView::PlayView(ProfilerAudioProcessor& p)
       _eqDisplay({{"Basic", [&p] { return std::make_unique<BasicEqModule>(p._apvts); }},
                   {"Advanced", [&p] { return std::make_unique<AdvancedEqModule>(p._apvts); }}}),
       _utilityBar(p),
-      _masterSliders(p._apvts) {
+      _masterSliders(p) {
     addAndMakeVisible(_eqDisplay);
     _eqDisplay.changeView(0);
 
@@ -67,8 +67,8 @@ void PlayView::paint(juce::Graphics& g) {
 
     g.setGradientFill(ProfilerStyle::Gradients::vertical(
         area,
-        ProfilerStyle::Colors::darkestGrey,
-        ProfilerStyle::Colors::darkestGrey.brighter(0.1f),
+        ProfilerStyle::Colors::appBackground,
+        ProfilerStyle::Colors::appBackground.brighter(0.1f),
         0.8f));
     g.fillPath(path);
 }
