@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 
+#include <common/TracyColor.hpp>
 #include <fstream>
 
 #define RTNEURAL_DEFAULT_STATIC 1
@@ -54,10 +55,8 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
     : _profileManager(_apvts)
 #endif
 {
-    LoggingConfig config = LoggingConfigLoader::loadFromFile(
-        juce::File(".config/log_settings.json"));
-    AppLogger::initialise(config);
-    AppLogger::info(LogCategory::Init, "Plugin instance created");
+    LogConfig config = LogConfig::fromFile((juce::File)("/home/krt/dev/EIP/VstProfiler/.config/log_settings.json"));
+    Logger& logger = LogRegistry::create(config.name, config);
 
     _masterParam = _apvts.getRawParameterValue("master");
     _gainParam = _apvts.getRawParameterValue("gain");
@@ -74,8 +73,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() {
-    AppLogger::info(LogCategory::Init, "Plugin instance destroyed");
-    AppLogger::shutdown();
+    LogRegistry::shutdownAll();
 }
 
 //==============================================================================
@@ -205,6 +203,9 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported(
 */
 void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                           juce::MidiBuffer& /*midiMessages*/) {
+    LogRegistry::get("MainLogger").warn(LogCategory::Other, "test warning");
+    ZoneScopedNC("test2", tracy::Color::Purple)
+
     juce::ScopedNoDenormals noDenormals;
 
     const auto numChannels = buffer.getNumChannels();
