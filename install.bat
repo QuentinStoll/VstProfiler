@@ -9,9 +9,19 @@ setlocal enabledelayedexpansion
 set "SCRIPT_DIR=%~dp0"
 set "BUILD_DIR=%SCRIPT_DIR%build"
 set "CACHE_DIR=%SCRIPT_DIR%.cache"
+set BUILD_PRESET="default"
 
 if not exist %BUILD_DIR% mkdir %BUILD_DIR%
 if not exist %CACHE_DIR% mkdir %CACHE_DIR%
+
+if "%2"=="" set BUILD_PRESET="default"
+if /I "%2"=="default" set BUILD_PRESET="default"
+if /I "%2"=="release" set BUILD_PRESET="release"
+if /I "%2"=="all-formats" set BUILD_PRESET="all-formats"
+if /I "%2"=="dev" set BUILD_PRESET="dev"
+if /I "%2"=="debug" set BUILD_PRESET="debug"
+if /I "%2"=="-h" goto usage
+if /I "%2"=="--help" goto usage
 
 if "%1"=="" goto default
 if /I "%1"=="all" goto default
@@ -28,16 +38,29 @@ echo Usage:
 echo   install.bat all       config + build (default)
 echo   install.bat config    cmake config only
 echo   install.bat build     cmake build only
-echo   install.bat test      run automated tests
-echo   install.bat test --coverage
-echo                            run automated tests and show coverage
+
 echo   install.bat re        cache delete + remake
 echo   install.bat -h        show this help
+
+echo Usage: install.bat ACTION [PRESET]
+echo ACTIONS
+echo   all				config + build
+echo   config			cmake config only
+echo   build			cmake build only
+echo   test             run automated tests
+echo   test --coverage  run automated tests and show coverage
+echo   re				cache delete + remake
+echo PRESETS
+echo   default			recommended (for dev or use)
+echo   release			with standard release features
+echo   all-formats		builds plugin in all availlable formats
+echo   dev				most debug features
+echo   debug			all debug features + performance profiling
 goto end
 
 :config
 echo [INFO] Configuring cmake
-cmake -DPROFILER_ENABLE_COVERAGE=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S "%~dp0." -B "%BUILD_DIR%"
+cmake -DPROFILER_ENABLE_COVERAGE=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S %SCRIPT_DIR% -B "%BUILD_DIR%" -DPRESET_NAME=%BUILD_PRESET%
 if errorlevel 1 (
     echo [ERROR] cmake configuration failed
     exit /b 1

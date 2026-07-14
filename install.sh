@@ -7,6 +7,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR/build"
 CACHE_DIR="$SCRIPT_DIR/.cache"
+BUILD_PRESET="default"
 
 set -e
 mkdir -p $BUILD_DIR
@@ -14,19 +15,57 @@ mkdir -p $CACHE_DIR
 
 
 usage() {
-	echo "Usage:"
-	echo "  ./install.sh all       config + build (default)"
-	echo "  ./install.sh config    cmake config only"
-	echo "  ./install.sh build     cmake build only"
-	echo "  ./install.sh test      run automated tests"
-	echo "  ./install.sh test --coverage"
-	echo "                         run automated tests and show coverage"
-	echo "  ./install.sh re    	   cache delete + remake"
+	echo "Usage: install.sh ACTION [PRESET]"
+	echo "ACTIONS"
+	echo "  all				config + build (default)"
+	echo "  config			cmake config only"
+	echo "  build			cmake build only"
+	echo "  test      		run automated tests"
+	echo "  test --coverage	run automated tests and show coverage"
+	echo "  re				cache delete + remake"
+	echo "PRESETS"
+	echo "  default			recommended (for dev or use)"
+	echo "  release			with standard release features"
+	echo "  all-formats		builds plugin in all availlable formats"
+	echo "  dev				most debug features"
+	echo "  debug			all debug features + performance profiling"
 }
+
+
+case "$2" in
+"" )
+	BUILD_PRESET="default"
+	;;
+default )
+	BUILD_PRESET="default"
+	;;
+release )
+	BUILD_PRESET="release"
+	;;
+all-formats )
+	BUILD_PRESET="all-formats"
+	;;
+dev )
+	BUILD_PRESET="dev"
+	;;
+debug )
+	BUILD_PRESET="debug"
+	;;
+-h|--help )
+	usage
+	exit 0
+	;;
+* )
+	echo "[ERROR] Unknown option: $2"
+	usage
+	exit 1
+	;;
+esac
+
 
 config() {
 	echo "[INFO] Configuring cmake"
-	cmake -DPROFILER_ENABLE_COVERAGE=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S $SCRIPT_DIR -B $BUILD_DIR
+	cmake -DPROFILER_ENABLE_COVERAGE=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S $SCRIPT_DIR -B $BUILD_DIR -DPRESET_NAME=$BUILD_PRESET
 	echo "[OK] cmake configured"
 }
 
@@ -80,7 +119,8 @@ test_project_with_coverage() {
 }
 
 case "$1" in
-	"" | "all")
+	all )
+		config
 		build
 		;;
 	config )
