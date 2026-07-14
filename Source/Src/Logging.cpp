@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string_view>
 
+#include "Components/NotificationBanner.h"
 #include "SettingsPath.h"
 #include "juce_core/juce_core.h"
 
@@ -143,8 +144,8 @@ LogConfig LogConfig::fromDefaultConfigFile() {
     return fromFile(getFileInSettingsFolder("log_settings_defaults.json"));
 }
 
-#ifdef TRACY_ENABLE
 namespace {
+#ifdef TRACY_ENABLE
 // Colors shown in the Tracy "Messages" pane so severity is visible at a glance.
 uint32_t tracyColorForLevel(LogLevel level) noexcept {
     switch (level) {
@@ -164,8 +165,28 @@ uint32_t tracyColorForLevel(LogLevel level) noexcept {
             return 0xFFFFFF;  // white
     }
 }
-}  // namespace
 #endif
+
+// Maps a LogLevel to a NotificationBanner::Type. Trace/Debug/Other have no
+// sensible popup equivalent and are intentionally skipped (returns false)
+// so routine/verbose logging doesn't spam the UI.
+bool notificationTypeForLevel(LogLevel level, NotificationBanner::Type& outType) noexcept {
+    switch (level) {
+        case LogLevel::Info:
+            outType = NotificationBanner::Type::Info;
+            return true;
+        case LogLevel::Warning:
+            outType = NotificationBanner::Type::Warning;
+            return true;
+        case LogLevel::Error:
+        case LogLevel::Fatal:
+            outType = NotificationBanner::Type::Error;
+            return true;
+        default:
+            return false;
+    }
+}
+}  // namespace
 
 //  LogRegistry
 std::map<std::string, std::unique_ptr<Logger>> LogRegistry::registry_;
@@ -310,6 +331,13 @@ void Logger::log(LogLevel level, LogCategory category, const juce::String& messa
                       tracyColorForLevel(level));
     }
 #endif
+
+    if (config_.showInUI) {
+        NotificationBanner::Type notifType;
+        NotificationBanner Banner;
+        if (notificationTypeForLevel(level, notifType))
+            Banner.showMessage(message, notifType, 5000);
+    }
 }
 
 void Logger::trace(LogCategory c, const juce::String& m) {

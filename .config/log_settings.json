@@ -1,7 +1,7 @@
 {
     "name": "MainLogger",
     "log_level": "Info",
-    "show_in_ui": false,
+    "show_in_ui": true,
     "write_to_file": false,
     "write_to_debug": false,
     "write_to_tracy": true,
