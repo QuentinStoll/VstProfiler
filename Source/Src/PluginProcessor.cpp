@@ -213,7 +213,7 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported(
 */
 void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                           juce::MidiBuffer& /*midiMessages*/) {
-    ZoneScopedNC("test2", tracy::Color::Purple)
+    ZoneScopedNC("test2", tracy::Color::Purple);
 
     juce::ScopedNoDenormals noDenormals;
 
