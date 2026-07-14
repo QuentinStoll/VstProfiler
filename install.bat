@@ -34,14 +34,6 @@ if /I "%1"=="--help" goto usage
 goto unknown
 
 :usage
-echo Usage:
-echo   install.bat all       config + build (default)
-echo   install.bat config    cmake config only
-echo   install.bat build     cmake build only
-
-echo   install.bat re        cache delete + remake
-echo   install.bat -h        show this help
-
 echo Usage: install.bat ACTION [PRESET]
 echo ACTIONS
 echo   all				config + build
