@@ -72,6 +72,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void clearAppliedProfile();
     ProfileManager& getProfileManager() noexcept;
     const ProfileManager& getProfileManager() const noexcept;
+    float getRmsLevelOutput() const noexcept;
 
    private:
     enum ChainPositions {
@@ -99,6 +100,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     Chain _chain;
     juce::dsp::Gain<float> _masterVolume;
+    std::atomic<float> _rmsLevelOutput{-60.0f};
 
     static constexpr float DEPTH_FREQ{60.0f};
     static constexpr float BASS_FREQ{200.0f};
