@@ -49,7 +49,7 @@ const char* toString(LogCategory category) noexcept {
             return "[Other]";
     }
 }
-
+}  // namespace Log
 
 //  LogConfig factory methods
 LogConfig LogConfig::fromDefaultPath() {
@@ -117,7 +117,7 @@ LogConfig LogConfig::fromFile(const juce::File& file) {
             config.logDirectory = dir;
     }
     // Derive log file path from directory
-    if (config.logDirectory.exists() && config.writeToFile) {
+    if (config.writeToFile && config.logDirectory.exists()) {
         juce::Time now = juce::Time::getCurrentTime();
         juce::String dateStr = now.formatted("%Y%m%d");
         juce::String timeStr = now.formatted("%H%M%S");

@@ -59,8 +59,13 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
     : _profileManager(_apvts, std::move(profileDirectory), std::move(playViewSettingsFile))
 #endif
 {
+<<<<<<< HEAD
     Log::LogConfig config = Log::LogConfig::fromFile((juce::File)("/home/krt/dev/EIP/VstProfiler/.config/log_settings.json"));
     Log::Logger& logger = Log::LogRegistry::create(config.name, config);
+=======
+    LogConfig config = LogConfig::fromFile((juce::File)("/home/krt/dev/EIP/VstProfiler/.config/log_settings.json"));
+    Logger& logger = LogRegistry::create(config.name, config);
+>>>>>>> 7ae9324 (feat: added back logging correctly)
 
     _masterParam = _apvts.getRawParameterValue("master");
     _gainParam = _apvts.getRawParameterValue("gain");
@@ -77,7 +82,11 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() {
+<<<<<<< HEAD
     Log::LogRegistry::shutdownAll();
+=======
+    LogRegistry::shutdownAll();
+>>>>>>> 7ae9324 (feat: added back logging correctly)
 }
 
 //==============================================================================
@@ -210,7 +219,11 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported(
 */
 void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                           juce::MidiBuffer& /*midiMessages*/) {
+<<<<<<< HEAD
     Log::LogRegistry::get("MainLogger").warn(Log::LogCategory::Other, "test warning");
+=======
+    LogRegistry::get("MainLogger").warn(LogCategory::Other, "test warning");
+>>>>>>> 7ae9324 (feat: added back logging correctly)
     ZoneScopedNC("test2", tracy::Color::Purple)
 
     juce::ScopedNoDenormals noDenormals;
