@@ -94,11 +94,11 @@ add_compile_definitions(JUCE_VST3_CAN_REPLACE_VST2=0)
 
 # Link JUCE modules from juce_setup.cmake
 if(NOT WIN32)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets CURL::libcurl simdjson)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} CURL::libcurl simdjson RTNeural)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets CURL::libcurl simdjson TracyClient)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} CURL::libcurl simdjson RTNeural TracyClient)
 else()
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets simdjson)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} simdjson RTNeural)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets simdjson TracyClient)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} simdjson RTNeural TracyClient)
 endif()
 
 # Generate the aggregate header consumed by the existing source files.  Unlike

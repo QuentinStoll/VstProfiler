@@ -9,6 +9,7 @@
 #define RTNEURAL_ENABLE_DENSE 1
 
 #include <RTNeural/RTNeural.h>
+#include <tracy/Tracy.hpp>
 
 #include "Logging.h"
 #if !(defined(PROFILER_HEADLESS_TESTS) && PROFILER_HEADLESS_TESTS)
