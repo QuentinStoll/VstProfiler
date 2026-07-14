@@ -153,8 +153,8 @@ void FileAssetsModule::chooseFile(size_t slotIndex) {
                                   if (loadedSuccessfully && selectedSlot.successMessage.isNotEmpty()) {
                                       safeThis->_notificationBanner.clearAction();
                                       safeThis->_notificationBanner.showMessage(selectedSlot.successMessage,
-                                                                               NotificationBanner::Type::Success,
-                                                                               5000);
+                                                                                NotificationBanner::Type::Success,
+                                                                                5000);
                                   } else if (!loadedSuccessfully && file.existsAsFile()) {
                                       if (selectedSlot.failureMessage.isNotEmpty()) {
                                           safeThis->showIssue(selectedSlot.failureMessage,
