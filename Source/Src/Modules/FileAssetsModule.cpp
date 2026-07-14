@@ -144,14 +144,26 @@ void FileAssetsModule::chooseFile(size_t slotIndex) {
 
                                   const auto file = chooser.getResult();
                                   const auto& selectedSlot = safeThis->_fileSlots[slotIndex];
+                                  bool loadedSuccessfully = false;
                                   if (file.existsAsFile() && selectedSlot.loadFile) {
-                                      if (!selectedSlot.loadFile(file)) {
+                                      loadedSuccessfully = selectedSlot.loadFile(file);
+                                  }
+
+                                  safeThis->refreshFileState();
+                                  if (loadedSuccessfully && selectedSlot.successMessage.isNotEmpty()) {
+                                      safeThis->_notificationBanner.clearAction();
+                                      safeThis->_notificationBanner.showMessage(selectedSlot.successMessage,
+                                                                               NotificationBanner::Type::Success,
+                                                                               5000);
+                                  } else if (!loadedSuccessfully && file.existsAsFile()) {
+                                      if (selectedSlot.failureMessage.isNotEmpty()) {
+                                          safeThis->showIssue(selectedSlot.failureMessage,
+                                                              NotificationBanner::Type::Error);
+                                      } else {
                                           safeThis->showIssue("Could not load file: " + file.getFullPathName(),
                                                               NotificationBanner::Type::Error);
                                       }
                                   }
-
-                                  safeThis->refreshFileState();
                                   safeThis->_fileChooser.reset();
                               });
 }
