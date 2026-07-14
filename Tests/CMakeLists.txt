@@ -7,9 +7,11 @@ set(PROFILER_TEST_SOURCES
 
 add_executable(ProfilerTests EXCLUDE_FROM_ALL
     ${PROFILER_TEST_SOURCES}
+    ../Source/Src/Components/NotificationBanner.cpp
     ../Source/Src/Logging.cpp
     ../Source/Src/PluginProcessor.cpp
     ../Source/Src/ProfileManager.cpp
+    ../Source/Src/UiSettings.cpp
 )
 
 target_include_directories(ProfilerTests PRIVATE
@@ -39,8 +41,10 @@ target_link_libraries(ProfilerTests PRIVATE
     juce::juce_data_structures
     juce::juce_dsp
     juce::juce_events
+    ProfilerAssets
     RTNeural
     simdjson
+    TracyClient
 )
 
 if(NOT WIN32)

@@ -63,7 +63,9 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
 {
     Log::logSystemInfoOnFileStart = (bool)(UiSettings::loadHardwareInfoSetting() - 1);
     Log::LogConfig config = Log::LogConfig::fromFile((juce::File)("/home/krt/dev/EIP/VstProfiler/.config/log_settings.json"));
-    Log::Logger& logger = Log::LogRegistry::create(config.name, config);
+    if (Log::LogRegistry::find(config.name) == nullptr) {
+        Log::LogRegistry::create(config.name, config);
+    }
 
     _masterParam = _apvts.getRawParameterValue("master");
     _gainParam = _apvts.getRawParameterValue("gain");
@@ -79,9 +81,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
     _isEqEnabledParam = _apvts.getRawParameterValue("isEqEnabled");
 }
 
-ProfilerAudioProcessor::~ProfilerAudioProcessor() {
-    Log::LogRegistry::shutdownAll();
-}
+ProfilerAudioProcessor::~ProfilerAudioProcessor() = default;
 
 //==============================================================================
 const juce::String ProfilerAudioProcessor::getName() const {
