@@ -17,6 +17,7 @@ if "%1"=="" goto default
 if /I "%1"=="all" goto default
 if /I "%1"=="config" goto config
 if /I "%1"=="build" goto build
+if /I "%1"=="test" goto test
 if /I "%1"=="re" goto rebuild
 if /I "%1"=="-h" goto usage
 if /I "%1"=="--help" goto usage
@@ -27,21 +28,53 @@ echo Usage:
 echo   install.bat all       config + build (default)
 echo   install.bat config    cmake config only
 echo   install.bat build     cmake build only
+echo   install.bat test      run automated tests
+echo   install.bat test --coverage
+echo                            run automated tests and show coverage
 echo   install.bat re        cache delete + remake
 echo   install.bat -h        show this help
 goto end
 
 :config
 echo [INFO] Configuring cmake
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S "%~dp0." -B "%~dp0build"
+cmake -DPROFILER_ENABLE_COVERAGE=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S "%~dp0." -B "%BUILD_DIR%"
 if errorlevel 1 (
     echo [ERROR] cmake configuration failed
     exit /b 1
 )
 echo [OK] cmake configured
-goto end
+exit /b 0
+
+:ensure_normal_config
+if not exist "%BUILD_DIR%\CMakeCache.txt" (
+    call :config
+    exit /b !errorlevel!
+)
+findstr /C:"PROFILER_ENABLE_COVERAGE:BOOL=ON" "%BUILD_DIR%\CMakeCache.txt" >nul
+if not errorlevel 1 (
+    call :config
+    exit /b !errorlevel!
+)
+exit /b 0
+
+:ensure_coverage_config
+if not exist "%BUILD_DIR%\CMakeCache.txt" goto configure_coverage
+findstr /C:"PROFILER_ENABLE_COVERAGE:BOOL=ON" "%BUILD_DIR%\CMakeCache.txt" >nul
+if errorlevel 1 goto configure_coverage
+exit /b 0
+
+:configure_coverage
+echo [INFO] Configuring coverage
+cmake -DPROFILER_BUILD_TESTS=ON -DPROFILER_ENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S "%~dp0." -B "%BUILD_DIR%"
+if errorlevel 1 (
+    echo [ERROR] Coverage configuration failed
+    exit /b 1
+)
+exit /b 0
 
 :build
+call :ensure_normal_config
+if errorlevel 1 exit /b 1
 echo [INFO] Building project
 cmake --build "%BUILD_DIR%"
 if errorlevel 1 (
@@ -49,6 +82,43 @@ if errorlevel 1 (
     exit /b 1
 )
 echo [OK] Done building project
+goto end
+
+:test
+if /I "%2"=="--coverage" goto test_coverage
+call :ensure_normal_config
+if errorlevel 1 exit /b 1
+echo [INFO] Building automated tests
+cmake --build "%BUILD_DIR%" --target ProfilerTests --config Release
+if errorlevel 1 (
+    echo [ERROR] Test build failed
+    exit /b 1
+)
+echo [INFO] Running automated tests
+ctest --test-dir "%BUILD_DIR%" -C Release --output-on-failure
+if errorlevel 1 (
+    echo [ERROR] Tests failed
+    exit /b 1
+)
+echo [INFO] Test summary
+"%BUILD_DIR%\Tests\Release\ProfilerTests.exe" --quiet
+if errorlevel 1 (
+    echo [ERROR] Test summary failed
+    exit /b 1
+)
+echo [OK] Tests passed
+goto end
+
+:test_coverage
+call :ensure_coverage_config
+if errorlevel 1 exit /b 1
+echo [INFO] Running automated tests with coverage
+cmake --build "%BUILD_DIR%" --target ProfilerCoverage --config Debug -- /m:1
+if errorlevel 1 (
+    echo [ERROR] Coverage tests failed
+    exit /b 1
+)
+echo [OK] Coverage report: %BUILD_DIR%\coverage\html\index.html
 goto end
 
 :rebuild
@@ -68,8 +138,6 @@ if errorlevel 1 exit /b 1
 goto end
 
 :default
-call :config
-if errorlevel 1 exit /b 1
 call :build
 if errorlevel 1 exit /b 1
 goto end

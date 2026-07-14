@@ -21,7 +21,8 @@ class ProfileManager : public juce::ChangeBroadcaster {
 
     // Creates the manager and loads profiles/settings from disk.
     explicit ProfileManager(juce::AudioProcessorValueTreeState& apvts,
-                            juce::File profileDirectory = {});
+                            juce::File profileDirectory = {},
+                            juce::File playViewSettingsFile = {});
 
     // Rebuilds the in-memory profile list from `.profilerprofile` files.
     void refreshProfiles();
@@ -97,6 +98,7 @@ class ProfileManager : public juce::ChangeBroadcaster {
    private:
     juce::AudioProcessorValueTreeState& _apvts;
     juce::File _profileDirectory;
+    juce::File _playViewSettingsFile;
 
     // Persisted in play_view_settings.json so the Play view can restore itself.
     juce::String _currentProfileId;

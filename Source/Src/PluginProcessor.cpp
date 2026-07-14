@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 
 #include <fstream>
+#include <utility>
 
 #define RTNEURAL_DEFAULT_STATIC 1
 #define RTNEURAL_ENABLE_LSTM 1
@@ -10,7 +11,9 @@
 #include <RTNeural/RTNeural.h>
 
 #include "Logging.h"
+#if !(defined(PROFILER_HEADLESS_TESTS) && PROFILER_HEADLESS_TESTS)
 #include "PluginEditor.h"
+#endif
 
 float ProfilerAudioProcessor::getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept {
     return parameter != nullptr ? parameter->load() : fallback;
@@ -37,7 +40,8 @@ float ProfilerAudioProcessor::getMasterGainLinear(float masterPercent) noexcept 
 }
 
 //==============================================================================
-ProfilerAudioProcessor::ProfilerAudioProcessor()
+ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
+                                               juce::File playViewSettingsFile)
 #ifndef JucePlugin_PreferredChannelConfigurations
     : AudioProcessor(
           BusesProperties()
@@ -48,9 +52,9 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
               .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
               ),
-      _profileManager(_apvts)
+      _profileManager(_apvts, std::move(profileDirectory), std::move(playViewSettingsFile))
 #else
-    : _profileManager(_apvts)
+    : _profileManager(_apvts, std::move(profileDirectory), std::move(playViewSettingsFile))
 #endif
 {
     LoggingConfig config = LoggingConfigLoader::loadFromFile(
@@ -315,10 +319,20 @@ void ProfilerAudioProcessor::updateEqCoefficients() {
 }
 
 //==============================================================================
-bool ProfilerAudioProcessor::hasEditor() const { return true; }
+bool ProfilerAudioProcessor::hasEditor() const {
+#if defined(PROFILER_HEADLESS_TESTS) && PROFILER_HEADLESS_TESTS
+    return false;
+#else
+    return true;
+#endif
+}
 
 juce::AudioProcessorEditor* ProfilerAudioProcessor::createEditor() {
+#if defined(PROFILER_HEADLESS_TESTS) && PROFILER_HEADLESS_TESTS
+    return nullptr;
+#else
     return new ProfilerAudioProcessorEditor(*this);
+#endif
 }
 
 //==============================================================================

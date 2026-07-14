@@ -11,7 +11,13 @@ jobs:
       - name: Check branch name
         run: |
           BRANCH_NAME="${{ github.head_ref }}"
+          BASE_BRANCH="${{ github.base_ref }}"
           REGEX="^(feat|fix|docs|poc|chore)\/[a-z0-9._-]+$"
+
+          if [[ "$BRANCH_NAME" == "Dev" && "$BASE_BRANCH" == "Main" ]]; then
+            echo "Dev to Main promotion branch is valid."
+            exit 0
+          fi
           
           if [[ ! $BRANCH_NAME =~ $REGEX ]]; then
             echo "❌ Error: Invalid branch name '$BRANCH_NAME'."
