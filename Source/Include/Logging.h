@@ -23,11 +23,18 @@ enum class LogCategory { Init,
                          Perf,
                          Other };
 
-//  Log helpers
+// Log helpers
 const char* toString(LogLevel level) noexcept;
 const char* toString(LogCategory category) noexcept;
 
-//  LogConfig
+// When true (not default), a Logger writes a short hardware/system and
+// config info header to the start of its log file the first time the
+// file is opened. Only takes effect when LogConfig::writeToFile is true.
+// Set this before creating loggers to enable the feature globally, e.g.
+//   Log::logSystemInfoOnFileStart = true;
+extern bool logSystemInfoOnFileStart;
+
+// LogConfig
 struct LogConfig {
     std::string name = "default";
     LogLevel logLevel = LogLevel::Info;
@@ -43,7 +50,7 @@ struct LogConfig {
     static LogConfig fromDefaultConfigFile();
 };
 
-//  Logger
+// Logger
 class Logger final {
    public:
     explicit Logger(LogConfig config);
@@ -67,13 +74,14 @@ class Logger final {
 
    private:
     void initialise();
+    void writeSystemInfoHeader();
 
     LogConfig config_;
     bool initialised_ = false;
     std::unique_ptr<juce::FileOutputStream> fileStream_;
 };
 
-//  LogRegistry
+// LogRegistry
 class LogRegistry final {
    public:
     static Logger& create(const std::string& name, LogConfig config);

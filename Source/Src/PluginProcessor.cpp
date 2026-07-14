@@ -9,10 +9,12 @@
 #define RTNEURAL_ENABLE_DENSE 1
 
 #include <RTNeural/RTNeural.h>
+
 #include <tracy/Tracy.hpp>
 
 #include "Logging.h"
 #include "PluginEditor.h"
+#include "UiSettings.h"
 
 float ProfilerAudioProcessor::getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept {
     return parameter != nullptr ? parameter->load() : fallback;
@@ -55,6 +57,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
     : _profileManager(_apvts)
 #endif
 {
+    Log::logSystemInfoOnFileStart = (bool)(UiSettings::loadHardwareInfoSetting() - 1);
     Log::LogConfig config = Log::LogConfig::fromFile((juce::File)("/home/krt/dev/EIP/VstProfiler/.config/log_settings.json"));
     Log::Logger& logger = Log::LogRegistry::create(config.name, config);
 
@@ -206,8 +209,7 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported(
 */
 void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                           juce::MidiBuffer& /*midiMessages*/) {
-    Log::LogRegistry::get("MainLogger").warn(Log::LogCategory::Other, "test warning");
-    ZoneScopedNC("test2", tracy::Color::Purple)
+    ZoneScopedNC("test2", tracy::Color::Purple);
 
     juce::ScopedNoDenormals noDenormals;
 

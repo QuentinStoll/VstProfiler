@@ -2,6 +2,10 @@
 
 #include <simdjson.h>
 
+#include <cstdint>
+#include <stdexcept>
+#include <string_view>
+
 #include "SettingsPath.h"
 #include "juce_core/juce_core.h"
 
@@ -49,7 +53,8 @@ const char* toString(LogCategory category) noexcept {
             return "[Other]";
     }
 }
-}  // namespace Log
+
+bool logSystemInfoOnFileStart = false;
 
 //  LogConfig factory methods
 LogConfig LogConfig::fromDefaultPath() {
@@ -117,7 +122,7 @@ LogConfig LogConfig::fromFile(const juce::File& file) {
             config.logDirectory = dir;
     }
     // Derive log file path from directory
-    if (config.logDirectory.exists() && config.writeToFile) {
+    if (config.writeToFile && config.logDirectory.exists()) {
         juce::Time now = juce::Time::getCurrentTime();
         juce::String dateStr = now.formatted("%Y%m%d");
         juce::String timeStr = now.formatted("%H%M%S");
@@ -159,6 +164,7 @@ uint32_t tracyColorForLevel(LogLevel level) noexcept {
             return 0xFFFFFF;  // white
     }
 }
+}  // namespace
 #endif
 
 //  LogRegistry
@@ -219,12 +225,42 @@ void Logger::initialise() {
     }
 
     initialised_ = true;
+    if (fileStream_ != nullptr && Log::logSystemInfoOnFileStart)
+        writeSystemInfoHeader();
+
     info(LogCategory::Init, "Logger '" + juce::String(config_.name) + "' initialised");
 
     if (fileStream_ != nullptr)
         info(LogCategory::Init, "Writing to file: " + config_.logFile.getFullPathName());
     else if (config_.writeToFile)
         info(LogCategory::Init, "File logging requested but file could not be opened\n falling back to debug output only.");
+}
+
+void Logger::writeSystemInfoHeader() {
+    if (!fileStream_) return;
+
+    juce::String header;
+    header << "==== Session Info ====" << "\n"
+           << "Logger:          " << config_.name << "\n"
+           << "Started:         " << juce::Time::getCurrentTime().toString(true, true) << "\n"
+           << "OS:              " << juce::SystemStats::getOperatingSystemName() << "\n"
+           << "Device:          " << juce::SystemStats::getDeviceDescription() << "\n"
+           << "CPU:             " << juce::SystemStats::getCpuVendor() << " "
+           << juce::SystemStats::getCpuModel() << " ("
+           << juce::SystemStats::getNumPhysicalCpus() << " cores / "
+           << juce::SystemStats::getNumCpus() << " logical, "
+           << juce::SystemStats::getCpuSpeedInMegahertz() << " MHz)\n"
+           << "RAM:             " << juce::SystemStats::getMemorySizeInMegabytes() << " MB\n"
+           << "---- Config ----" << "\n"
+           << "Log level:       " << Log::toString(config_.logLevel) << "\n"
+           << "Show in UI:      " << (config_.showInUI ? "true" : "false") << "\n"
+           << "Write to file:   " << (config_.writeToFile ? "true" : "false") << "\n"
+           << "Write to debug:  " << (config_.writeToDebug ? "true" : "false") << "\n"
+           << "Write to tracy:  " << (config_.writeToTracy ? "true" : "false") << "\n"
+           << "=======================" << "\n";
+
+    fileStream_->writeText(header, false, false, nullptr);
+    fileStream_->flush();
 }
 
 void Logger::shutdown() {
