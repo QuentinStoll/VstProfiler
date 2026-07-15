@@ -66,10 +66,13 @@ juce::File getPlayViewSettingsFile() {
 
 // Initialises storage locations and loads both profile files and Play view state.
 ProfileManager::ProfileManager(juce::AudioProcessorValueTreeState& apvts,
-                               juce::File profileDirectory)
+                               juce::File profileDirectory,
+                               juce::File playViewSettingsFile)
     : _apvts(apvts),
       _profileDirectory(profileDirectory == juce::File{} ? getDefaultProfileDirectory()
-                                                         : std::move(profileDirectory)) {
+                                                         : std::move(profileDirectory)),
+      _playViewSettingsFile(playViewSettingsFile == juce::File{} ? getPlayViewSettingsFile()
+                                                                 : std::move(playViewSettingsFile)) {
     refreshProfiles();
     loadPlayViewSettings();
 }
@@ -700,12 +703,11 @@ void ProfileManager::setError(juce::String* errorMessage, const juce::String& me
 void ProfileManager::loadPlayViewSettings() {
     _currentProfileId.clear();
 
-    const auto settingsFile = getPlayViewSettingsFile();
-    if (!settingsFile.existsAsFile()) {
+    if (!_playViewSettingsFile.existsAsFile()) {
         return;
     }
 
-    auto parsed = juce::JSON::parse(settingsFile.loadFileAsString());
+    auto parsed = juce::JSON::parse(_playViewSettingsFile.loadFileAsString());
     if (auto* settingsObject = parsed.getDynamicObject()) {
         _currentProfileId = settingsObject->getProperty(currentProfileId).toString().trim();
     }
@@ -717,7 +719,7 @@ void ProfileManager::savePlayViewSettings() const {
     settingsObject->setProperty(currentProfileId, _currentProfileId);
 
     const auto json = juce::JSON::toString(juce::var(settingsObject.release()), false);
-    getPlayViewSettingsFile().replaceWithText(json);
+    _playViewSettingsFile.replaceWithText(json);
 }
 
 // Applies a parameter value through APVTS using host notification.

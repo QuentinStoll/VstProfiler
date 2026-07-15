@@ -1,6 +1,8 @@
 #include "PluginProcessor.h"
 
+#include <common/TracyColor.hpp>
 #include <fstream>
+#include <utility>
 
 #define RTNEURAL_DEFAULT_STATIC 1
 #define RTNEURAL_ENABLE_LSTM 1
@@ -9,8 +11,13 @@
 
 #include <RTNeural/RTNeural.h>
 
+#include <tracy/Tracy.hpp>
+
 #include "Logging.h"
+#if !(defined(PROFILER_HEADLESS_TESTS) && PROFILER_HEADLESS_TESTS)
 #include "PluginEditor.h"
+#endif
+#include "UiSettings.h"
 
 float ProfilerAudioProcessor::getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept {
     return parameter != nullptr ? parameter->load() : fallback;
@@ -37,7 +44,8 @@ float ProfilerAudioProcessor::getMasterGainLinear(float masterPercent) noexcept 
 }
 
 //==============================================================================
-ProfilerAudioProcessor::ProfilerAudioProcessor()
+ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
+                                               juce::File playViewSettingsFile)
 #ifndef JucePlugin_PreferredChannelConfigurations
     : AudioProcessor(
           BusesProperties()
@@ -48,15 +56,16 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
               .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
               ),
-      _profileManager(_apvts)
+      _profileManager(_apvts, std::move(profileDirectory), std::move(playViewSettingsFile))
 #else
-    : _profileManager(_apvts)
+    : _profileManager(_apvts, std::move(profileDirectory), std::move(playViewSettingsFile))
 #endif
 {
-    LoggingConfig config = LoggingConfigLoader::loadFromFile(
-        juce::File(".config/log_settings.json"));
-    AppLogger::initialise(config);
-    AppLogger::info(LogCategory::Init, "Plugin instance created");
+    Log::logSystemInfoOnFileStart = (bool)(UiSettings::loadHardwareInfoSetting() - 1);
+    Log::LogConfig config = Log::LogConfig::fromFile((juce::File)("/home/krt/dev/EIP/VstProfiler/.config/log_settings.json"));
+    if (Log::LogRegistry::find(config.name) == nullptr) {
+        Log::LogRegistry::create(config.name, config);
+    }
 
     _masterParam = _apvts.getRawParameterValue("master");
     _gainParam = _apvts.getRawParameterValue("gain");
@@ -72,10 +81,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor()
     _isEqEnabledParam = _apvts.getRawParameterValue("isEqEnabled");
 }
 
-ProfilerAudioProcessor::~ProfilerAudioProcessor() {
-    AppLogger::info(LogCategory::Init, "Plugin instance destroyed");
-    AppLogger::shutdown();
-}
+ProfilerAudioProcessor::~ProfilerAudioProcessor() = default;
 
 //==============================================================================
 const juce::String ProfilerAudioProcessor::getName() const {
@@ -207,6 +213,8 @@ bool ProfilerAudioProcessor::isBusesLayoutSupported(
 */
 void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                           juce::MidiBuffer& /*midiMessages*/) {
+    ZoneScopedNC("test2", tracy::Color::Purple);
+
     juce::ScopedNoDenormals noDenormals;
 
     const auto numChannels = buffer.getNumChannels();
@@ -315,10 +323,20 @@ void ProfilerAudioProcessor::updateEqCoefficients() {
 }
 
 //==============================================================================
-bool ProfilerAudioProcessor::hasEditor() const { return true; }
+bool ProfilerAudioProcessor::hasEditor() const {
+#if defined(PROFILER_HEADLESS_TESTS) && PROFILER_HEADLESS_TESTS
+    return false;
+#else
+    return true;
+#endif
+}
 
 juce::AudioProcessorEditor* ProfilerAudioProcessor::createEditor() {
+#if defined(PROFILER_HEADLESS_TESTS) && PROFILER_HEADLESS_TESTS
+    return nullptr;
+#else
     return new ProfilerAudioProcessorEditor(*this);
+#endif
 }
 
 //==============================================================================

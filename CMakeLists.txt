@@ -6,11 +6,28 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(PROFILER_BUILD_TESTS "Build Profiler automated tests" ON)
+option(PROFILER_ENABLE_COVERAGE "Run Profiler tests with coverage reporting" OFF)
+set(PROFILER_COVERAGE_MINIMUM 70 CACHE STRING "Minimum required line coverage percentage")
+
+if(NOT PROFILER_COVERAGE_MINIMUM MATCHES "^[0-9]+$")
+    message(FATAL_ERROR "PROFILER_COVERAGE_MINIMUM must be an integer from 0 to 100")
+endif()
+
+if(PROFILER_COVERAGE_MINIMUM LESS 0 OR PROFILER_COVERAGE_MINIMUM GREATER 100)
+    message(FATAL_ERROR "PROFILER_COVERAGE_MINIMUM must be an integer from 0 to 100")
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+include(presets)
 include(dependencies)
 include(juce_setup)
-include(presets)
 include(compiler_options)
 
 add_subdirectory(Source)
+
+if(PROFILER_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(Tests)
+endif()

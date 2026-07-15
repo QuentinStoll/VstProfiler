@@ -2,6 +2,21 @@
 
 set(PLUGIN_NAME Profiler)
 
+set(PROFILER_PLUGIN_FORMATS)
+if(PLUGIN_AU)
+    list(APPEND PROFILER_PLUGIN_FORMATS AU)
+endif()
+if(PLUGIN_VST3)
+    list(APPEND PROFILER_PLUGIN_FORMATS VST3)
+endif()
+if(PLUGIN_STANDALONE)
+    list(APPEND PROFILER_PLUGIN_FORMATS Standalone)
+endif()
+
+if(NOT PROFILER_PLUGIN_FORMATS)
+    list(APPEND PROFILER_PLUGIN_FORMATS VST3 Standalone)
+endif()
+
 juce_add_plugin(${PLUGIN_NAME}
     COMPANY_NAME "Profiler"
     PRODUCT_NAME "Profiler"
@@ -79,11 +94,11 @@ add_compile_definitions(JUCE_VST3_CAN_REPLACE_VST2=0)
 
 # Link JUCE modules from juce_setup.cmake
 if(NOT WIN32)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets curl simdjson)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} curl simdjson RTNeural)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets CURL::libcurl simdjson TracyClient)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} CURL::libcurl simdjson RTNeural TracyClient)
 else()
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets simdjson)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} simdjson RTNeural)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets simdjson TracyClient)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} simdjson RTNeural TracyClient)
 endif()
 
 # Generate the aggregate header consumed by the existing source files.  Unlike
@@ -99,11 +114,3 @@ target_include_directories(${PLUGIN_NAME} PRIVATE
 # Apply compiler options and preset-based defines
 apply_compiler_options(${PLUGIN_NAME})
 
-# Add plugin formats based on presets
-if(APPLE)
-    set(FORMATS AU VST3 Standalone)
-elseif(UNIX)
-    set(FORMATS VST3)
-else()
-    set(FORMATS VST3 Standalone)
-endif()
