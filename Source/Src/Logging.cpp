@@ -2,12 +2,20 @@
 
 #include <simdjson.h>
 
+#include <cstdint>
+#include <stdexcept>
 #include <string_view>
 
+#include "Components/NotificationBanner.h"
 #include "SettingsPath.h"
 #include "juce_core/juce_core.h"
 
-const char* logLevelToString(LogLevel level) noexcept {
+#ifdef TRACY_ENABLE
+#include <tracy/Tracy.hpp>
+#endif
+
+namespace Log {
+const char* toString(LogLevel level) noexcept {
     switch (level) {
         case LogLevel::Trace:
             return "[Trace]";
@@ -26,7 +34,7 @@ const char* logLevelToString(LogLevel level) noexcept {
     }
 }
 
-const char* logCategoryToString(LogCategory category) noexcept {
+const char* toString(LogCategory category) noexcept {
     switch (category) {
         case LogCategory::Init:
             return "[Init]";
@@ -47,25 +55,30 @@ const char* logCategoryToString(LogCategory category) noexcept {
     }
 }
 
-// LoggingConfigLoader
-//  Load config from default platform path
-LoggingConfig LoggingConfigLoader::load() {
-    return loadFromFile(getFileInSettingsFolder("log_settings.json"));
+bool logSystemInfoOnFileStart = false;
+
+//  LogConfig factory methods
+LogConfig LogConfig::fromDefaultPath() {
+    return fromFile(getFileInSettingsFolder("log_settings.json"));
 }
 
-// Load config from a specific file
-LoggingConfig LoggingConfigLoader::loadFromFile(const juce::File& file) {
-    LoggingConfig config;  // defaults already set in struct
+LogConfig LogConfig::fromFile(const juce::File& file) {
+    LogConfig config;  // defaults set in struct declaration
     if (!file.existsAsFile()) return config;
+
     juce::String jsonText = file.loadFileAsString();
     if (jsonText.isEmpty()) return config;
+
     simdjson::dom::parser parser;
     simdjson::dom::element root;
     auto error =
         parser.parse(jsonText.toRawUTF8(), jsonText.getNumBytesAsUTF8())
             .get(root);
     if (error) return config;
-
+    // name
+    std::string_view name;
+    if (root["name"].get(name) == simdjson::SUCCESS)
+        config.name = std::string(name);
     // log_level
     std::string_view _logLevel;
     if (root["log_level"].get(_logLevel) == simdjson::SUCCESS) {
@@ -85,43 +98,36 @@ LoggingConfig LoggingConfigLoader::loadFromFile(const juce::File& file) {
             config.logLevel = LogLevel::Other;
         }
     }
-
     // show_in_ui
-    bool _showInUi;
-    if (root["show_in_ui"].get(_showInUi) == simdjson::SUCCESS) {
-        config.showInUi = _showInUi;
-    }
-
+    bool showInUI = false;
+    if (root["show_in_ui"].get(showInUI) == simdjson::SUCCESS)
+        config.showInUI = showInUI;
     // write_to_file
-    bool _writeToFile;
-    if (root["write_to_file"].get(_writeToFile) == simdjson::SUCCESS) {
-        config.writeToFile = _writeToFile;
-    }
-
+    bool writeToFile = false;
+    if (root["write_to_file"].get(writeToFile) == simdjson::SUCCESS)
+        config.writeToFile = writeToFile;
     // write_to_debug
-    bool _writeToDebug;
-    if (root["write_to_file"].get(_writeToDebug) == simdjson::SUCCESS) {
-        config.writeToDebug = _writeToDebug;
-    }
-
+    bool writeToDebug = true;
+    if (root["write_to_debug"].get(writeToDebug) == simdjson::SUCCESS)
+        config.writeToDebug = writeToDebug;
+    // write_to_tracy
+    bool writeToTracy = true;
+    if (root["write_to_tracy"].get(writeToTracy) == simdjson::SUCCESS)
+        config.writeToTracy = writeToTracy;
     // log_directory
-    std::string_view _logDirectory;
-    if (root["log_directory"].get(_logDirectory) == simdjson::SUCCESS) {
-        std::string _logDirectoryStr = std::string(_logDirectory);
-        juce::File dir(_logDirectoryStr);
-        if (dir.isDirectory()) {
+    std::string_view logDirectory;
+    if (root["log_directory"].get(logDirectory) == simdjson::SUCCESS) {
+        std::string logDirectoryStr = std::string(logDirectory);
+        juce::File dir(logDirectoryStr);
+        if (dir.isDirectory())
             config.logDirectory = dir;
-        }
     }
-
-    // log_file
-    if (config.logDirectory.exists()) {
+    // Derive log file path from directory
+    if (config.writeToFile && config.logDirectory.exists()) {
         juce::Time now = juce::Time::getCurrentTime();
         juce::String dateStr = now.formatted("%Y%m%d");
         juce::String timeStr = now.formatted("%H%M%S");
-        juce::String levelStr = logLevelToString(config.logLevel);
-        juce::String fileName =
-            dateStr + "-" + timeStr + "-" + levelStr + ".log";
+        juce::String fileName = dateStr + "-" + timeStr + "-" + config.name + ".log";
         config.logFile = config.logDirectory.getChildFile(fileName);
         if (!config.logFile.existsAsFile()) {
             if (!config.logFile.create().wasOk()) {
@@ -134,87 +140,222 @@ LoggingConfig LoggingConfigLoader::loadFromFile(const juce::File& file) {
     return config;
 }
 
-// Returns platform default const config file
-LoggingConfig LoggingConfigLoader::loadDefaultConfigFile() {
-    return loadFromFile(getFileInSettingsFolder("log_settings_defaults.json"));
+LogConfig LogConfig::fromDefaultConfigFile() {
+    return fromFile(getFileInSettingsFolder("log_settings_defaults.json"));
 }
 
-// AppLogger
-bool AppLogger::initialised = false;
-LoggingConfig AppLogger::currentConfig = {};
-
-void AppLogger::initialise() { initialise(LoggingConfigLoader::load()); }
-
-void AppLogger::initialise(LoggingConfig config) {
-    if (initialised) {
-        return;
+namespace {
+#ifdef TRACY_ENABLE
+// Colors shown in the Tracy "Messages" pane so severity is visible at a glance.
+uint32_t tracyColorForLevel(LogLevel level) noexcept {
+    switch (level) {
+        case LogLevel::Trace:
+            return 0x808080;  // grey
+        case LogLevel::Debug:
+            return 0x1E90FF;  // dodger blue
+        case LogLevel::Info:
+            return 0x2ECC71;  // green
+        case LogLevel::Warning:
+            return 0xF1C40F;  // yellow
+        case LogLevel::Error:
+            return 0xE74C3C;  // red
+        case LogLevel::Fatal:
+            return 0xFF00FF;  // magenta
+        default:
+            return 0xFFFFFF;  // white
     }
-    bool isLoggerSet = false;
+}
+#endif
 
-    if (config.writeToFile) {
-        if (!config.logFile.existsAsFile()) {
-            config.logFile.create();
+// Maps a LogLevel to a NotificationBanner::Type. Trace/Debug/Other have no
+// sensible popup equivalent and are intentionally skipped (returns false)
+// so routine/verbose logging doesn't spam the UI.
+bool notificationTypeForLevel(LogLevel level, NotificationBanner::Type& outType) noexcept {
+    switch (level) {
+        case LogLevel::Info:
+            outType = NotificationBanner::Type::Info;
+            return true;
+        case LogLevel::Warning:
+            outType = NotificationBanner::Type::Warning;
+            return true;
+        case LogLevel::Error:
+        case LogLevel::Fatal:
+            outType = NotificationBanner::Type::Error;
+            return true;
+        default:
+            return false;
+    }
+}
+}  // namespace
+
+//  LogRegistry
+std::map<std::string, std::unique_ptr<Logger>> LogRegistry::registry_;
+
+Logger& LogRegistry::create(const std::string& name, LogConfig config) {
+    if (registry_.count(name))
+        throw std::runtime_error("Logger '" + name + "' already exists. Use LogRegistry::get() instead.");
+
+    config.name = name;
+    auto instance = std::make_unique<Logger>(std::move(config));
+    Logger& ref = *instance;
+    registry_.emplace(name, std::move(instance));
+    return ref;
+}
+
+Logger& LogRegistry::get(const std::string& name) {
+    auto it = registry_.find(name);
+    if (it == registry_.end())
+        throw std::out_of_range("Logger '" + name + "' not found. Call LogRegistry::create() first.");
+    return *it->second;
+}
+
+Logger* LogRegistry::find(const std::string& name) noexcept {
+    auto it = registry_.find(name);
+    return (it != registry_.end()) ? it->second.get() : nullptr;
+}
+
+void LogRegistry::shutdownAll() {
+    for (auto& [name, instance] : registry_)
+        instance->shutdown();
+    registry_.clear();
+}
+
+//  Logger instance
+Logger::Logger(LogConfig config)
+    : config_(std::move(config)) {
+    initialise();
+}
+
+Logger::~Logger() {
+    shutdown();
+}
+
+void Logger::initialise() {
+    if (initialised_) return;
+
+    if (config_.writeToFile) {
+        if (!config_.logFile.existsAsFile())
+            config_.logFile.create();
+        if (config_.logFile.hasWriteAccess()) {
+            fileStream_ = std::make_unique<juce::FileOutputStream>(config_.logFile);
+            if (fileStream_->failedToOpen()) {
+                fileStream_.reset();
+                config_.writeToFile = false;
+            }
         }
-        if (config.logFile.hasWriteAccess()) {
-            juce::Logger::setCurrentLogger(new juce::FileLogger(
-                config.logFile, "Profiler Log", 10 * 1024 * 1024));
-            isLoggerSet = true;
-        }
     }
-    if (!isLoggerSet) {
-        juce::Logger::setCurrentLogger(nullptr);
-    }
-    currentConfig = config;
-    initialised = true;
-    AppLogger::info(LogCategory::Init, "--==## Logger initialised ##==--");
+
+    initialised_ = true;
+    if (fileStream_ != nullptr && Log::logSystemInfoOnFileStart)
+        writeSystemInfoHeader();
+
+    info(LogCategory::Init, "Logger '" + juce::String(config_.name) + "' initialised");
+
+    if (fileStream_ != nullptr)
+        info(LogCategory::Init, "Writing to file: " + config_.logFile.getFullPathName());
+    else if (config_.writeToFile)
+        info(LogCategory::Init, "File logging requested but file could not be opened\n falling back to debug output only.");
 }
 
-void AppLogger::shutdown() {
-    if (!initialised) {
-        return;
-    }
-    AppLogger::info(LogCategory::Init, "--==## Logger shutdown ##==--");
-    delete juce::Logger::getCurrentLogger();
-    juce::Logger::setCurrentLogger(nullptr);
-    initialised = false;
+void Logger::writeSystemInfoHeader() {
+    if (!fileStream_) return;
+
+    juce::String header;
+    header << "==== Session Info ====" << "\n"
+           << "Logger:          " << config_.name << "\n"
+           << "Started:         " << juce::Time::getCurrentTime().toString(true, true) << "\n"
+           << "OS:              " << juce::SystemStats::getOperatingSystemName() << "\n"
+           << "Device:          " << juce::SystemStats::getDeviceDescription() << "\n"
+           << "CPU:             " << juce::SystemStats::getCpuVendor() << " "
+           << juce::SystemStats::getCpuModel() << " ("
+           << juce::SystemStats::getNumPhysicalCpus() << " cores / "
+           << juce::SystemStats::getNumCpus() << " logical, "
+           << juce::SystemStats::getCpuSpeedInMegahertz() << " MHz)\n"
+           << "RAM:             " << juce::SystemStats::getMemorySizeInMegabytes() << " MB\n"
+           << "---- Config ----" << "\n"
+           << "Log level:       " << Log::toString(config_.logLevel) << "\n"
+           << "Show in UI:      " << (config_.showInUI ? "true" : "false") << "\n"
+           << "Write to file:   " << (config_.writeToFile ? "true" : "false") << "\n"
+           << "Write to debug:  " << (config_.writeToDebug ? "true" : "false") << "\n"
+           << "Write to tracy:  " << (config_.writeToTracy ? "true" : "false") << "\n"
+           << "=======================" << "\n";
+
+    fileStream_->writeText(header, false, false, nullptr);
+    fileStream_->flush();
 }
 
-bool AppLogger::isInitialised() noexcept { return initialised; }
+void Logger::shutdown() {
+    if (!initialised_) return;
 
-void AppLogger::log(LogLevel level, LogCategory category,
-                    const juce::String& message) {
-    if (!initialised) {
-        return;
-    }
-    if (level < currentConfig.logLevel) {
-        return;
-    }
+    info(LogCategory::Init, "Logger '" + juce::String(config_.name) + "' shutdown");
+    fileStream_.reset();
+    initialised_ = false;
+}
+
+bool Logger::isInitialised() const noexcept {
+    return initialised_;
+}
+
+const LogConfig& Logger::getConfig() const noexcept {
+    return config_;
+}
+
+void Logger::reloadConfig() {
+    shutdown();
+    config_ = LogConfig::fromDefaultPath();
+    initialise();
+}
+
+void Logger::log(LogLevel level, LogCategory category, const juce::String& message) {
+    if (!initialised_) return;
+    if (level < config_.logLevel) return;
+
     juce::String line;
     line << "[" << juce::Time::getCurrentTime().toString(true, true) << "] "
-         << logLevelToString(level) << logCategoryToString(category) << message;
-#if JUCE_Debug
-    DBG(line);
+         << "[" << config_.name << "] "
+         << Log::toString(level) << " " << Log::toString(category) << " " << message;
+
+#if JUCE_DEBUG
+    if (config_.writeToDebug)
+        DBG(line);
 #endif
-    if (juce::Logger* logger = juce::Logger::getCurrentLogger()) {
-        logger->writeToLog(line);
+
+    if (fileStream_) {
+        fileStream_->writeText(line + "\n", false, false, nullptr);
+        fileStream_->flush();
+    }
+
+#ifdef TRACY_ENABLE
+    if (config_.writeToTracy) {
+        TracyMessageC(line.toRawUTF8(), static_cast<size_t>(line.getNumBytesAsUTF8()),
+                      tracyColorForLevel(level));
+    }
+#endif
+
+    if (config_.showInUI) {
+        NotificationBanner::Type notifType;
+        NotificationBanner Banner;
+        if (notificationTypeForLevel(level, notifType))
+            Banner.showMessage(message, notifType, 5000);
     }
 }
 
-void AppLogger::trace(LogCategory c, const juce::String& m) {
+void Logger::trace(LogCategory c, const juce::String& m) {
     log(LogLevel::Trace, c, m);
 }
-void AppLogger::debug(LogCategory c, const juce::String& m) {
+void Logger::debug(LogCategory c, const juce::String& m) {
     log(LogLevel::Debug, c, m);
 }
-void AppLogger::info(LogCategory c, const juce::String& m) {
+void Logger::info(LogCategory c, const juce::String& m) {
     log(LogLevel::Info, c, m);
 }
-void AppLogger::warn(LogCategory c, const juce::String& m) {
+void Logger::warn(LogCategory c, const juce::String& m) {
     log(LogLevel::Warning, c, m);
 }
-void AppLogger::error(LogCategory c, const juce::String& m) {
+void Logger::error(LogCategory c, const juce::String& m) {
     log(LogLevel::Error, c, m);
 }
-void AppLogger::fatal(LogCategory c, const juce::String& m) {
+void Logger::fatal(LogCategory c, const juce::String& m) {
     log(LogLevel::Fatal, c, m);
 }
+}  // namespace Log

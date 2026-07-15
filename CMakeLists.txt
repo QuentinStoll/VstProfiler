@@ -20,9 +20,9 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+include(presets)
 include(dependencies)
 include(juce_setup)
-include(presets)
 include(compiler_options)
 
 add_subdirectory(Source)

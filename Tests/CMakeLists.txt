@@ -3,13 +3,18 @@ set(PROFILER_TEST_SOURCES
     AudioProcessorTests.cpp
     ProfileProcessorIntegrationTests.cpp
     ProfileManagerTests.cpp
+    LoggingTests.cpp
+    NotificationBannerTests.cpp
+    UiSettingsTests.cpp
 )
 
 add_executable(ProfilerTests EXCLUDE_FROM_ALL
     ${PROFILER_TEST_SOURCES}
+    ../Source/Src/Components/NotificationBanner.cpp
     ../Source/Src/Logging.cpp
     ../Source/Src/PluginProcessor.cpp
     ../Source/Src/ProfileManager.cpp
+    ../Source/Src/UiSettings.cpp
 )
 
 target_include_directories(ProfilerTests PRIVATE
@@ -39,8 +44,10 @@ target_link_libraries(ProfilerTests PRIVATE
     juce::juce_data_structures
     juce::juce_dsp
     juce::juce_events
+    ProfilerAssets
     RTNeural
     simdjson
+    TracyClient
 )
 
 if(NOT WIN32)
@@ -165,3 +172,31 @@ add_profiler_profile_processor_integration_test(ApplyMapsProfileValues "profile 
 add_profiler_profile_processor_integration_test(TracksProfileAssetPaths "profile processor tracks profile asset paths")
 add_profiler_profile_processor_integration_test(AppliedProfileAffectsAudio "profile processor applied profile affects audio")
 add_profiler_profile_processor_integration_test(SyncsCurrentProfileSelection "profile processor syncs current profile selection")
+
+function(add_profiler_logging_test test_name case_name)
+    add_test(NAME ProfilerTests.Logging.${test_name}
+        COMMAND ProfilerTests --case "${case_name}")
+endfunction()
+
+add_profiler_logging_test(CreateAndFind "create and find logger")
+add_profiler_logging_test(DuplicateCreateThrows "duplicate create throws")
+add_profiler_logging_test(GetMissingThrows "get non-existent throws")
+add_profiler_logging_test(FormatLabels "format log labels")
+add_profiler_logging_test(ConfigAndFileOutput "parse config and write log file")
+
+function(add_profiler_ui_settings_test test_name case_name)
+    add_test(NAME ProfilerTests.UiSettings.${test_name}
+        COMMAND ProfilerTests --case "${case_name}")
+endfunction()
+
+add_profiler_ui_settings_test(DefaultsAndNormalisation "ui settings defaults and normalisation")
+add_profiler_ui_settings_test(Persistence "ui settings persistence")
+add_profiler_ui_settings_test(InvalidJson "ui settings invalid JSON")
+
+function(add_profiler_notification_banner_test test_name case_name)
+    add_test(NAME ProfilerTests.NotificationBanner.${test_name}
+        COMMAND ProfilerTests --case "${case_name}")
+endfunction()
+
+add_profiler_notification_banner_test(Lifecycle "notification banner lifecycle")
+add_profiler_notification_banner_test(Painting "notification banner painting")
