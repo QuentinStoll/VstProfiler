@@ -3,6 +3,7 @@ set(PROFILER_TEST_SOURCES
     AudioProcessorTests.cpp
     ProfileProcessorIntegrationTests.cpp
     ProfileManagerTests.cpp
+    LoggingTests.cpp
 )
 
 add_executable(ProfilerTests EXCLUDE_FROM_ALL
