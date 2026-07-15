@@ -15,6 +15,8 @@ class FileAssetsModule : public juce::Component {
         std::function<void()> unloadFile;
         std::function<bool()> isLoaded;
         std::function<juce::File()> getCurrentFile;
+        juce::String successMessage;
+        juce::String failureMessage;
     };
 
     FileAssetsModule(juce::String title,
