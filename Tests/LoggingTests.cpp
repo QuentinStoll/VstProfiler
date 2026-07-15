@@ -1,19 +1,21 @@
 #include <JuceHeader.h>
 
-#include "TestRunner.h"
 #include "Logging.h"
+#include "TestRunner.h"
 
 class LoggingUnitTests : public juce::UnitTest {
-public:
+   public:
     LoggingUnitTests() : juce::UnitTest("Logging", "Profiler") {}
 
     void runTest() override {
         runCase("create and find logger", [this] { testCreateAndFind(); });
         runCase("duplicate create throws", [this] { testDuplicateCreateThrows(); });
         runCase("get non-existent throws", [this] { testGetNonExistentThrows(); });
+        runCase("format log labels", [this] { testLogLabels(); });
+        runCase("parse config and write log file", [this] { testLogConfigFromFileAndFileLogging(); });
     }
 
-private:
+   private:
     template <typename Fn>
     void runCase(const juce::String& name, Fn&& fn) {
         if (!profiler_tests::requestedTestCase.isEmpty() && profiler_tests::requestedTestCase != name)
@@ -74,6 +76,25 @@ private:
         expect(threw, "get() for a non-existent logger should throw out_of_range");
     }
 
+    void testLogLabels() {
+        expectEquals(juce::String(Log::toString(Log::LogLevel::Trace)), juce::String("[Trace]"));
+        expectEquals(juce::String(Log::toString(Log::LogLevel::Debug)), juce::String("[Debug]"));
+        expectEquals(juce::String(Log::toString(Log::LogLevel::Info)), juce::String("[Info]"));
+        expectEquals(juce::String(Log::toString(Log::LogLevel::Warning)), juce::String("[Warning]"));
+        expectEquals(juce::String(Log::toString(Log::LogLevel::Error)), juce::String("[Error]"));
+        expectEquals(juce::String(Log::toString(Log::LogLevel::Fatal)), juce::String("[Fatal]"));
+        expectEquals(juce::String(Log::toString(Log::LogLevel::Other)), juce::String("[Other]"));
+
+        expectEquals(juce::String(Log::toString(Log::LogCategory::Init)), juce::String("[Init]"));
+        expectEquals(juce::String(Log::toString(Log::LogCategory::Dsp)), juce::String("[Dsp]"));
+        expectEquals(juce::String(Log::toString(Log::LogCategory::Io)), juce::String("[Io]"));
+        expectEquals(juce::String(Log::toString(Log::LogCategory::Ui)), juce::String("[Ui]"));
+        expectEquals(juce::String(Log::toString(Log::LogCategory::Param)), juce::String("[Param]"));
+        expectEquals(juce::String(Log::toString(Log::LogCategory::Host)), juce::String("[Host]"));
+        expectEquals(juce::String(Log::toString(Log::LogCategory::Perf)), juce::String("[Perf]"));
+        expectEquals(juce::String(Log::toString(Log::LogCategory::Other)), juce::String("[Other]"));
+    }
+
     void testLogConfigFromFileAndFileLogging() {
         Log::LogRegistry::shutdownAll();
 
@@ -82,19 +103,18 @@ private:
         const auto folderResult = baseFolder.createDirectory();
         expect(folderResult.wasOk(), "Could not create temp folder");
 
-        // Create a settings JSON with write_to_file and log_directory
-        juce::String json = "{\n"
-                            "  \"name\": \"cfgtest\",\n"
-                            "  \"log_level\": \"Debug\",\n"
-                            "  \"show_in_ui\": false,\n"
-                            "  \"write_to_file\": true,\n"
-                            "  \"write_to_debug\": false,\n"
-                            "  \"write_to_tracy\": false,\n"
-                            "  \"log_directory\": \"" + baseFolder.getFullPathName() + "\"\n"
-                            "}\n";
+        juce::var configObject(new juce::DynamicObject());
+        configObject.getDynamicObject()->setProperty("name", "cfgtest");
+        configObject.getDynamicObject()->setProperty("log_level", "Debug");
+        configObject.getDynamicObject()->setProperty("show_in_ui", false);
+        configObject.getDynamicObject()->setProperty("write_to_file", true);
+        configObject.getDynamicObject()->setProperty("write_to_debug", false);
+        configObject.getDynamicObject()->setProperty("write_to_tracy", false);
+        configObject.getDynamicObject()->setProperty("log_directory", baseFolder.getFullPathName());
 
         const auto cfgFile = baseFolder.getChildFile("log_settings.json");
-        expect(cfgFile.replaceWithText(json), "Could not write config JSON");
+        expect(cfgFile.replaceWithText(juce::JSON::toString(configObject, true)),
+               "Could not write config JSON");
 
         auto cfg = Log::LogConfig::fromFile(cfgFile);
         expect(cfg.name == "cfgtest", "Config name should be parsed");
@@ -106,10 +126,9 @@ private:
         // Create a logger that writes to the derived file and test writing/filtering
         cfg.writeToDebug = false;
         cfg.writeToTracy = false;
+        Log::logSystemInfoOnFileStart = true;
         auto& logger = Log::LogRegistry::create("file_logger", cfg);
 
-        // Ensure header was written when global flag is enabled
-        Log::logSystemInfoOnFileStart = true;
         logger.info(Log::LogCategory::Init, "Test message 1");
         logger.error(Log::LogCategory::Init, "Error message");
 
@@ -129,6 +148,7 @@ private:
 
         // Cleanup
         Log::LogRegistry::shutdownAll();
+        Log::logSystemInfoOnFileStart = false;
         baseFolder.deleteRecursively();
     }
 };
