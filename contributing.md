@@ -35,6 +35,41 @@ The branch name must follow this pattern:
 * **No Special Characters:** Do not use spaces, `@`, `!`, or accented characters.
 * **Example of a valid branch:** `feat/add-user-auth` or `docs/update-adr-001`
 
+## 💬 Commit Message Convention
+
+We follow the **Conventional Commits** specification. This ensures a readable project history and allows for automated changelog generation.
+
+### 🏗 Format
+Every commit message must follow this structure:  
+`type(scope): description`
+
+* **type**: The intent of the change (see list below).
+* **scope**: (Optional) The part of the project affected (e.g., `api`, `auth`, `ui`).
+* **description**: A short, imperative summary of the change.
+
+### 📋 Allowed Types
+| Type | Use Case |
+| :--- | :--- |
+| `feat` | A new feature for the user |
+| `fix` | A bug fix |
+| `docs` | Changes to documentation (ADR, Research, Wiki) |
+| `style` | Formatting, missing semi-colons, etc. (no code change) |
+| `refactor` | Refactoring code that neither fixes a bug nor adds a feature |
+| `perf` | Code changes that improve performance |
+| `test` | Adding or correcting tests |
+| `chore` | Updates to build tasks, package managers, or CI/CD config |
+
+### 🛠 Rules
+* **No Capitalization:** The type must be lowercase (e.g., `feat:`, not `Feat:`).
+* **Space Required:** There must be a space after the colon (`type: description`).
+* **No Period:** Do not end the description with a period.
+* **Be Concise:** Keep the description under 50 characters if possible.
+
+**Examples:**
+- ✅ `feat(api): add endpoint for user profile`
+- ✅ `fix: resolve memory leak in data parser`
+- ✅ `docs: add research note about mermaid.js`
+
 ## **PR**
 ### Before You Start
 1. **Check existing PRs and issues** to avoid duplicate work
