@@ -12,6 +12,29 @@ To install the project please just follow the README.md file Installation: instr
 ### repository structure
 The sources of the repository are in the folder ./Source, then you have the include and src folders. The other folders are useless for you exept the cmake folder if you need to add new files of build method.
 
+## 🌿 Branch Naming Convention
+
+To keep the repository organized and allow our automated workflows to pass, all branches must follow a specific naming convention.
+
+### 🏗 Structure
+The branch name must follow this pattern:  
+`type/short-description`
+
+### 📋 Allowed Types
+| Type | Description |
+| :--- | :--- |
+| `feat/` | A new feature or significant evolution |
+| `fix/` | A bug fix |
+| `docs/` | Documentation changes only (ADR, Research, Wiki) |
+| `poc/` | Proof of Concept, research, or technical experiments |
+| `chore/` | Maintenance tasks, configuration, or dependencies update |
+
+### 🛠 Rules & Constraints
+* **Lowercase only:** All characters must be lowercase.
+* **Separators:** Use hyphens `-`, underscores `_`, or dots `.` to separate words.
+* **No Special Characters:** Do not use spaces, `@`, `!`, or accented characters.
+* **Example of a valid branch:** `feat/add-user-auth` or `docs/update-adr-001`
+
 ## **PR**
 ### Before You Start
 1. **Check existing PRs and issues** to avoid duplicate work
