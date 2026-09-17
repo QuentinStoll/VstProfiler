@@ -84,14 +84,13 @@ git clone https://github.com/QuentinStoll/VstProfiler.git
 cd VstProfiler
 ```
 
-Configure and build on Windows:
+Configure and build on Windows using `install.bat`:
 
 ```powershell
-cmake -S . -B build -DPRESET_NAME=default
-cmake --build build --config Release --parallel 8
+.\install.bat all default
 ```
 
-Configure and build on Linux:
+Configure and build on Linux using `install.sh`:
 
 ```sh
 bash ./install.sh all default
@@ -103,19 +102,21 @@ The scripts compile from source; they do not install the plugin into your DAW's 
 
 No `.env` file or API keys are required for the documented local workflow.
 
-Build settings live in [cmake/presets_config.json](cmake/presets_config.json). Select a preset with `-DPRESET_NAME=default`, `release`, `dev`, or `debug` at configure time. For multi-configuration generators such as Visual Studio, also pass the desired configuration to the build command, for example `--config Debug`.
+Build settings live in [cmake/presets_config.json](cmake/presets_config.json). Both scripts accept an action followed by an optional preset: `default`, `release`, `all-formats`, `dev`, or `debug`. To change an existing build's preset, run the `config` action first (for example, `.\install.bat config dev` or `bash ./install.sh config dev`), then run the `build` action. Use `.\install.bat --help` or `bash ./install.sh --help` to list the available actions.
+
+The Windows build action does not pass a CMake `--config` option. With Visual Studio, it therefore uses the generator's default build configuration, which is normally Debug, even when the preset sets a Release build type. To explicitly build Release after configuring with the script, run `cmake --build build --config Release --parallel 8`.
 
 The application stores settings and profiles in the JUCE user application-data directory under `Profiler`, with profiles in its `Profiles` subdirectory. On Windows, this is normally `%APPDATA%\Profiler`. External amp and IR files remain at their selected paths.
 
 ### Launch
 
-For a Windows Release build with Visual Studio:
+On Windows:
 
 ```powershell
 & ".\build\bin\Standalone\Profiler.exe"
 ```
 
-For a Linux Release build:
+On Linux:
 
 ```sh
 ./build/bin/Standalone/Profiler
