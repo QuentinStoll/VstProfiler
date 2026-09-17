@@ -1,49 +1,69 @@
-# Contributing instruction
+# Contributing to VSTProfiler
 
-## **MODALITY**
+Contributions to code, tests, documentation, and compatibility testing are welcome. Follow the [code of conduct](CODE_OF_CONDUCT.md). For suspected vulnerabilities, use the [security policy](SECURITY.md) instead of a public bug report.
 
-### contributing limits
-You can only merge your branch once its validated by at least 1 member of the founder team.
-Its better to follow the ongoing issues in the Github Project: https://github.com/users/QuentinStoll/projects/5 but you can propose your own new features.
+## Before you start
 
-### install inctruction
-To install the project please just follow the README.md file Installation: instructions https://github.com/QuentinStoll/Profiler?tab=readme-ov-file#installation
+Check existing issues and pull requests to avoid duplicate work. The [project board](https://github.com/users/QuentinStoll/projects/5) tracks ongoing work; new proposals are welcome too.
 
-### repository structure
-The sources of the repository are in the folder ./Source, then you have the include and src folders. The other folders are useless for you exept the cmake folder if you need to add new files of build method.
+Discuss substantial features, breaking changes, and architectural changes in an issue or an early draft pull request. Keep each contribution focused so it is practical to review and test.
 
-## **PR**
-### Before You Start
-1. **Check existing PRs and issues** to avoid duplicate work
-2. **Open a Draft PR early** for significant changes to discuss your approach and get feedback before investing too much time
-   - When creating a PR on GitHub, click the dropdown next to "Create Pull Request" and select **"Create Draft Pull Request"**
-   - This gives visibility to other contributors and maintainers can provide early guidance
-3. **Discuss breaking changes** or major architectural decisions in an issue or draft PR first
+## Local setup and project structure
 
-### PR Requirements
-When submitting a pull request, ensure:
+Follow the [README installation instructions](README.md#installation) and [usage examples](README.md#usage).
 
-* **Clear description:** Explain what the PR achieves and why the change is needed with **HUMAN generated** text. Also cleary explain how you tested it and how to replicate those test.
-* **Testing:** Verify main features that can be affected by your changes:
-  * Profiling
-  * User interface
-  * Efficiency
-* **License compliance:** Your code must align with VstProfiler license
-* **Build:** You have to verify that all the parts of the project still build
-* **Documentation:** If needed, update the documentation or create your own
+- `Source/Include/`: headers, shared interfaces, and styling.
+- `Source/Src/`: processor, editor, views, and UI modules.
+- `Source/Assets/`: images and other interface assets.
+- `Tests/`: automated tests and test support.
+- `cmake/`: dependencies, presets, and compiler configuration.
+- `.github/`: workflows and contribution templates.
 
-> Important: Prefer opening small PR, focused on specific functionality that directly add value. Avoid to change multiple unrelated functionality to facilitate test.
+## Branches and pull request titles
 
-> Contributions generated with AI are welcome, provided that a qualified human reviewer verifies, tests, and understands the code. AI tools can assist in development, but all pull requests must be submitted by someone capable of ensuring correctness and maintainability. 
+The branch-name workflow accepts `feat/`, `fix/`, `docs/`, `poc/`, or `chore/`, followed by lowercase letters, digits, dots, underscores, or hyphens. For example:
 
-> Missing requirements may lead to requests for additional information and, if not provided, the PR may be closed. Regardless of the above, the final decision to merge a pull request is at the maintainer’s discretion.
+```sh
+git checkout -b docs/improve-setup
+```
 
-### How to Open a Draft PR
-1. Push your branch to your fork
-2. Go to the main repository and click **"New Pull Request"**
-3. Select your fork and branch
-4. Click the dropdown arrow next to **"Create Pull Request"**
-5. Select **"Create Draft Pull Request"**
-6. Once ready for review, click **"Ready for review"** in the PR
+The workflow also allows promotion from `Dev` to `Main`. Follow the existing change's target branch when updating an open PR; discuss the appropriate target with maintainers when uncertain.
 
-This workflow helps avoid spending time on PRs that may not align with project goals.
+PR titles must use a type accepted by CI: `feat`, `fix`, `docs`, `chore`, or `refactor`. For example: `docs: clarify Windows setup`. Write concise commits that explain the change; the current title-check workflow validates PR titles, despite its commit-check filename.
+
+## Code style and validation
+
+Follow the existing C++ style and the repository's `.clang-format` configuration. CI runs `clang-format --dry-run --Werror` on C/C++ files under `Source` and `Tests`.
+
+Run the automated tests before submitting code changes:
+
+```powershell
+# Windows
+.\install.bat test
+```
+
+```sh
+# Linux
+bash ./install.sh test
+```
+
+Verify that affected application and plugin targets still build. Manually check affected profiling/model-loading, UI, and performance behavior as appropriate. Include relevant platform, host, audio-device, sample-rate, and buffer-size details in your report.
+
+Add or update tests for meaningful behavior changes, and update documentation when installation or observable behavior changes. For documentation-only changes, verify links, examples, and claims against the repository; explain why audio tests or builds were not needed.
+
+## Pull requests and review
+
+Use the repository's pull request template. The PR description must be **human-written**, explaining what changed, why, and how someone else can reproduce your validation. State which checks passed and disclose checks not run.
+
+Your contribution must align with the project's [GPLv3-or-later notice](LICENCE.md), and you must have the right to contribute any included code or assets.
+
+AI-assisted contributions are welcome only when a qualified human reviewer verifies, tests, and understands the code. The person submitting the PR must be able to explain its correctness and maintainability.
+
+To open an early draft:
+
+1. Push your branch to your fork.
+2. Open a pull request against the project using your branch.
+3. Select **Create draft pull request** from the creation dropdown.
+4. Address feedback, then mark it **Ready for review** when complete.
+
+At least one founder-team member must approve the change before it can be merged. Maintainers may request revisions or decline changes that do not fit the project's direction or quality expectations. Missing information may result in a PR being closed.

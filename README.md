@@ -1,161 +1,198 @@
 <a id="readme-top"></a>
 
-<!-- PROJECT SHIELDS -->
 [![Epitech](https://img.shields.io/badge/Epitech-Paris-blue)](https://www.epitech.eu/fr/)
-[![OpenSource](https://img.shields.io/badge/Open-Source-red)](https://github.com/QuentinStoll/VstProfiler)
-[![C++20](https://img.shields.io/badge/C++-20-blue)](https://en.cppreference.com/w/cpp/20)
-[![JUCE](https://img.shields.io/badge/JUCE-8.0.12+-red)](https://juce.com/)
-<!-- PROJECT LOGO -->
+[![C++20](https://img.shields.io/badge/C++-20-blue)](CMakeLists.txt)
+[![JUCE](https://img.shields.io/badge/JUCE-8.0.12-red)](cmake/dependencies.cmake)
 
-![Alt text](Source/Assets/png/ProfilerBanner.png)   
+![VSTProfiler banner](Source/Assets/png/ProfilerBanner.png)
 
-<br />
-<div align="center">
-<!--
-  <a href="https://github.com/QuentinStoll/Profiler">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
--->
-<h3 align="center">VSTProfiler - Guitar Amplifier Simulator</h3>
-  <p align="center">
-    VSTProfiler is an open-source audio plugin (VST3 / AU / Standalone) designed to accurately model and reproduce the sound and dynamic behavior of legendary guitar amplifiers using impulse responses, circuit modeling, and lightweight machine learning.
-    <br />
-    <a href="https://github.com/QuentinStoll/Profiler/wiki"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="#getting-started">Getting Started</a>
-    &middot;
-    <a href="#contributing">Contributing</a>
-    &middot;
-    <a href="https://github.com/QuentinStoll/Profiler/issues/new?labels=enhancement">Request Feature</a>
-    &middot;
-    <a href="https://github.com/QuentinStoll/Profiler/issues/new?labels=bug">Report Bug</a>
-  </p>
-</div>
+# VSTProfiler - Guitar Amplifier Simulator
 
+VSTProfiler is an open-source audio plugin for guitarists who want to shape and save amplifier tones using neural amp models, cabinet impulse responses, and real-time controls, in a DAW or a standalone application.
 
+[Getting started](#getting-started) · [Usage](#usage) · [Contributing](#contributing) · [Report a bug](https://github.com/QuentinStoll/VstProfiler/issues) · [Request a feature](https://github.com/QuentinStoll/VstProfiler/issues)
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-  </ol>
-</details>
+## Table of contents
 
+- [Why this project](#why-this-project)
+- [Features and current limitations](#features-and-current-limitations)
+- [Getting started](#getting-started)
+- [Usage](#usage)
+- [Architecture](#architecture)
+- [Tests](#tests)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
+- [Project status](#project-status)
 
+## Why this project
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
+**EIP 2025-2026 - Technical Track.** This final-year engineering project was started in fourth year by four students at Epitech Paris.
 
-**EIP 2025–2026 — Technical Track**
-Final-year engineering project (started in 4th year) developed by 4 students from **Epitech Paris**.
+The goal is to give guitarists a free, customizable way to explore amplifier and cabinet sounds. Musicians can combine external models and impulse responses, adjust their tone, and reuse saved profiles. Developers and audio enthusiasts can inspect and extend the C++ processing chain and JUCE interface.
 
-The goal of VSTProfiler is to provide guitarists with a **free, open-source, and highly customizable** tool capable of “copying” the tone and feel of real amplifiers, with audio quality comparable to commercial solutions.
+Reproducing the tone and dynamic behavior of real amplifiers is the project's longer-term ambition; the current implementation and its limits are described below.
 
-### Key Features
-- Impulse Response capture and loading (custom capture tools)
-- Non-linear tube modeling (12AX7, EL34, etc.)
-- Speaker cabinet and speaker emulation
-- Oversampling up to **16×** for zero aliasing
-- Modern, skinnable JUCE-based UI
-- Cross-platform support (Windows, macOS Apple Silicon, Linux — target)
+## Features and current limitations
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+### Implemented features
 
+- Load cabinet impulse responses through the **Clone** view and process audio with JUCE convolution.
+- Load compatible neural amplifier models through RTNeural.
+- Adjust gain, noise gate, master volume, mute, and a five-band EQ through the **Play** view.
+- Create, edit, import, export, and delete `.profilerprofile` profiles containing parameter values and external asset paths.
+- Use a JUCE interface with **Clone**, **Play**, **Profil**, and settings views.
+- Build VST3 and standalone targets; AU is intended for macOS.
 
+### Current limitations
 
-### Built With
+- This is an experimental project. Audio quality, performance, and host compatibility still need validation for each use case.
+- The **Clone** view loads existing files; it does not currently provide an amplifier capture or model-training workflow.
+- Amp files must contain a model that the RTNeural JSON parser accepts, with one input and at least one output. The file chooser lists `.nam`, `.json`, and `.txt`, but an extension alone does not guarantee compatibility.
+- Profiles reference external amp and IR files rather than embedding them. Keep those files available when reopening or sharing a profile.
+- The processor currently requires mono input and stereo output. Configure the host's channel layout accordingly.
+- Windows and Linux have CI test jobs. macOS/AU remains a target requiring build validation: the current non-Windows dependency block also requires GTK3 and WebKit2GTK.
+- Preset format selections are not fully wired into the plugin target, which currently declares its formats directly in `Source/CMakeLists.txt`.
 
-* [**C++20**](https://en.cppreference.com/w/cpp/20)
-* [**JUCE 8.0+**](https://juce.com/)
-* [**spdlog**](https://github.com/gabime/spdlog)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- GETTING STARTED -->
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
-**for windows:**
+- Git, CMake **3.22 or later**, and a **C++20** compiler.
+- Internet access for the first configure step: CMake fetches JUCE **8.0.12**, spdlog, simdjson, RTNeural, and Tracy. See [dependency configuration](cmake/dependencies.cmake) for the selected versions.
+- On Windows: Visual Studio 2022 or Build Tools with the **Desktop development with C++** workload and a Windows SDK. Run commands from a developer terminal.
+- On Linux: a C++20-capable GCC or Clang toolchain and the JUCE system dependencies below.
+- For live guitar input: an audio interface and a configured audio input/output device. The VST3 build also needs a compatible plugin host.
+
+For Debian/Ubuntu, the system libraries used by the repository's CI can be installed with:
+
+```sh
+sudo apt-get update
+sudo apt-get install -y build-essential cmake git pkg-config \
+  libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxcomposite-dev \
+  libfreetype6-dev libfontconfig1-dev libasound2-dev libcurl4-openssl-dev \
+  libssl-dev libwebkit2gtk-4.1-dev libgtk-3-dev libglib2.0-dev \
+  mesa-common-dev libjack-jackd2-dev libdbus-1-dev
 ```
-cmake
-...
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-
-choco install pkgconfiglite
-
-choco install curl
-```
-
-**for linux**
-```
-cmake
-...
-to be documented
-```
-
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Installation
 
-1. Clone the repository
-  ```sh
-  git clone https://github.com/QuentinStoll/Profiler.git
-  ```
-2. use the install script
-  >windows:
-  ```batch
-  .\install.bat
-  ```
+Clone the repository and enter its directory:
 
-  >linux:
-  ```sh
-  ./install.sh
-  ```
+```sh
+git clone https://github.com/QuentinStoll/VstProfiler.git
+cd VstProfiler
+```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Configure and build on Windows:
 
+```powershell
+cmake -S . -B build -DPRESET_NAME=default
+cmake --build build --config Release --parallel 8
+```
 
+Configure and build on Linux:
 
-<!-- USAGE -->
+```sh
+bash ./install.sh all default
+```
+
+The scripts compile from source; they do not install the plugin into your DAW's plugin directory. This project overrides JUCE's default output directories: the standalone application is under `build/bin/Standalone/`, and the VST3 bundle is under `build/bin/lib/VST3/`. Generated JUCE support files remain under `build/Source/Profiler_artefacts/`.
+
+### Configuration
+
+No `.env` file or API keys are required for the documented local workflow.
+
+Build settings live in [cmake/presets_config.json](cmake/presets_config.json). Select a preset with `-DPRESET_NAME=default`, `release`, `dev`, or `debug` at configure time. For multi-configuration generators such as Visual Studio, also pass the desired configuration to the build command, for example `--config Debug`.
+
+The application stores settings and profiles in the JUCE user application-data directory under `Profiler`, with profiles in its `Profiles` subdirectory. On Windows, this is normally `%APPDATA%\Profiler`. External amp and IR files remain at their selected paths.
+
+### Launch
+
+For a Windows Release build with Visual Studio:
+
+```powershell
+& ".\build\bin\Standalone\Profiler.exe"
+```
+
+For a Linux Release build:
+
+```sh
+./build/bin/Standalone/Profiler
+```
+
+For DAW use, copy the entire `build/bin/lib/VST3/Profiler.vst3` bundle to a VST3 location scanned by your host, and rescan plugins. Load **Profiler** on a track configured for mono input and stereo output. Build configurations share these output paths, so building Debug can replace an existing Release binary.
+
 ## Usage
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+### Play through an amp model and cabinet IR
 
+1. Launch the standalone application and select your audio device, or load the plugin in your DAW and route your guitar input to it.
+2. Open **Clone**, choose **Load Amp**, and select a compatible RTNeural model file.
+3. Choose **Load IR** to select a cabinet impulse response. The chooser lists WAV, AIFF, AIF, and FLAC files.
+4. Open **Play** and adjust gain, noise gate, EQ, and master volume while monitoring your input.
+5. Check the file status cards if a model or IR does not load, and verify that the selected file still exists and is compatible.
 
+### Save and reuse a tone
 
-<!-- CONTRIBUTING -->
+Use the export controls in **Play** to save the current settings as a profile or export a `.profilerprofile` file. Open **Profil** to create, import, edit, or delete profiles, and use the profile selector in **Play** to recall one. When sharing a profile, provide its referenced assets separately and update their paths on the receiving machine.
+
+## Architecture
+
+| Component | Responsibility |
+| --- | --- |
+| [PluginProcessor](Source/Src/PluginProcessor.cpp) | Audio processing, host parameters, model/IR loading, and plugin state. |
+| [PluginEditor](Source/Src/PluginEditor.cpp), [Views](Source/Src/Views), and [Modules](Source/Src/Modules) | JUCE interface, controls, file selection, and profile workflows. |
+| [ProfileManager](Source/Src/ProfileManager.cpp) | Profile validation, local JSON storage, import/export, and parameter recall. |
+| [Source/Include](Source/Include) | Shared interfaces, settings paths, and styling definitions. |
+| [cmake](cmake) | Dependency fetching, build presets, and compiler configuration. |
+| [Tests](Tests) | Automated checks for audio processing, profiles, settings, logging, and UI components. |
+
+Audio flows from the host or standalone audio device through gain, noise gate, and EQ processing, then the amp-model stage and cabinet convolution, before reaching the output. UI controls and recalled profiles update the processor's parameter state. Settings and profiles are stored locally; this workflow has no backend or database service.
+
+## Tests
+
+On Windows:
+
+```powershell
+.\install.bat test
+```
+
+On Linux:
+
+```sh
+bash ./install.sh test
+```
+
+These commands build `ProfilerTests` and run the CTest suite. Tests are enabled by default through `PROFILER_BUILD_TESTS`. The [CI workflow](.github/workflows/CI.yml) defines Windows and Linux test jobs and a Windows coverage job.
+
 ## Contributing
-see [CONTRIBUTING.md](contributing.md)
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+Contributions to code, tests, documentation, and compatibility testing are welcome.
 
+1. Read [contributing.md](contributing.md) and check existing issues and pull requests.
+2. Discuss substantial changes in an issue or an early draft pull request.
+3. Make a focused change, update relevant documentation, and run the tests. For audio or UI changes, also verify affected behavior manually.
+4. Submit a pull request describing the change and how to reproduce your checks. A founder-team member must approve it before merging.
 
-<!-- LICENSE -->
+See the [issue tracker](https://github.com/QuentinStoll/VstProfiler/issues) for bugs, feature requests, and questions, and the [project board](https://github.com/users/QuentinStoll/projects/5) for ongoing work.
+
+Use the repository's issue and pull request templates when submitting changes or feedback. Participation follows the [code of conduct](CODE_OF_CONDUCT.md).
+
+## Security
+
+See the [security policy](SECURITY.md) for vulnerability-reporting guidance and current support limitations. Quentin's proposed reporting email remains an unconfirmed placeholder; do not post vulnerability details in public issues.
+
 ## License
-see [LICENSE.md](LICENSE.md)
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+The project's [license notice](LICENCE.md) specifies **GNU GPL version 3 or later**. The complete GPLv3 text is included in [LICENSE](LICENSE). Third-party dependencies retain their own licenses.
 
+## Project status
 
-<!-- ROADMAP -->
+- **Maturity:** experimental; the CMake project version is currently `0.0.0`.
+- **Maintenance:** an Epitech Paris student project developed by the VSTProfiler team.
+- **Support:** use the issue tracker for questions and reproducible reports; no response-time guarantee is documented.
+- **Planning and history:** see the proposed [roadmap](ROADMAP.md) and [changelog](CHANGELOG.md).
+- **Open setup tasks:** confirm or replace the placeholder reporting email in the security and conduct policies, and validate macOS setup instructions.
+
+[Back to top](#readme-top)
