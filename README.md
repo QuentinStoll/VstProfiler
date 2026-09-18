@@ -4,7 +4,9 @@
 [![C++20](https://img.shields.io/badge/C++-20-blue)](CMakeLists.txt)
 [![JUCE](https://img.shields.io/badge/JUCE-8.0.12-red)](cmake/dependencies.cmake)
 
-![VSTProfiler banner](Source/Assets/png/ProfilerBanner.png)
+<center>
+  <img src="Source/Assets/Svg/Profiler-white.svg" alt="VSTProfiler logo" width="300">
+</center>
 
 # VSTProfiler - Guitar Amplifier Simulator
 
