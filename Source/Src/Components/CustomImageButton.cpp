@@ -1,5 +1,7 @@
 #include "Components/CustomImageButton.h"
 
+#include "Components/CustomLookAndFeel.h"
+
 //=============================================================================
 // CustomImageButton Implementation
 //=============================================================================
@@ -42,7 +44,7 @@ void CustomImageButton::paintButton(juce::Graphics& g, bool isMouseOverButton, b
     auto hasImage = (_drawable != nullptr);
     auto hasText = buttonText.isNotEmpty();
     auto gap = 0;
-    auto font = juce::Font(juce::FontOptions(16.0f));
+    auto font = ProfilerStyle::Fonts::regular(16.0f);
     auto contentArea = area.reduced(10);
     auto imageArea = hasText ? contentArea : contentArea.reduced(juce::roundToInt(getWidth() * 0.3f));
     auto textArea = contentArea;
@@ -57,22 +59,29 @@ void CustomImageButton::paintButton(juce::Graphics& g, bool isMouseOverButton, b
         imageArea = contentArea;
     }
 
-    auto baseColour = _backgroundColour;
-    if (isButtonDown)
-        baseColour = baseColour.darker(0.2f);
-    else if (isMouseOverButton)
-        baseColour = baseColour.brighter(0.1f);
+    if (auto* customLf = dynamic_cast<CustomLookAndFeel*>(&getLookAndFeel())) {
+        customLf->paintFlatButtonBackground(g,
+                                               area.toFloat(),
+                                               _backgroundColour,
+                                               isMouseOverButton,
+                                               isButtonDown,
+                                               getToggleState(),
+                                               _outlineVisible,
+                                               _outlineColour);
+    } else {
+        auto baseColour = _backgroundColour;
+        if (isButtonDown)
+            baseColour = baseColour.darker(0.12f);
+        else if (isMouseOverButton)
+            baseColour = baseColour.brighter(0.06f);
 
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        area.toFloat(),
-        baseColour.brighter(0.2f),
-        baseColour.darker(0.2f),
-        0.9f));
-    g.fillRoundedRectangle(fillArea.toFloat(), cornerSize);
+        g.setColour(baseColour);
+        g.fillRoundedRectangle(fillArea.toFloat(), cornerSize);
 
-    if (_outlineVisible) {
-        g.setColour(_outlineColour);
-        g.drawRoundedRectangle(area.toFloat(), cornerSize + 2.0f, 3.0f);
+        if (_outlineVisible) {
+            g.setColour(_outlineColour.withAlpha(0.45f));
+            g.drawRoundedRectangle(area.toFloat(), cornerSize + 1.0f, 1.0f);
+        }
     }
 
     auto alpha = (isEnabled() ? 1.0f : 0.5f) * (isButtonDown ? 0.8f : 1.0f);

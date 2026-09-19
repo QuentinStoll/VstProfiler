@@ -10,7 +10,6 @@ FormSliderField::FormSliderField(const juce::Identifier& fieldId,
     : FormField(fieldId, labelText) {
     addAndMakeVisible(_slider);
 
-    _slider.setLookAndFeel(&_customLF);
     _slider.setSliderStyle(juce::Slider::LinearHorizontal);
     _slider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 58, 20);
     _slider.setRange(min, max, step);
@@ -20,10 +19,6 @@ FormSliderField::FormSliderField(const juce::Identifier& fieldId,
     _slider.onValueChange = [this]() {
         notifyValueChanged();
     };
-}
-
-FormSliderField::~FormSliderField() {
-    _slider.setLookAndFeel(nullptr);
 }
 
 double FormSliderField::getSliderValue() const {

@@ -2,28 +2,69 @@
 
 #include <JuceHeader.h>
 
-#include "Components/CustomTabs.h"
+#include "Components/CustomLookAndFeel.h"
+#include "Components/NotificationBanner.h"
+#include "Components/SignalChainStrip.h"
+#include "Modules/ExportProfilModule.h"
+#include "Modules/StudioEditPanels.h"
+#include "Modules/StudioTopBar.h"
 #include "PluginProcessor.h"
+#include "Views/ProfilView.h"
+#include "Views/SettingsView.h"
 
-//==============================================================================
-class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor {
+class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
+                                     private juce::ChangeListener,
+                                     private juce::AudioProcessorValueTreeState::Listener {
    public:
     ProfilerAudioProcessorEditor(ProfilerAudioProcessor&);
     ~ProfilerAudioProcessorEditor() override;
 
-    //
     void paint(juce::Graphics&) override;
-
-    //
     void resized() override;
 
    private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
-    ProfilerAudioProcessor& _audioProcessor;
+    enum class OverlayMode {
+        None,
+        Settings,
+        Library,
+        Export
+    };
 
-    //
-    CustomTabs _tabs;
+    ProfilerAudioProcessor& _audioProcessor;
+    CustomLookAndFeel _customLookAndFeel;
+
+    StudioTopBar _topBar;
+    SignalChainStrip _signalChain;
+    juce::Component _editHost;
+    InputGatePanel _inputGatePanel;
+    AmpProfilerPanel _ampPanel;
+    CabinetIrPanel _cabinetPanel;
+    EqPostFxPanel _eqPanel;
+
+    SettingsView _settingsView;
+    juce::TextButton _resetButton{"Reset Chain"};
+    juce::TextButton _exportButton{"Export Profile"};
+    juce::TextButton _closeOverlayButton{"Close"};
+    juce::Component _settingsHost;
+
+    ProfilView _libraryView;
+    juce::Viewport _exportViewport;
+    ExportProfilModule _exportModule;
+    NotificationBanner _notificationBanner;
+    juce::TooltipWindow _tooltipWindow{this, 700};
+    OverlayMode _overlayMode = OverlayMode::None;
+
+    void showStudio();
+    void showOverlay(OverlayMode mode);
+    void showEditPanel(SignalChainStrip::BlockId blockId);
+    void updateChainStatus();
+    void showStatus(const juce::String& message, bool success);
+    void exportProfil(const juce::NamedValueSet& values, const juce::File& destinationFile);
+    void createProfil(const juce::NamedValueSet& values);
+    juce::String getDefaultExportName() const;
+    juce::File getDefaultExportFile(const juce::String& profileName) const;
+    void changeListenerCallback(juce::ChangeBroadcaster* source) override;
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ProfilerAudioProcessorEditor)
 };

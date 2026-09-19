@@ -59,18 +59,7 @@ PlayView::~PlayView() {
 }
 
 void PlayView::paint(juce::Graphics& g) {
-    auto area = getLocalBounds().toFloat();
-    juce::Path path;
-
-    // Draw a rounded rectangle as the background
-    path.addRoundedRectangle(area, 5.0f);
-
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        area,
-        ProfilerStyle::Colors::appBackground,
-        ProfilerStyle::Colors::appBackground.brighter(0.1f),
-        0.8f));
-    g.fillPath(path);
+    ProfilerStyle::Surfaces::fillPanel(g, getLocalBounds().toFloat());
 }
 
 void PlayView::resized() {

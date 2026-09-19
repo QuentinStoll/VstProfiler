@@ -82,8 +82,8 @@ void NotificationBanner::clearAction() {
 }
 
 int NotificationBanner::getIdealWidth() const {
-    const auto messageFont = juce::Font(juce::FontOptions(14.0f));
-    const auto actionFont = juce::Font(juce::FontOptions(13.0f));
+    const auto messageFont = ProfilerStyle::Fonts::regular(14.0f);
+    const auto actionFont = ProfilerStyle::Fonts::regular(13.0f);
     auto width = 64 + getTextWidth(messageFont, _message);
 
     if (_actionLabel.isNotEmpty())
@@ -99,28 +99,23 @@ int NotificationBanner::getIdealHeight() const {
 void NotificationBanner::paint(juce::Graphics& g) {
     const auto bounds = getLocalBounds().toFloat().reduced(1.0f);
     const auto accent = getAccentColour();
-    const auto baseColour = ProfilerStyle::Colors::darkerGrey;
 
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        bounds,
-        baseColour.brighter(0.18f),
-        baseColour.darker(0.18f),
-        0.85f));
-    g.fillRoundedRectangle(bounds, 5.0f);
+    g.setColour(ProfilerStyle::Colors::elevated);
+    g.fillRoundedRectangle(bounds, ProfilerStyle::Surfaces::controlCorner);
 
     g.setColour(accent);
-    g.fillRoundedRectangle(bounds.withWidth(4.0f), 2.0f);
+    g.fillRoundedRectangle(bounds.withWidth(3.0f), 1.5f);
 
-    g.setColour(accent.withAlpha(0.35f));
-    g.drawRoundedRectangle(bounds, 5.0f, 1.0f);
+    g.setColour(accent.withAlpha(0.28f));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), ProfilerStyle::Surfaces::controlCorner, 1.0f);
 
-    auto dotBounds = juce::Rectangle<float>(0.0f, 0.0f, 9.0f, 9.0f)
+    auto dotBounds = juce::Rectangle<float>(0.0f, 0.0f, 8.0f, 8.0f)
                          .withCentre(_messageBounds.withWidth(10).getCentre().toFloat());
     g.setColour(accent);
     g.fillEllipse(dotBounds);
 
-    g.setFont(juce::Font(juce::FontOptions(14.0f)));
-    g.setColour(ProfilerStyle::Colors::white);
+    g.setFont(ProfilerStyle::Fonts::regular(14.0f));
+    g.setColour(ProfilerStyle::Colors::text);
     g.drawFittedText(_message, _messageBounds.withTrimmedLeft(18),
                      juce::Justification::centredLeft, 1);
 
@@ -128,11 +123,11 @@ void NotificationBanner::paint(juce::Graphics& g) {
 
     if (_actionLabel.isNotEmpty()) {
         const auto isActionHovered = _actionBounds.contains(mousePosition);
-        g.setColour(accent.withAlpha(isActionHovered ? 0.28f : 0.18f));
-        g.fillRoundedRectangle(_actionBounds.toFloat(), 3.0f);
+        g.setColour(accent.withAlpha(isActionHovered ? 0.28f : 0.16f));
+        g.fillRoundedRectangle(_actionBounds.toFloat(), ProfilerStyle::Surfaces::controlCorner);
 
-        g.setFont(juce::Font(juce::FontOptions(13.0f)));
-        g.setColour(ProfilerStyle::Colors::white.withAlpha(isActionHovered ? 1.0f : 0.86f));
+        g.setFont(ProfilerStyle::Fonts::regular(13.0f));
+        g.setColour(ProfilerStyle::Colors::text.withAlpha(isActionHovered ? 1.0f : 0.86f));
         g.drawFittedText(_actionLabel, _actionBounds,
                          juce::Justification::centred, 1);
     }
@@ -153,7 +148,7 @@ void NotificationBanner::resized() {
     area.removeFromRight(8);
 
     if (_actionLabel.isNotEmpty()) {
-        const auto actionWidth = getTextWidth(juce::Font(juce::FontOptions(13.0f)), _actionLabel) + 18;
+        const auto actionWidth = getTextWidth(ProfilerStyle::Fonts::regular(13.0f), _actionLabel) + 18;
         _actionBounds = area.removeFromRight(juce::jlimit(58, 160, actionWidth)).reduced(0, 3);
         area.removeFromRight(8);
     } else {

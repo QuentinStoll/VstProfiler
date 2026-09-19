@@ -20,22 +20,17 @@ void BasicEqModule::paint(juce::Graphics& /*g*/) {}
 
 void BasicEqModule::resized() {
     auto area = getLocalBounds();
-    auto areaWidth = area.getWidth();
+    const auto count = 5;
+    const auto gap = 12;
+    const auto knobWidth = juce::jmin(92, juce::jmax(64, (area.getWidth() - gap * (count - 1)) / count));
+    const auto totalWidth = count * knobWidth + (count - 1) * gap;
+    auto row = juce::Rectangle<int>(totalWidth, juce::jmin(108, area.getHeight())).withCentre(area.getCentre());
 
-    auto topArea = area.removeFromTop(static_cast<int>(getHeight() * 0.5f));
-
-    auto bassArea = topArea.removeFromLeft(areaWidth / 3);
-    auto midArea = topArea.removeFromLeft(areaWidth / 3);
-    auto trebleArea = topArea;
-
-    area = area.withSizeKeepingCentre(bassArea.getWidth() * 2, area.getHeight());
-
-    auto presenceArea = area.removeFromLeft(bassArea.getWidth());
-    auto depthArea = area.removeFromLeft(bassArea.getWidth());
-
-    _bassKnob.setBounds(bassArea);
-    _midKnob.setBounds(midArea);
-    _trebleKnob.setBounds(trebleArea);
-    _presenceKnob.setBounds(presenceArea);
-    _depthKnob.setBounds(depthArea);
+    juce::Component* knobs[] = {&_bassKnob, &_midKnob, &_trebleKnob, &_presenceKnob, &_depthKnob};
+    for (int index = 0; index < count; ++index) {
+        knobs[index]->setBounds(row.removeFromLeft(knobWidth));
+        if (index + 1 < count) {
+            row.removeFromLeft(gap);
+        }
+    }
 }

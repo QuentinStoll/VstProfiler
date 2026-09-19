@@ -50,12 +50,15 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomComboBox.cpp
     Src/Components/CustomImageButton.cpp
     Src/Components/CustomKnob.cpp
+    Src/Components/CustomLookAndFeel.cpp
     Src/Components/CustomLinearSlider.cpp
     Src/Components/CustomTabBar.cpp
     Src/Components/CustomTabs.cpp
     Src/Components/CustomTextButton.cpp
     Src/Components/CustomTextEditor.cpp
     Src/Components/CustomToggleButton.cpp
+    Src/Components/FileDropZone.cpp
+    Src/Components/SignalChainStrip.cpp
     Src/Components/FormFields/FormComboField.cpp
     Src/Components/FormComponent.cpp
     Src/Components/FormFields/FormField.cpp
@@ -76,6 +79,8 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Modules/ExportProfilModule.cpp
     Src/Modules/FileAssetsModule.cpp
     Src/Modules/MasterSlidersModule.cpp
+    Src/Modules/StudioEditPanels.cpp
+    Src/Modules/StudioTopBar.cpp
     Src/Modules/UtilityBarModule.cpp
     Src/Views/CloneView.cpp
     Src/Views/PlayView.cpp

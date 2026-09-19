@@ -1,2 +1,4 @@
-#define windowHeight 600
-#define windowWidth 400
+#pragma once
+
+constexpr int editorWidth = 1000;
+constexpr int editorHeight = 500;
