@@ -23,6 +23,9 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     void paint(juce::Graphics&) override;
     void resized() override;
     void parentHierarchyChanged() override;
+    void visibilityChanged() override;
+    void broughtToFront() override;
+    void mouseDown(const juce::MouseEvent& event) override;
     bool keyPressed(const juce::KeyPress& key) override;
 
    private:
@@ -58,8 +61,10 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     NotificationBanner _notificationBanner;
     juce::TooltipWindow _tooltipWindow{this, 700};
     OverlayMode _overlayMode = OverlayMode::None;
+    int _hostChromePasses = 0;
 
     void applyStandaloneWindowChrome();
+    void applyHostWindowChrome();
 
     void showStudio();
     void showOverlay(OverlayMode mode);

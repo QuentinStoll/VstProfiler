@@ -4,6 +4,97 @@
 #include "ProfilerConstantValues.h"
 #include "Stylesheet.h"
 
+#if JUCE_WINDOWS
+#include <dwmapi.h>
+#endif
+
+namespace {
+constexpr int kHostChromeRetryLimit = 10;
+
+#if JUCE_WINDOWS
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1
+#define DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 19
+#endif
+
+void setImmersiveDarkMode(HWND hwnd) {
+    if (hwnd == nullptr) {
+        return;
+    }
+
+    BOOL enabled = TRUE;
+    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enabled, sizeof(enabled));
+    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1, &enabled, sizeof(enabled));
+}
+
+bool isDedicatedPluginFrame(HWND hwnd, int editorWidthPx, int editorHeightPx) {
+    if (hwnd == nullptr) {
+        return false;
+    }
+
+    RECT bounds{};
+    if (!GetWindowRect(hwnd, &bounds)) {
+        return false;
+    }
+
+    const auto width = bounds.right - bounds.left;
+    const auto height = bounds.bottom - bounds.top;
+    return width >= editorWidthPx - 16 && width <= editorWidthPx + 96
+           && height >= editorHeightPx - 16 && height <= editorHeightPx + 96;
+}
+
+void stripNativeFrame(HWND hwnd, int editorWidthPx, int editorHeightPx) {
+    if (hwnd == nullptr) {
+        return;
+    }
+
+    auto style = GetWindowLongPtr(hwnd, GWL_STYLE);
+    auto exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+    style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
+    exStyle &= ~(WS_EX_CLIENTEDGE | WS_EX_WINDOWEDGE | WS_EX_DLGMODALFRAME | WS_EX_STATICEDGE);
+    SetWindowLongPtr(hwnd, GWL_STYLE, style);
+    SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
+
+    MARGINS margins{0, 0, 0, 0};
+    DwmExtendFrameIntoClientArea(hwnd, &margins);
+    setImmersiveDarkMode(hwnd);
+
+    RECT client{0, 0, editorWidthPx, editorHeightPx};
+    AdjustWindowRectEx(&client, static_cast<DWORD>(GetWindowLongPtr(hwnd, GWL_STYLE)), FALSE,
+                       static_cast<DWORD>(GetWindowLongPtr(hwnd, GWL_EXSTYLE)));
+    SetWindowPos(hwnd, nullptr, 0, 0, client.right - client.left, client.bottom - client.top,
+                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+}
+
+void restyleWindowsHostFrame(HWND pluginHwnd, int editorWidthPx, int editorHeightPx) {
+    if (pluginHwnd == nullptr) {
+        return;
+    }
+
+    setImmersiveDarkMode(pluginHwnd);
+
+    auto* parent = GetParent(pluginHwnd);
+    if (parent != nullptr) {
+        setImmersiveDarkMode(parent);
+    }
+
+    auto* root = GetAncestor(pluginHwnd, GA_ROOT);
+    if (root == nullptr || root == GetDesktopWindow()) {
+        return;
+    }
+
+    setImmersiveDarkMode(root);
+    if (isDedicatedPluginFrame(root, editorWidthPx, editorHeightPx)
+        || isDedicatedPluginFrame(parent, editorWidthPx, editorHeightPx)) {
+        stripNativeFrame(isDedicatedPluginFrame(root, editorWidthPx, editorHeightPx) ? root : parent,
+                         editorWidthPx, editorHeightPx);
+    }
+}
+#endif
+}  // namespace
+
 ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcessor& p)
     : AudioProcessorEditor(&p),
       _audioProcessor(p),
@@ -20,9 +111,10 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
     setColour(juce::ResizableWindow::backgroundColourId, juce::Colours::black);
 
     setResizable(true, true);
-    getConstrainer()->setFixedAspectRatio(editorWidth / static_cast<double>(editorHeight));
     setResizeLimits(editorMinWidth, editorMinHeight, editorWidth, editorHeight);
+    getConstrainer()->setFixedAspectRatio(editorWidth / static_cast<double>(editorHeight));
     setSize(editorWidth, editorHeight);
+    setBroughtToFrontOnMouseClick(true);
 
     addAndMakeVisible(_content);
     _content.addAndMakeVisible(_topBar);
@@ -152,7 +244,34 @@ bool ProfilerAudioProcessorEditor::keyPressed(const juce::KeyPress& key) {
 }
 
 void ProfilerAudioProcessorEditor::parentHierarchyChanged() {
+    applyHostWindowChrome();
+}
+
+void ProfilerAudioProcessorEditor::visibilityChanged() {
+    if (isVisible()) {
+        applyHostWindowChrome();
+    }
+}
+
+void ProfilerAudioProcessorEditor::broughtToFront() {
+    applyHostWindowChrome();
+}
+
+void ProfilerAudioProcessorEditor::mouseDown(const juce::MouseEvent& event) {
+    applyHostWindowChrome();
+    AudioProcessorEditor::mouseDown(event);
+}
+
+void ProfilerAudioProcessorEditor::applyHostWindowChrome() {
     applyStandaloneWindowChrome();
+
+#if JUCE_WINDOWS
+    if (auto* peer = getPeer()) {
+        restyleWindowsHostFrame(static_cast<HWND>(peer->getNativeHandle()), getWidth(), getHeight());
+    }
+#else
+    juce::ignoreUnused(juce::Desktop::getInstance().getDisplays());
+#endif
 }
 
 void ProfilerAudioProcessorEditor::applyStandaloneWindowChrome() {
@@ -416,4 +535,8 @@ void ProfilerAudioProcessorEditor::parameterChanged(const juce::String& paramete
 
 void ProfilerAudioProcessorEditor::timerCallback() {
     _signalChain.setIoMeterLevels(_audioProcessor.getRmsLevelInput(), _audioProcessor.getRmsLevelOutput());
+    if (_hostChromePasses < kHostChromeRetryLimit) {
+        applyHostWindowChrome();
+        ++_hostChromePasses;
+    }
 }
