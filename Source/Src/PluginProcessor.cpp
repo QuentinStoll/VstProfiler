@@ -1,7 +1,7 @@
 #include "PluginProcessor.h"
 
-#include <common/TracyColor.hpp>
 #include <cmath>
+#include <common/TracyColor.hpp>
 #include <fstream>
 #include <utility>
 
@@ -161,8 +161,7 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     _chain.get<NoiseGate>().setAttack(5.0f);
     _chain.get<NoiseGate>().setRelease(100.0f);
     _chain.get<NoiseGate>().setRatio(10.0f);
-    _chain.setBypassed<NoiseGate>(getParameterValue(_isGateEnabledParam, 1.0f) <= 0.5f
-                                 || getParameterValue(_noiseParam, 0.0f) <= 0.0f);
+    _chain.setBypassed<NoiseGate>(getParameterValue(_isGateEnabledParam, 1.0f) <= 0.5f || getParameterValue(_noiseParam, 0.0f) <= 0.0f);
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
 
@@ -296,9 +295,7 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         _eqGainSmoothed[index].setTargetValue(getParameterValue(_eqGainParams[index], EqBands::specs[band].defaultDb));
         _eqFreqSmoothed[index].setTargetValue(
             getParameterValue(_eqFreqParams[index], EqBands::specs[band].defaultHz));
-        eqSmoothing = eqSmoothing
-                      || _eqGainSmoothed[index].isSmoothing()
-                      || _eqFreqSmoothed[index].isSmoothing();
+        eqSmoothing = eqSmoothing || _eqGainSmoothed[index].isSmoothing() || _eqFreqSmoothed[index].isSmoothing();
     }
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;

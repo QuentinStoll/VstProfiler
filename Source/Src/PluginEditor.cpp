@@ -41,8 +41,7 @@ bool isDedicatedPluginFrame(HWND hwnd, int editorWidthPx, int editorHeightPx) {
 
     const auto width = bounds.right - bounds.left;
     const auto height = bounds.bottom - bounds.top;
-    return width >= editorWidthPx - 16 && width <= editorWidthPx + 96
-           && height >= editorHeightPx - 16 && height <= editorHeightPx + 96;
+    return width >= editorWidthPx - 16 && width <= editorWidthPx + 96 && height >= editorHeightPx - 16 && height <= editorHeightPx + 96;
 }
 
 void stripNativeFrame(HWND hwnd, int editorWidthPx, int editorHeightPx) {
@@ -86,8 +85,7 @@ void restyleWindowsHostFrame(HWND pluginHwnd, int editorWidthPx, int editorHeigh
     }
 
     setImmersiveDarkMode(root);
-    if (isDedicatedPluginFrame(root, editorWidthPx, editorHeightPx)
-        || isDedicatedPluginFrame(parent, editorWidthPx, editorHeightPx)) {
+    if (isDedicatedPluginFrame(root, editorWidthPx, editorHeightPx) || isDedicatedPluginFrame(parent, editorWidthPx, editorHeightPx)) {
         stripNativeFrame(isDedicatedPluginFrame(root, editorWidthPx, editorHeightPx) ? root : parent,
                          editorWidthPx, editorHeightPx);
     }
@@ -260,8 +258,7 @@ bool ProfilerAudioProcessorEditor::keyPressed(const juce::KeyPress& key) {
     }
 
     if (auto* focused = juce::Component::getCurrentlyFocusedComponent()) {
-        if (dynamic_cast<juce::TextEditor*>(focused) != nullptr
-            || dynamic_cast<juce::ComboBox*>(focused) != nullptr) {
+        if (dynamic_cast<juce::TextEditor*>(focused) != nullptr || dynamic_cast<juce::ComboBox*>(focused) != nullptr) {
             return false;
         }
     }
@@ -587,8 +584,7 @@ void ProfilerAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaste
 }
 
 void ProfilerAudioProcessorEditor::parameterChanged(const juce::String& parameterID, float /*newValue*/) {
-    if (parameterID == "isEqEnabled" || parameterID == "isGateEnabled" || parameterID == "isAmpEnabled"
-        || parameterID == "isCabEnabled" || parameterID == "isPedalEnabled" || parameterID == "noise") {
+    if (parameterID == "isEqEnabled" || parameterID == "isGateEnabled" || parameterID == "isAmpEnabled" || parameterID == "isCabEnabled" || parameterID == "isPedalEnabled" || parameterID == "noise") {
         auto refresh = [safeThis = juce::Component::SafePointer<ProfilerAudioProcessorEditor>(this)]() {
             if (safeThis == nullptr) {
                 return;

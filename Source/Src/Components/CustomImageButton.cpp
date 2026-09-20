@@ -61,13 +61,13 @@ void CustomImageButton::paintButton(juce::Graphics& g, bool isMouseOverButton, b
 
     if (auto* customLf = dynamic_cast<CustomLookAndFeel*>(&getLookAndFeel())) {
         customLf->paintFlatButtonBackground(g,
-                                               area.toFloat(),
-                                               _backgroundColour,
-                                               isMouseOverButton,
-                                               isButtonDown,
-                                               getToggleState(),
-                                               _outlineVisible,
-                                               _outlineColour);
+                                            area.toFloat(),
+                                            _backgroundColour,
+                                            isMouseOverButton,
+                                            isButtonDown,
+                                            getToggleState(),
+                                            _outlineVisible,
+                                            _outlineColour);
     } else {
         auto baseColour = _backgroundColour;
         if (isButtonDown)

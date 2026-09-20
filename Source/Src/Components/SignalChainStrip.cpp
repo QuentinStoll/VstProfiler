@@ -22,7 +22,7 @@ float smoothMeter(float current, float target, float deltaSeconds) {
     const auto coeff = 1.0f - std::exp(-deltaSeconds / tau);
     return current + (target - current) * coeff;
 }
-}
+}  // namespace
 
 SignalChainBlock::SignalChainBlock(juce::Colour categoryColour, CustomLookAndFeel::RigIcon icon)
     : juce::Button({}),

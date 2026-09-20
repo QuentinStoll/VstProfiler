@@ -1,9 +1,9 @@
 #pragma once
 
+#include <JuceHeader.h>
+
 #include <array>
 #include <cstdint>
-
-#include <JuceHeader.h>
 
 #include "EqBandLayout.h"
 #include "ProfileManager.h"

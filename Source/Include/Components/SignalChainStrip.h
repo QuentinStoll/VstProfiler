@@ -1,8 +1,8 @@
 #pragma once
 
-#include <array>
-
 #include <JuceHeader.h>
+
+#include <array>
 
 #include "Components/CustomLookAndFeel.h"
 #include "SignalChainLayout.h"

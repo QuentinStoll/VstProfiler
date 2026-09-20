@@ -139,8 +139,7 @@ juce::Typeface::Ptr CustomLookAndFeel::getTypefaceForFont(const juce::Font& font
 
 juce::Font CustomLookAndFeel::getLabelFont(juce::Label& label) {
     const auto requested = label.getFont();
-    if (requested.getTypefacePtr() != nullptr
-        && requested.getTypefaceName().containsIgnoreCase(ProfilerStyle::Fonts::family())) {
+    if (requested.getTypefacePtr() != nullptr && requested.getTypefaceName().containsIgnoreCase(ProfilerStyle::Fonts::family())) {
         return requested;
     }
 
@@ -828,8 +827,8 @@ void CustomLookAndFeel::drawRigIcon(juce::Graphics& g, juce::Rectangle<float> bo
                 auto track = juce::Rectangle<float>(x - trackW * 0.5f, bounds.getY() + 2.0f, trackW, bounds.getHeight() - 4.0f);
                 g.fillRoundedRectangle(track, 1.0f);
                 auto cap = juce::Rectangle<float>(x - capW * 0.5f,
-                                                 bounds.getY() + bounds.getHeight() * caps[i] - capH * 0.5f,
-                                                 capW, capH);
+                                                  bounds.getY() + bounds.getHeight() * caps[i] - capH * 0.5f,
+                                                  capW, capH);
                 g.fillRoundedRectangle(cap, 1.0f);
             }
             break;

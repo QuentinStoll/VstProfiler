@@ -5,7 +5,7 @@
 namespace {
 constexpr int kNormalDragSensitivity = 220;
 constexpr int kFineDragSensitivity = 900;
-}
+}  // namespace
 
 void CustomKnob::FineSlider::applyDragSensitivity(const juce::MouseEvent& event) {
     setMouseDragSensitivity(event.mods.isShiftDown() ? kFineDragSensitivity : kNormalDragSensitivity);

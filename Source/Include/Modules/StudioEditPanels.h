@@ -1,9 +1,9 @@
 #pragma once
 
+#include <JuceHeader.h>
+
 #include <array>
 #include <atomic>
-
-#include <JuceHeader.h>
 
 #include "Components/CustomKnob.h"
 #include "Components/CustomLevelMeter.h"
