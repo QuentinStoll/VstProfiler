@@ -2,7 +2,6 @@
 
 #include <JuceHeader.h>
 
-#include "Components/CustomComboBox.h"
 #include "Components/CustomKnob.h"
 #include "Components/CustomToggleButton.h"
 #include "Components/FileDropZone.h"
@@ -68,8 +67,6 @@ class CabinetIrPanel : public juce::Component {
     juce::Label _title{"", "Cabinet / IR"};
     juce::Label _bypassLabel{"", "No IR loaded"};
     FileDropZone _irDrop;
-    juce::Label _micLabel{"", "Mic"};
-    CustomComboBox _micMenu;
     CustomKnob _lowCutKnob{"Low Cut", 20.0f, 250.0f, 80.0f, "Hz", 1.0f};
 
     void restoreCabNotes();

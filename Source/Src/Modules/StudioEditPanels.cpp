@@ -4,19 +4,18 @@
 #include "Stylesheet.h"
 
 namespace {
-constexpr const char* kCabMicProperty = "cabMic";
 constexpr const char* kCabLowCutProperty = "cabLowCut";
 
 void configurePanelTitle(juce::Label& label, const juce::String& text) {
     label.setText(text, juce::dontSendNotification);
-    label.setFont(ProfilerStyle::Fonts::bold(13.0f));
+    label.setFont(ProfilerStyle::Fonts::bold(15.0f));
     label.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
     label.setJustificationType(juce::Justification::centredLeft);
     label.setInterceptsMouseClicks(false, false);
 }
 
 void configureBypassLabel(juce::Label& label) {
-    label.setFont(ProfilerStyle::Fonts::bold(11.0f));
+    label.setFont(ProfilerStyle::Fonts::bold(12.0f));
     label.setColour(juce::Label::textColourId, juce::Colour(0xffffb020));
     label.setJustificationType(juce::Justification::centredRight);
     label.setInterceptsMouseClicks(false, false);
@@ -75,7 +74,7 @@ FileDropZone::Options makeIrDropOptions(ProfilerAudioProcessor& processor) {
 
 InputGatePanel::InputGatePanel(juce::AudioProcessorValueTreeState& apvts) {
     configurePanelTitle(_title, "Input / Gate");
-    _summary.setFont(ProfilerStyle::Fonts::regular(11.0f));
+    _summary.setFont(ProfilerStyle::Fonts::regular(13.0f));
     _summary.setColour(juce::Label::textColourId, ProfilerStyle::Colors::caption);
     _summary.setJustificationType(juce::Justification::centredLeft);
     _summary.setInterceptsMouseClicks(false, false);
@@ -90,8 +89,8 @@ void InputGatePanel::paint(juce::Graphics&) {}
 
 void InputGatePanel::resized() {
     auto area = getLocalBounds().reduced(10, 6);
-    auto header = area.removeFromTop(20);
-    _title.setBounds(header.removeFromLeft(120));
+    auto header = area.removeFromTop(22);
+    _title.setBounds(header.removeFromLeft(140));
     _summary.setBounds(header);
     _noiseGateKnob.setBounds(area.withSizeKeepingCentre(108, juce::jmin(88, area.getHeight())));
 }
@@ -135,7 +134,7 @@ void AmpProfilerPanel::paint(juce::Graphics&) {}
 
 void AmpProfilerPanel::resized() {
     auto area = getLocalBounds().reduced(10, 6);
-    auto header = area.removeFromTop(20);
+    auto header = area.removeFromTop(22);
     _bypassLabel.setBounds(header.removeFromRight(130));
     header.removeFromRight(8);
     _title.setBounds(header);
@@ -155,23 +154,8 @@ CabinetIrPanel::CabinetIrPanel(ProfilerAudioProcessor& processor)
     addAndMakeVisible(_title);
     addAndMakeVisible(_bypassLabel);
     addAndMakeVisible(_irDrop);
-    addAndMakeVisible(_micLabel);
-    addAndMakeVisible(_micMenu);
     addAndMakeVisible(_lowCutKnob);
 
-    _micLabel.setFont(ProfilerStyle::Fonts::regular(11.0f));
-    _micLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::caption);
-    _micLabel.setJustificationType(juce::Justification::centredLeft);
-
-    _micMenu.addItem("SM57", 1);
-    _micMenu.addItem("MD421", 2);
-    _micMenu.addItem("e609", 3);
-    _micMenu.addItem("Condenser", 4);
-    _micMenu.setSelectedId(1, juce::dontSendNotification);
-
-    _micMenu.onChange = [this]() {
-        storeCabNotes();
-    };
     _lowCutKnob.getSlider().onValueChange = [this]() {
         storeCabNotes();
     };
@@ -195,8 +179,6 @@ CabinetIrPanel::CabinetIrPanel(ProfilerAudioProcessor& processor)
 void CabinetIrPanel::refreshAssets() {
     _irDrop.refresh();
     const auto loaded = _irDrop.isFileLoaded();
-    _micLabel.setEnabled(loaded);
-    _micMenu.setEnabled(loaded);
     _lowCutKnob.setEnabled(loaded);
     _bypassLabel.setVisible(!loaded);
     resized();
@@ -206,7 +188,7 @@ void CabinetIrPanel::paint(juce::Graphics&) {}
 
 void CabinetIrPanel::resized() {
     auto area = getLocalBounds().reduced(10, 6);
-    auto header = area.removeFromTop(20);
+    auto header = area.removeFromTop(22);
     _bypassLabel.setBounds(header.removeFromRight(110));
     header.removeFromRight(8);
     _title.setBounds(header);
@@ -215,24 +197,15 @@ void CabinetIrPanel::resized() {
     auto side = area.removeFromRight(112);
     area.removeFromRight(10);
     _irDrop.setBounds(area);
-
-    _micLabel.setBounds(side.removeFromTop(12));
-    side.removeFromTop(2);
-    _micMenu.setBounds(side.removeFromTop(22));
-    side.removeFromTop(4);
-    _lowCutKnob.setBounds(side.withSizeKeepingCentre(side.getWidth(), juce::jmin(72, side.getHeight())));
+    _lowCutKnob.setBounds(side.withSizeKeepingCentre(side.getWidth(), juce::jmin(92, side.getHeight())));
 }
 
 void CabinetIrPanel::restoreCabNotes() {
-    const auto micId = static_cast<int>(_apvts.state.getProperty(kCabMicProperty, 1));
-    _micMenu.setSelectedId(juce::jlimit(1, 4, micId), juce::dontSendNotification);
-
     const auto lowCut = static_cast<float>(_apvts.state.getProperty(kCabLowCutProperty, 80.0));
     _lowCutKnob.getSlider().setValue(lowCut, juce::dontSendNotification);
 }
 
 void CabinetIrPanel::storeCabNotes() {
-    _apvts.state.setProperty(kCabMicProperty, _micMenu.getSelectedId(), nullptr);
     _apvts.state.setProperty(kCabLowCutProperty, _lowCutKnob.getSlider().getValue(), nullptr);
 }
 

@@ -98,19 +98,19 @@ juce::Font CustomLookAndFeel::getLabelFont(juce::Label& label) {
 }
 
 juce::Font CustomLookAndFeel::getTextButtonFont(juce::TextButton&, int buttonHeight) {
-    return getUiFont(juce::jlimit(11.0f, 15.0f, static_cast<float>(buttonHeight) * 0.38f));
+    return getUiFont(juce::jlimit(12.0f, 16.0f, static_cast<float>(buttonHeight) * 0.42f));
 }
 
 juce::Font CustomLookAndFeel::getComboBoxFont(juce::ComboBox& box) {
-    return getUiFont(juce::jlimit(12.0f, 16.0f, static_cast<float>(box.getHeight()) * 0.42f));
+    return getUiFont(juce::jlimit(13.0f, 17.0f, static_cast<float>(box.getHeight()) * 0.45f));
 }
 
 juce::Font CustomLookAndFeel::getPopupMenuFont() {
-    return getUiFont(14.0f);
+    return getUiFont(15.0f);
 }
 
 juce::Font CustomLookAndFeel::getSliderPopupFont(juce::Slider&) {
-    return getUiFont(13.0f);
+    return getUiFont(14.0f);
 }
 
 void CustomLookAndFeel::drawAccentGlow(juce::Graphics& g, juce::Rectangle<float> bounds, float intensity,
@@ -260,7 +260,7 @@ void CustomLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int wi
 
     if (slider.getTextBoxPosition() == juce::Slider::NoTextBox) {
         const auto valueText = slider.getTextFromValue(slider.getValue()).trim();
-        const auto fontHeight = juce::jlimit(8.0f, 11.0f, radius * 0.32f);
+        const auto fontHeight = juce::jlimit(10.0f, 14.0f, radius * 0.36f);
         g.setFont(getUiFont(fontHeight, juce::Font::bold));
         g.setColour(ProfilerStyle::Colors::text.withAlpha(enabledAlpha));
         g.drawFittedText(valueText,
@@ -523,8 +523,6 @@ void CustomLookAndFeel::drawLabel(juce::Graphics& g, juce::Label& label) {
 
 void CustomLookAndFeel::drawSignalChainBlock(juce::Graphics& g,
                                              juce::Rectangle<float> bounds,
-                                             const juce::String& title,
-                                             const juce::String& subtitle,
                                              juce::Colour categoryColour,
                                              RigIcon icon,
                                              bool isActive,
@@ -537,79 +535,76 @@ void CustomLookAndFeel::drawSignalChainBlock(juce::Graphics& g,
     }
 
     g.setColour(ProfilerStyle::Colors::elevated);
-    g.fillRoundedRectangle(bounds, kPanelCorner);
+    g.fillRoundedRectangle(bounds, 5.0f);
 
     if (isActive) {
-        g.setColour(categoryColour.withAlpha(0.1f));
-        g.fillRoundedRectangle(bounds, kPanelCorner);
+        g.setColour(categoryColour.withAlpha(0.12f));
+        g.fillRoundedRectangle(bounds, 5.0f);
         g.setColour(categoryColour);
-        g.drawRoundedRectangle(bounds.reduced(0.5f), kPanelCorner, 1.2f);
+        g.drawRoundedRectangle(bounds.reduced(0.5f), 5.0f, 1.2f);
     } else {
         g.setColour(ProfilerStyle::Colors::border);
-        g.drawRoundedRectangle(bounds.reduced(0.5f), kPanelCorner, 1.0f);
+        g.drawRoundedRectangle(bounds.reduced(0.5f), 5.0f, 1.0f);
     }
 
-    auto accentBar = juce::Rectangle<float>(bounds.getX() + 10.0f, bounds.getY() + 5.0f,
-                                            bounds.getWidth() - 20.0f, 2.0f);
-    g.setColour(categoryColour);
-    g.fillRoundedRectangle(accentBar, 1.0f);
-
-    auto content = bounds.reduced(10.0f, 14.0f);
-    auto led = juce::Rectangle<float>(7.0f, 7.0f).withX(content.getRight() - 7.0f).withY(content.getY() + 2.0f);
+    const auto side = juce::jmin(bounds.getWidth(), bounds.getHeight());
+    const auto ledSize = juce::jlimit(6.0f, 8.0f, side * 0.07f);
+    auto led = juce::Rectangle<float>(ledSize, ledSize)
+                   .withX(bounds.getRight() - ledSize - side * 0.08f)
+                   .withY(bounds.getY() + side * 0.08f);
     if (ledOn) {
-        juce::DropShadow(categoryColour.withAlpha(0.75f), 6, {}).drawForRectangle(g, led.toNearestInt());
+        juce::DropShadow(categoryColour.withAlpha(0.7f), 4, {}).drawForRectangle(g, led.toNearestInt());
         g.setColour(categoryColour);
     } else {
         g.setColour(ProfilerStyle::Colors::border.brighter(0.2f));
     }
     g.fillEllipse(led);
 
-    auto captionBounds = content.removeFromBottom(14.0f);
-    content.removeFromBottom(2.0f);
-    auto titleBounds = content.removeFromBottom(16.0f);
-    content.removeFromBottom(4.0f);
-    auto iconBounds = content.withSizeKeepingCentre(juce::jmin(40.0f, content.getWidth()),
-                                                    juce::jmin(38.0f, content.getHeight()));
-    drawRigIcon(g, iconBounds, icon, categoryColour);
+    const auto iconSize = side * 0.50f;
+    drawRigIcon(g, bounds.withSizeKeepingCentre(iconSize, iconSize), icon, categoryColour);
+}
 
-    g.setColour(ProfilerStyle::Colors::text.withAlpha(isActive ? 1.0f : 0.9f));
-    g.setFont(getUiFont(11.0f, juce::Font::bold));
-    g.drawFittedText(title, titleBounds.toNearestInt(), juce::Justification::centred, 1);
+void CustomLookAndFeel::drawSignalBus(juce::Graphics& g, float y, float x1, float x2) const {
+    const auto colour = juce::Colour(0xffC5C5CE);
+    g.setColour(colour.withAlpha(0.16f));
+    g.drawLine(x1, y, x2, y, 5.1f);
+    g.setColour(colour.withAlpha(0.88f));
+    g.drawLine(x1, y, x2, y, 1.72f);
+}
 
-    const auto captionFont = getUiFont(9.0f);
-    g.setFont(captionFont);
-    g.setColour(ProfilerStyle::Colors::caption);
-    g.drawText(ellipsize(captionFont, subtitle, captionBounds.getWidth()),
-               captionBounds,
-               juce::Justification::centred,
-               false);
+void CustomLookAndFeel::drawEmptySignalSlot(juce::Graphics& g, juce::Rectangle<float> bounds) const {
+    const auto side = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.5f;
+    auto outline = bounds.withSizeKeepingCentre(side, side);
+    g.setColour(ProfilerStyle::Colors::border.brighter(0.15f).withAlpha(0.7f));
+    g.drawRoundedRectangle(outline, 3.0f, 1.2f);
 }
 
 void CustomLookAndFeel::drawRigIcon(juce::Graphics& g, juce::Rectangle<float> bounds, RigIcon icon, juce::Colour colour) const {
     g.setColour(colour);
-    const auto stroke = juce::PathStrokeType(1.4f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded);
+    const auto strokeW = juce::jlimit(1.1f, 1.8f, juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.05f);
+    const auto stroke = juce::PathStrokeType(strokeW, juce::PathStrokeType::curved, juce::PathStrokeType::rounded);
 
     switch (icon) {
         case RigIcon::InputJack: {
             auto plate = bounds.withSizeKeepingCentre(bounds.getWidth() * 0.72f, bounds.getHeight() * 0.72f);
-            g.drawEllipse(plate, 1.4f);
+            g.drawEllipse(plate, strokeW);
             auto inner = plate.reduced(plate.getWidth() * 0.22f);
-            g.drawEllipse(inner, 1.2f);
+            g.drawEllipse(inner, strokeW * 0.85f);
             auto slot = inner.withSizeKeepingCentre(inner.getWidth() * 0.22f, inner.getHeight() * 0.55f);
             g.fillRoundedRectangle(slot, 1.0f);
             break;
         }
         case RigIcon::AmpHead: {
             auto head = bounds.reduced(1.5f);
-            g.drawRoundedRectangle(head, 2.2f, 1.3f);
+            g.drawRoundedRectangle(head, 2.2f, strokeW);
             auto controlRow = head.removeFromTop(head.getHeight() * 0.34f).reduced(3.0f, 2.2f);
-            const auto knobSize = juce::jmin(4.4f, controlRow.getHeight());
+            const auto knobSize = juce::jmax(3.0f, juce::jmin(controlRow.getHeight(), controlRow.getWidth() * 0.16f));
             for (int i = 0; i < 4; ++i) {
                 const auto x = controlRow.getX() + (controlRow.getWidth() - knobSize) * (i / 3.0f);
-                g.drawEllipse(x, controlRow.getCentreY() - knobSize * 0.5f, knobSize, knobSize, 1.0f);
+                g.drawEllipse(x, controlRow.getCentreY() - knobSize * 0.5f, knobSize, knobSize, juce::jmax(1.0f, strokeW * 0.7f));
             }
             auto grille = head.reduced(3.2f, 2.4f);
-            const auto dot = 1.5f;
+            const auto dot = juce::jmax(1.4f, grille.getWidth() * 0.07f);
             for (int row = 0; row < 3; ++row) {
                 for (int col = 0; col < 5; ++col) {
                     const auto x = grille.getX() + (grille.getWidth() - dot) * (col / 4.0f);
@@ -630,15 +625,15 @@ void CustomLookAndFeel::drawRigIcon(juce::Graphics& g, juce::Rectangle<float> bo
             g.strokePath(cone, stroke);
             const auto centre = juce::Point<float>(bounds.getCentreX(), top + bounds.getHeight() * 0.22f);
             const auto radius = bounds.getWidth() * 0.16f;
-            g.drawEllipse(centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f, 1.2f);
+            g.drawEllipse(centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f, strokeW);
             g.fillEllipse(centre.x - radius * 0.35f, centre.y - radius * 0.35f, radius * 0.7f, radius * 0.7f);
             break;
         }
         case RigIcon::EqFaders: {
             const float caps[] = {0.28f, 0.58f, 0.4f};
-            const auto trackW = 2.0f;
-            const auto capW = 7.0f;
-            const auto capH = 3.2f;
+            const auto trackW = juce::jmax(2.0f, bounds.getWidth() * 0.055f);
+            const auto capW = juce::jmax(7.0f, bounds.getWidth() * 0.18f);
+            const auto capH = juce::jmax(3.2f, bounds.getHeight() * 0.085f);
             for (int i = 0; i < 3; ++i) {
                 const auto x = bounds.getX() + bounds.getWidth() * (0.22f + 0.28f * static_cast<float>(i));
                 auto track = juce::Rectangle<float>(x - trackW * 0.5f, bounds.getY() + 2.0f, trackW, bounds.getHeight() - 4.0f);
@@ -658,13 +653,16 @@ void CustomLookAndFeel::drawSignalCable(juce::Graphics& g,
                                         juce::Point<float> to,
                                         bool isEnergized) const {
     const auto colour = isEnergized ? juce::Colour(0xffC5C5CE) : ProfilerStyle::Colors::border.brighter(0.2f);
+    const auto span = juce::jmax(8.0f, from.getDistanceFrom(to));
+    const auto glowW = juce::jlimit(2.2f, 3.4f, span * 0.22f);
+    const auto coreW = juce::jlimit(1.0f, 1.4f, span * 0.09f);
+    const auto node = juce::jlimit(2.6f, 3.6f, span * 0.22f);
 
     g.setColour(colour.withAlpha(isEnergized ? 0.18f : 0.3f));
-    g.drawLine(from.x, from.y, to.x, to.y, 4.0f);
+    g.drawLine(from.x, from.y, to.x, to.y, glowW);
     g.setColour(colour.withAlpha(isEnergized ? 0.9f : 0.65f));
-    g.drawLine(from.x, from.y, to.x, to.y, 1.2f);
+    g.drawLine(from.x, from.y, to.x, to.y, coreW);
 
-    const auto node = 4.0f;
     g.setColour(colour);
     g.fillEllipse(from.x - node * 0.5f, from.y - node * 0.5f, node, node);
     g.fillEllipse(to.x - node * 0.5f, to.y - node * 0.5f, node, node);
@@ -697,20 +695,23 @@ void CustomLookAndFeel::drawDropZone(juce::Graphics& g,
     g.drawDashedLine({dashBounds.getRight(), dashBounds.getBottom(), dashBounds.getX(), dashBounds.getBottom()}, dash, 2, 1.0f);
     g.drawDashedLine({dashBounds.getX(), dashBounds.getBottom(), dashBounds.getX(), dashBounds.getY()}, dash, 2, 1.0f);
 
-    auto content = bounds.reduced(14.0f, 10.0f);
-    auto hintBounds = content.removeFromBottom(14.0f);
+    auto content = bounds.reduced(14.0f, 8.0f);
+    const auto hintSize = juce::jlimit(11.0f, 13.0f, bounds.getHeight() * 0.12f);
+    auto hintBounds = content.removeFromBottom(hintSize + 4.0f);
     content.removeFromBottom(4.0f);
 
-    auto iconBounds = content.removeFromTop(juce::jmin(32.0f, content.getHeight() * 0.42f))
-                          .withSizeKeepingCentre(28.0f, 28.0f);
+    const auto iconSize = juce::jmin(42.0f, content.getHeight() * 0.42f);
+    auto iconBounds = content.removeFromTop(iconSize).withSizeKeepingCentre(iconSize, iconSize);
     drawRigIcon(g, iconBounds, icon, isDragOver || isLoaded ? categoryColour : ProfilerStyle::Colors::caption);
 
+    const auto titleSize = juce::jlimit(12.0f, 14.0f, bounds.getHeight() * 0.14f);
     g.setColour(ProfilerStyle::Colors::caption);
-    g.setFont(getUiFont(10.0f));
-    auto titleBounds = content.removeFromTop(15.0f);
+    g.setFont(getUiFont(titleSize));
+    auto titleBounds = content.removeFromTop(titleSize + 4.0f);
     g.drawFittedText(title, titleBounds.toNearestInt(), juce::Justification::centred, 1);
 
-    const auto detailFont = getUiFont(isLoaded ? 13.0f : 11.0f, isLoaded ? juce::Font::bold : juce::Font::plain);
+    const auto detailSize = juce::jlimit(isLoaded ? 14.0f : 12.0f, 16.0f, bounds.getHeight() * 0.16f);
+    const auto detailFont = getUiFont(detailSize, isLoaded ? juce::Font::bold : juce::Font::plain);
     g.setFont(detailFont);
     g.setColour(isLoaded ? ProfilerStyle::Colors::text : ProfilerStyle::Colors::caption);
     g.drawFittedText(ellipsize(detailFont, detail, content.getWidth()),
@@ -718,7 +719,7 @@ void CustomLookAndFeel::drawDropZone(juce::Graphics& g,
                      juce::Justification::centred,
                      2);
 
-    g.setFont(getUiFont(9.0f));
+    g.setFont(getUiFont(hintSize));
     g.setColour(ProfilerStyle::Colors::caption.withAlpha(0.85f));
     g.drawFittedText("Left click / Drag & Drop to load  •  Right click to unload",
                      hintBounds.toNearestInt(),

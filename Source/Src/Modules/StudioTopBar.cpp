@@ -38,7 +38,7 @@ StudioTopBar::StudioTopBar(ProfilerAudioProcessor& processor)
     : _audioProcessor(processor),
       _apvts(processor._apvts) {
     _logoLabel.setText("Profiler", juce::dontSendNotification);
-    _logoLabel.setFont(ProfilerStyle::Fonts::bold(18.0f));
+    _logoLabel.setFont(ProfilerStyle::Fonts::bold(20.0f));
     _logoLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
     _logoLabel.setJustificationType(juce::Justification::centredLeft);
     _logoLabel.setInterceptsMouseClicks(false, false);
@@ -53,7 +53,7 @@ StudioTopBar::StudioTopBar(ProfilerAudioProcessor& processor)
     addAndMakeVisible(_settingsButton);
 
     _masterLabel.setText("VOL", juce::dontSendNotification);
-    _masterLabel.setFont(ProfilerStyle::Fonts::bold(10.0f));
+    _masterLabel.setFont(ProfilerStyle::Fonts::bold(12.0f));
     _masterLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::textMuted);
     _masterLabel.setJustificationType(juce::Justification::centred);
     _masterLabel.setInterceptsMouseClicks(false, false);
@@ -106,7 +106,7 @@ void StudioTopBar::paint(juce::Graphics& g) {
 
 void StudioTopBar::resized() {
     auto area = getLocalBounds().reduced(12, 6);
-    _logoLabel.setBounds(area.removeFromLeft(118));
+    _logoLabel.setBounds(area.removeFromLeft(128));
 
     auto right = area.removeFromRight(228);
     _settingsButton.setBounds(right.removeFromRight(32).withSizeKeepingCentre(32, 32));
@@ -114,7 +114,7 @@ void StudioTopBar::resized() {
     _outputMeter.setBounds(right.removeFromRight(7).reduced(0, 4));
     right.removeFromRight(5);
     auto masterArea = right.removeFromRight(44);
-    _masterLabel.setBounds(masterArea.removeFromBottom(11));
+    _masterLabel.setBounds(masterArea.removeFromBottom(14));
     _masterSlider.setBounds(masterArea);
     right.removeFromRight(6);
     _muteButton.setBounds(right.removeFromRight(56).withSizeKeepingCentre(56, 26));

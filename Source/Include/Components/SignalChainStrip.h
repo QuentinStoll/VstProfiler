@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include <JuceHeader.h>
 
 #include "Components/CustomLookAndFeel.h"
@@ -53,14 +55,18 @@ class SignalChainStrip : public juce::Component {
     std::function<void(BlockId)> onBlockSelected;
 
    private:
-    SignalChainBlock _inputGate{"Input / Gate", "Noise Gate", ProfilerStyle::Colors::rigInput,
+    static constexpr int kSlotCount = 8;
+    static constexpr int kOccupiedSlots[4] = {0, 2, 4, 6};
+
+    SignalChainBlock _inputGate{"Input / Gate", "Gate", ProfilerStyle::Colors::rigInput,
                                 CustomLookAndFeel::RigIcon::InputJack};
-    SignalChainBlock _ampProfiler{"Amp Profiler", "Load NAM", ProfilerStyle::Colors::rigAmp,
+    SignalChainBlock _ampProfiler{"Amp Profiler", "Load", ProfilerStyle::Colors::rigAmp,
                                   CustomLookAndFeel::RigIcon::AmpHead};
     SignalChainBlock _cabinetIr{"Cabinet / IR", "Load IR", ProfilerStyle::Colors::rigCab,
                                 CustomLookAndFeel::RigIcon::Cabinet};
-    SignalChainBlock _eqPostFx{"EQ / Post-FX", "Tone stack", ProfilerStyle::Colors::rigEq,
+    SignalChainBlock _eqPostFx{"EQ / Post-FX", "Bypassed", ProfilerStyle::Colors::rigEq,
                                CustomLookAndFeel::RigIcon::EqFaders};
+    std::array<juce::Rectangle<int>, kSlotCount> _slotBounds{};
     BlockId _selected = BlockId::AmpProfiler;
 
     SignalChainBlock& getBlock(BlockId blockId);

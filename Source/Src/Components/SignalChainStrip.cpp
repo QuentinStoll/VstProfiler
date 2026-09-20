@@ -16,6 +16,7 @@ SignalChainBlock::SignalChainBlock(const juce::String& title,
     setClickingTogglesState(true);
     setRadioGroupId(kSignalChainRadioGroup);
     setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    setTooltip(title);
 }
 
 void SignalChainBlock::setSubtitle(const juce::String& subtitle) {
@@ -40,8 +41,6 @@ void SignalChainBlock::paintButton(juce::Graphics& g, bool isMouseOverButton, bo
     if (auto* laf = dynamic_cast<CustomLookAndFeel*>(&getLookAndFeel())) {
         laf->drawSignalChainBlock(g,
                                   getLocalBounds().toFloat(),
-                                  _title,
-                                  _subtitle,
                                   _categoryColour,
                                   _icon,
                                   getToggleState(),
@@ -51,8 +50,6 @@ void SignalChainBlock::paintButton(juce::Graphics& g, bool isMouseOverButton, bo
     }
 
     ProfilerStyle::Surfaces::fillPanel(g, getLocalBounds().toFloat());
-    g.setColour(ProfilerStyle::Colors::text);
-    g.drawFittedText(_title, getLocalBounds().reduced(8), juce::Justification::centred, 1);
 }
 
 SignalChainStrip::SignalChainStrip() {
@@ -73,37 +70,50 @@ SignalChainStrip::SignalChainStrip() {
 
 void SignalChainStrip::paint(juce::Graphics& g) {
     auto* laf = dynamic_cast<CustomLookAndFeel*>(&getLookAndFeel());
-    const SignalChainBlock* blocks[] = {&_inputGate, &_ampProfiler, &_cabinetIr, &_eqPostFx};
+    const auto busY = _slotBounds.front().isEmpty()
+                          ? static_cast<float>(getLocalBounds().getCentreY())
+                          : _slotBounds.front().toFloat().getCentreY();
 
-    for (int index = 0; index < 3; ++index) {
-        const auto from = blocks[index]->getBounds().toFloat().getCentre().withX(blocks[index]->getBounds().toFloat().getRight());
-        const auto to = blocks[index + 1]->getBounds().toFloat().getCentre().withX(blocks[index + 1]->getBounds().toFloat().getX());
+    if (laf != nullptr) {
+        laf->drawSignalBus(g, busY, 0.0f, static_cast<float>(getWidth()));
+    } else {
+        g.setColour(ProfilerStyle::Colors::caption);
+        g.drawLine(0.0f, busY, static_cast<float>(getWidth()), busY, 1.2f);
+    }
+
+    for (int slot = 0; slot < kSlotCount; ++slot) {
+        const auto occupied = slot == kOccupiedSlots[0] || slot == kOccupiedSlots[1]
+                              || slot == kOccupiedSlots[2] || slot == kOccupiedSlots[3];
+        if (occupied || _slotBounds[static_cast<size_t>(slot)].isEmpty()) {
+            continue;
+        }
 
         if (laf != nullptr) {
-            laf->drawSignalCable(g, from, to, true);
+            laf->drawEmptySignalSlot(g, _slotBounds[static_cast<size_t>(slot)].toFloat());
         } else {
-            g.setColour(ProfilerStyle::Colors::caption);
-            g.drawLine(from.x, from.y, to.x, to.y, 1.2f);
+            g.setColour(ProfilerStyle::Colors::border.withAlpha(0.55f));
+            auto outline = _slotBounds[static_cast<size_t>(slot)].toFloat();
+            const auto side = juce::jmin(outline.getWidth(), outline.getHeight()) / 2.5f;
+            g.drawRoundedRectangle(outline.withSizeKeepingCentre(side, side), 3.0f, 1.2f);
         }
     }
 }
 
 void SignalChainStrip::resized() {
     auto area = getLocalBounds();
-    const auto count = 4;
-    const auto blockHeight = juce::jlimit(124, 188, area.getHeight() - 12);
-    const auto blockWidth = juce::jlimit(112, 152, juce::roundToInt(blockHeight * 0.78f) + 18);
-    const auto gap = juce::jmax(28, juce::roundToInt(area.getWidth() * 0.032f));
-    const auto totalWidth = count * blockWidth + (count - 1) * gap;
-    auto row = juce::Rectangle<int>(totalWidth, blockHeight).withCentre(area.getCentre());
+    const auto slotWidth = area.getWidth() / static_cast<float>(kSlotCount);
+    const auto square = juce::jlimit(100, 110, juce::roundToInt(slotWidth) - 16);
+    const auto rowY = area.getY() + juce::jmax(0, (area.getHeight() - square) / 2);
 
-    _inputGate.setBounds(row.removeFromLeft(blockWidth));
-    row.removeFromLeft(gap);
-    _ampProfiler.setBounds(row.removeFromLeft(blockWidth));
-    row.removeFromLeft(gap);
-    _cabinetIr.setBounds(row.removeFromLeft(blockWidth));
-    row.removeFromLeft(gap);
-    _eqPostFx.setBounds(row.removeFromLeft(blockWidth));
+    for (int slot = 0; slot < kSlotCount; ++slot) {
+        const auto centreX = juce::roundToInt(static_cast<float>(area.getX()) + slotWidth * (static_cast<float>(slot) + 0.5f));
+        _slotBounds[static_cast<size_t>(slot)] = {centreX - square / 2, rowY, square, square};
+    }
+
+    SignalChainBlock* blocks[] = {&_inputGate, &_ampProfiler, &_cabinetIr, &_eqPostFx};
+    for (int index = 0; index < 4; ++index) {
+        blocks[index]->setBounds(_slotBounds[static_cast<size_t>(kOccupiedSlots[index])]);
+    }
 }
 
 void SignalChainStrip::setSelectedBlock(BlockId blockId) {

@@ -17,7 +17,7 @@ CustomKnob::CustomKnob(const juce::String& name, float min, float max, float def
     _label.setJustificationType(juce::Justification::centred);
     _label.setColour(juce::Label::textColourId, ProfilerStyle::Colors::textMuted);
     _label.setMinimumHorizontalScale(0.7f);
-    _label.setFont(ProfilerStyle::Fonts::regular(11.0f));
+    _label.setFont(ProfilerStyle::Fonts::regular(13.0f));
 
     addAndMakeVisible(_slider);
     addAndMakeVisible(_label);
@@ -29,11 +29,11 @@ void CustomKnob::paint(juce::Graphics& /*g*/) {
 void CustomKnob::resized() {
     auto area = getLocalBounds();
 
-    constexpr auto labelHeight = 14;
-    constexpr auto labelToKnobGap = 1;
+    constexpr auto labelHeight = 16;
+    constexpr auto labelToKnobGap = 2;
 
     const auto availableKnobHeight = juce::jmax(0, area.getHeight() - labelHeight - labelToKnobGap);
-    const auto knobSide = juce::jmax(22, juce::jmin(58, juce::jmin(area.getWidth(), availableKnobHeight)));
+    const auto knobSide = juce::jmax(24, juce::jmin(68, juce::jmin(area.getWidth(), availableKnobHeight)));
     const auto contentHeight = juce::jmin(area.getHeight(), labelHeight + labelToKnobGap + knobSide);
 
     auto contentArea = area.withHeight(contentHeight).withCentre(area.getCentre());

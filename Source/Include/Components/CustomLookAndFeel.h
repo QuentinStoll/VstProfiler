@@ -86,13 +86,15 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
 
     void drawSignalChainBlock(juce::Graphics& g,
                               juce::Rectangle<float> bounds,
-                              const juce::String& title,
-                              const juce::String& subtitle,
                               juce::Colour categoryColour,
                               RigIcon icon,
                               bool isActive,
                               bool isMouseOver,
                               bool ledOn) const;
+
+    void drawSignalBus(juce::Graphics& g, float y, float x1, float x2) const;
+
+    void drawEmptySignalSlot(juce::Graphics& g, juce::Rectangle<float> bounds) const;
 
     void drawSignalCable(juce::Graphics& g,
                          juce::Point<float> from,

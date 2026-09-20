@@ -32,6 +32,7 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
 
     ProfilerAudioProcessor& _audioProcessor;
     CustomLookAndFeel _customLookAndFeel;
+    juce::Component _content;
 
     StudioTopBar _topBar;
     SignalChainStrip _signalChain;

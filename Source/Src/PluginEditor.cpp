@@ -21,9 +21,10 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
     setResizeLimits(800, 400, 1100, 550);
     setSize(editorWidth, editorHeight);
 
-    addAndMakeVisible(_topBar);
-    addAndMakeVisible(_signalChain);
-    addAndMakeVisible(_editHost);
+    addAndMakeVisible(_content);
+    _content.addAndMakeVisible(_topBar);
+    _content.addAndMakeVisible(_signalChain);
+    _content.addAndMakeVisible(_editHost);
     _editHost.setInterceptsMouseClicks(false, true);
     _editHost.addAndMakeVisible(_inputGatePanel);
     _editHost.addAndMakeVisible(_ampPanel);
@@ -33,15 +34,15 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
     _settingsHost.addAndMakeVisible(_settingsView);
     _settingsHost.addAndMakeVisible(_resetButton);
     _settingsHost.addAndMakeVisible(_exportButton);
-    addChildComponent(_settingsHost);
-    addChildComponent(_libraryView);
+    _content.addChildComponent(_settingsHost);
+    _content.addChildComponent(_libraryView);
 
     _exportViewport.getVerticalScrollBar().setColour(juce::ScrollBar::thumbColourId, ProfilerStyle::Colors::accent);
     _exportViewport.setViewedComponent(&_exportModule, false);
     _exportViewport.setScrollBarsShown(true, false);
-    addChildComponent(_exportViewport);
-    addChildComponent(_closeOverlayButton);
-    addChildComponent(_notificationBanner);
+    _content.addChildComponent(_exportViewport);
+    _content.addChildComponent(_closeOverlayButton);
+    _content.addChildComponent(_notificationBanner);
 
     _topBar.onSettingsClicked = [this]() {
         showOverlay(_overlayMode == OverlayMode::Settings ? OverlayMode::None : OverlayMode::Settings);
@@ -96,6 +97,7 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
 
     showEditPanel(SignalChainStrip::BlockId::AmpProfiler);
     updateChainStatus();
+    resized();
 }
 
 ProfilerAudioProcessorEditor::~ProfilerAudioProcessorEditor() {
@@ -112,6 +114,9 @@ void ProfilerAudioProcessorEditor::paint(juce::Graphics& g) {
         return;
     }
 
+    juce::Graphics::ScopedSaveState saved(g);
+    g.addTransform(_content.getTransform());
+
     if (auto* laf = dynamic_cast<CustomLookAndFeel*>(&getLookAndFeel())) {
         laf->drawRaisedPanel(g, _editHost.getBounds().toFloat());
     } else {
@@ -120,7 +125,11 @@ void ProfilerAudioProcessorEditor::paint(juce::Graphics& g) {
 }
 
 void ProfilerAudioProcessorEditor::resized() {
-    auto area = getLocalBounds().reduced(12);
+    const auto scale = getWidth() / static_cast<float>(editorWidth);
+    _content.setTransform(juce::AffineTransform::scale(scale));
+    _content.setBounds(0, 0, editorWidth, editorHeight);
+
+    auto area = _content.getLocalBounds().reduced(12);
     _topBar.setBounds(area.removeFromTop(48));
     area.removeFromTop(8);
 
@@ -128,7 +137,7 @@ void ProfilerAudioProcessorEditor::resized() {
         constexpr int editHeight = 126;
         _editHost.setBounds(area.removeFromBottom(juce::jmin(editHeight, juce::jmax(0, area.getHeight() - 160))));
         area.removeFromBottom(8);
-        _signalChain.setBounds(area);
+        _signalChain.setBounds(0, area.getY(), editorWidth, area.getHeight());
 
         auto panelBounds = _editHost.getLocalBounds();
         _inputGatePanel.setBounds(panelBounds);
@@ -157,10 +166,10 @@ void ProfilerAudioProcessorEditor::resized() {
         _exportModule.setBounds(0, 0, area.getWidth(), exportHeight);
     }
 
-    const auto bannerWidth = juce::jmin(_notificationBanner.getIdealWidth(), juce::jmax(220, getWidth() - 50));
-    _notificationBanner.setBounds(getLocalBounds()
+    const auto bannerWidth = juce::jmin(_notificationBanner.getIdealWidth(), juce::jmax(220, editorWidth - 50));
+    _notificationBanner.setBounds(_content.getLocalBounds()
                                       .withSizeKeepingCentre(bannerWidth, _notificationBanner.getIdealHeight())
-                                      .withRightX(getWidth() - 22)
+                                      .withRightX(editorWidth - 22)
                                       .withY(18));
 }
 
@@ -226,12 +235,12 @@ void ProfilerAudioProcessorEditor::updateChainStatus() {
     _signalChain.setBlockLed(SignalChainStrip::BlockId::EqPostFx, eqEnabled);
 
     _signalChain.setBlockSubtitle(SignalChainStrip::BlockId::InputGate,
-                                  noise != nullptr ? "Gate " + juce::String(noise->load(), 1) + " dB" : "Noise Gate");
+                                  noise != nullptr ? juce::String(noise->load(), 1) + " dB" : "Gate");
     _signalChain.setBlockSubtitle(SignalChainStrip::BlockId::AmpProfiler,
-                                  ampLoaded ? _audioProcessor.getCurrentAmpFile().getFileName() : "Load model");
+                                  ampLoaded ? _audioProcessor.getCurrentAmpFile().getFileNameWithoutExtension() : "");
     _signalChain.setBlockSubtitle(SignalChainStrip::BlockId::CabinetIr,
-                                  irLoaded ? _audioProcessor.getCurrentIRFile().getFileName() : "Load IR");
-    _signalChain.setBlockSubtitle(SignalChainStrip::BlockId::EqPostFx, eqEnabled ? "Enabled" : "Bypassed");
+                                  irLoaded ? _audioProcessor.getCurrentIRFile().getFileNameWithoutExtension() : "");
+    _signalChain.setBlockSubtitle(SignalChainStrip::BlockId::EqPostFx, eqEnabled ? "On" : "Off");
 }
 
 void ProfilerAudioProcessorEditor::showStatus(const juce::String& message, bool success) {
