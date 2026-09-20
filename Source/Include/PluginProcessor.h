@@ -1,11 +1,13 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 
 #include <JuceHeader.h>
 
 #include "EqBandLayout.h"
 #include "ProfileManager.h"
+#include "SignalChainLayout.h"
 
 namespace RTNeural {
 template <typename T>
@@ -78,6 +80,10 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     const ProfileManager& getProfileManager() const noexcept;
     float getRmsLevelInput() const noexcept;
     float getRmsLevelOutput() const noexcept;
+    SignalChain::Layout getChainLayout() const noexcept;
+    void setChainLayout(const SignalChain::Layout& layout);
+    void resetChainLayout();
+    void placeChainStage(SignalChain::Stage stage, int slot);
 
    private:
     enum ChainPositions {
@@ -137,13 +143,19 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     std::atomic<float>* _isAmpEnabledParam{nullptr};
     std::atomic<float>* _isCabEnabledParam{nullptr};
     std::atomic<float>* _cabLowCutParam{nullptr};
+    std::atomic<float>* _isPedalEnabledParam{nullptr};
+    std::atomic<float>* _pedalDriveParam{nullptr};
+    std::atomic<float>* _pedalToneParam{nullptr};
+    std::atomic<float>* _pedalLevelParam{nullptr};
 
     std::array<juce::SmoothedValue<float>, EqBands::count> _eqGainSmoothed{};
     std::array<juce::SmoothedValue<float>, EqBands::count> _eqFreqSmoothed{};
     juce::SmoothedValue<float> _cabLowCutSmoothed;
     bool _eqCoeffsDirty{true};
+    std::atomic<std::uint32_t> _chainLayoutPacked{SignalChain::defaultPacked};
 
     Filter _cabLowCut;
+    Filter _pedalToneFilter;
 
     ProfileManager _profileManager;
     juce::String _appliedProfileId;
@@ -151,6 +163,16 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void updateEqCoefficients();
     void updateCabLowCutCoefficients();
     void applyProfileFileValues(const juce::NamedValueSet& values);
+    void processGateStage(juce::dsp::ProcessContextReplacing<float>& context);
+    void processAmpStage(juce::AudioBuffer<float>& buffer,
+                         juce::dsp::ProcessContextReplacing<float>& context,
+                         int numSamples);
+    void processCabStage(juce::dsp::ProcessContextReplacing<float>& context);
+    void processEqStage(juce::dsp::ProcessContextReplacing<float>& context);
+    void processPedalStage(juce::AudioBuffer<float>& buffer,
+                           juce::dsp::ProcessContextReplacing<float>& context,
+                           int numSamples);
+    void updatePedalToneCoefficients();
     static float getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept;
     static bool isCompatibleAmpModel(const RTNeural::Model<float>& model);
     static float getMasterGainLinear(float masterPercent) noexcept;

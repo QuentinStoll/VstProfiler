@@ -111,6 +111,11 @@ void UtilityBarModule::resetParametersToDefaults() {
     resetParam("isAmpEnabled");
     resetParam("isCabEnabled");
     resetParam("cabLowCut");
+    resetParam("isPedalEnabled");
+    resetParam("pedalDrive");
+    resetParam("pedalTone");
+    resetParam("pedalLevel");
+    _audioProcessor.resetChainLayout();
 }
 
 void UtilityBarModule::resetLoadedFiles() {

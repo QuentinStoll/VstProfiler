@@ -158,6 +158,30 @@ class EqPostFxPanel : public juce::Component {
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EqPostFxPanel)
 };
 
+class PedalDrivePanel : public juce::Component {
+   public:
+    explicit PedalDrivePanel(juce::AudioProcessorValueTreeState& apvts);
+    ~PedalDrivePanel() override = default;
+
+    void paint(juce::Graphics& g) override;
+    void resized() override;
+    void refreshBypassState();
+
+   private:
+    juce::Label _title{"", "Overdrive"};
+    juce::Label _bypassLabel{"", "Bypassed"};
+    CustomToggleButton _enabled{"Pedal Enabled"};
+    CustomKnob _driveKnob{"Drive", 0.0f, 10.0f, 4.0f, ""};
+    CustomKnob _toneKnob{"Tone", 0.0f, 100.0f, 65.0f, "%", 1.0f};
+    CustomKnob _levelKnob{"Level", -12.0f, 12.0f, 0.0f, "dB"};
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> _enabledAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> _driveAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> _toneAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> _levelAttachment;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PedalDrivePanel)
+};
+
 class MasterVolumePanel : public juce::Component,
                           private juce::Timer {
    public:

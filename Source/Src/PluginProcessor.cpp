@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 
 #include <common/TracyColor.hpp>
+#include <cmath>
 #include <fstream>
 #include <utility>
 
@@ -84,6 +85,11 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
     _isAmpEnabledParam = _apvts.getRawParameterValue("isAmpEnabled");
     _isCabEnabledParam = _apvts.getRawParameterValue("isCabEnabled");
     _cabLowCutParam = _apvts.getRawParameterValue("cabLowCut");
+    _isPedalEnabledParam = _apvts.getRawParameterValue("isPedalEnabled");
+    _pedalDriveParam = _apvts.getRawParameterValue("pedalDrive");
+    _pedalToneParam = _apvts.getRawParameterValue("pedalTone");
+    _pedalLevelParam = _apvts.getRawParameterValue("pedalLevel");
+    _apvts.state.setProperty("chainLayout", static_cast<int>(_chainLayoutPacked.load()), nullptr);
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() = default;
@@ -189,6 +195,11 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     updateCabLowCutCoefficients();
     _cabLowCut.reset();
 
+    _pedalToneFilter.reset();
+    _pedalToneFilter.prepare(spec);
+    updatePedalToneCoefficients();
+    _pedalToneFilter.reset();
+
     *_dcBlocker.state = juce::dsp::IIR::ArrayCoefficients<float>::makeHighPass(sampleRate, 35.0f);
     _dcBlocker.prepare(spec);
     _dcBlocker.reset();
@@ -206,6 +217,7 @@ void ProfilerAudioProcessor::releaseResources() {
     _chain.reset();
     _eqChain.reset();
     _cabLowCut.reset();
+    _pedalToneFilter.reset();
     _inputTrim.reset();
     _masterVolume.reset();
     _outputTrim.reset();
@@ -306,51 +318,31 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     auto monoBlock = block.getSingleChannelBlock(0);
     juce::dsp::ProcessContextReplacing<float> context(monoBlock);
     _inputTrim.process(context);
-    _chain.process(context);
+    processGateStage(context);
 
-    {
-        const juce::ScopedLock ampLock(_ampModelLock);
-        if (_ampLoaded && _neuralAmp != nullptr && getParameterValue(_isAmpEnabledParam, 1.0f) > 0.5f) {
-            auto* channel0Data = buffer.getWritePointer(0);
-
-            for (int i = 0; i < numSamples; ++i) {
-                // 1. Protection entrée : on évite d'envoyer un signal trop fort qui ferait exploser le réseau
-                float input = juce::jlimit(-1.0f, 1.0f, channel0Data[i]);
-
-                // 2. Traitement par RTNeural
-                float inputSample[] = {input};
-                _neuralAmp->forward(inputSample);
-                float output = _neuralAmp->getOutputs()[0];
-
-                if (std::isnan(output) || std::isinf(output)) {
-                    _neuralAmp->reset();
-                    output = 0.0f;
-                }
-
-                // 4. On applique le signal traité au buffer (avec une limite de sécurité à 1.0)
-                channel0Data[i] = juce::jlimit(-1.0f, 1.0f, output);
-            }
-        }
-    }
-
-    juce::dsp::AudioBlock<float> postAmpBlock(buffer);
-    auto postAmpMono = postAmpBlock.getSingleChannelBlock(0);
-    juce::dsp::ProcessContextReplacing<float> postAmpContext(postAmpMono);
-    _dcBlocker.process(postAmpContext);
-
-    // 4. Cabinet Simulation
-    const bool cabEnabled = getParameterValue(_isCabEnabledParam, 1.0f) > 0.5f;
     _cabLowCutSmoothed.setTargetValue(getParameterValue(_cabLowCutParam, 80.0f));
-    if (_irLoaded && cabEnabled) {
-        _convolver.process(postAmpContext);
-        if (_cabLowCutSmoothed.isSmoothing()) {
-            updateCabLowCutCoefficients();
+    const auto layout = SignalChain::Layout::fromPacked(_chainLayoutPacked.load(std::memory_order_relaxed));
+    for (int slot = SignalChain::firstMovableSlot; slot <= SignalChain::lastMovableSlot; ++slot) {
+        switch (layout.atSlot(slot)) {
+            case SignalChain::Stage::Cab:
+                processCabStage(context);
+                break;
+            case SignalChain::Stage::Eq:
+                processEqStage(context);
+                break;
+            case SignalChain::Stage::Pedal:
+                processPedalStage(buffer, context, numSamples);
+                break;
+            case SignalChain::Stage::Amp:
+                processAmpStage(buffer, context, numSamples);
+                break;
+            case SignalChain::Stage::Empty:
+            default:
+                break;
         }
-        _cabLowCut.process(postAmpContext);
     }
-    _cabLowCutSmoothed.skip(numSamples);
 
-    _eqChain.process(postAmpContext);
+    _cabLowCutSmoothed.skip(numSamples);
     for (auto& smoothed : _eqGainSmoothed) {
         smoothed.skip(numSamples);
     }
@@ -359,9 +351,9 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
 
     _masterVolume.setGainLinear(getMasterGainLinear(getParameterValue(_masterParam, 50.0f)));
-    _masterVolume.process(postAmpContext);
+    _masterVolume.process(context);
     _outputTrim.setGainDecibels(getParameterValue(_outputParam, 0.0f));
-    _outputTrim.process(postAmpContext);
+    _outputTrim.process(context);
 
     if (numChannels > 1) {
         juce::FloatVectorOperations::copy(buffer.getWritePointer(1), buffer.getReadPointer(0), numSamples);
@@ -377,6 +369,112 @@ float ProfilerAudioProcessor::getRmsLevelInput() const noexcept {
 
 float ProfilerAudioProcessor::getRmsLevelOutput() const noexcept {
     return _rmsLevelOutput.load(std::memory_order_relaxed);
+}
+
+SignalChain::Layout ProfilerAudioProcessor::getChainLayout() const noexcept {
+    return SignalChain::Layout::fromPacked(_chainLayoutPacked.load(std::memory_order_relaxed));
+}
+
+void ProfilerAudioProcessor::setChainLayout(const SignalChain::Layout& layout) {
+    const auto valid = layout.isValid() ? layout : SignalChain::Layout{};
+    const auto packed = valid.packed();
+    _chainLayoutPacked.store(packed, std::memory_order_relaxed);
+    if (_apvts.state.isValid()) {
+        _apvts.state.setProperty("chainLayout", static_cast<int>(packed), nullptr);
+    }
+}
+
+void ProfilerAudioProcessor::resetChainLayout() {
+    setChainLayout({});
+}
+
+void ProfilerAudioProcessor::placeChainStage(SignalChain::Stage stage, int slot) {
+    auto layout = getChainLayout();
+    layout.place(stage, slot);
+    setChainLayout(layout);
+}
+
+void ProfilerAudioProcessor::processGateStage(juce::dsp::ProcessContextReplacing<float>& context) {
+    if (!_chain.isBypassed<NoiseGate>()) {
+        _chain.get<NoiseGate>().process(context);
+    }
+}
+
+void ProfilerAudioProcessor::processAmpStage(juce::AudioBuffer<float>& buffer,
+                                             juce::dsp::ProcessContextReplacing<float>& context,
+                                             int numSamples) {
+    _chain.get<Gain>().process(context);
+
+    {
+        const juce::ScopedLock ampLock(_ampModelLock);
+        if (_ampLoaded && _neuralAmp != nullptr && getParameterValue(_isAmpEnabledParam, 1.0f) > 0.5f) {
+            auto* channel0Data = buffer.getWritePointer(0);
+
+            for (int i = 0; i < numSamples; ++i) {
+                float input = juce::jlimit(-1.0f, 1.0f, channel0Data[i]);
+                float inputSample[] = {input};
+                _neuralAmp->forward(inputSample);
+                float output = _neuralAmp->getOutputs()[0];
+
+                if (std::isnan(output) || std::isinf(output)) {
+                    _neuralAmp->reset();
+                    output = 0.0f;
+                }
+
+                channel0Data[i] = juce::jlimit(-1.0f, 1.0f, output);
+            }
+        }
+    }
+
+    _dcBlocker.process(context);
+}
+
+void ProfilerAudioProcessor::processCabStage(juce::dsp::ProcessContextReplacing<float>& context) {
+    const bool cabEnabled = getParameterValue(_isCabEnabledParam, 1.0f) > 0.5f;
+    if (!_irLoaded || !cabEnabled) {
+        return;
+    }
+
+    _convolver.process(context);
+    if (_cabLowCutSmoothed.isSmoothing()) {
+        updateCabLowCutCoefficients();
+    }
+    _cabLowCut.process(context);
+}
+
+void ProfilerAudioProcessor::processEqStage(juce::dsp::ProcessContextReplacing<float>& context) {
+    _eqChain.process(context);
+}
+
+void ProfilerAudioProcessor::processPedalStage(juce::AudioBuffer<float>& buffer,
+                                               juce::dsp::ProcessContextReplacing<float>& context,
+                                               int numSamples) {
+    if (getParameterValue(_isPedalEnabledParam, 1.0f) <= 0.5f) {
+        return;
+    }
+
+    const auto drive = juce::jmap(getParameterValue(_pedalDriveParam, 4.0f), 0.0f, 10.0f, 1.0f, 16.0f);
+    const auto level = juce::Decibels::decibelsToGain(getParameterValue(_pedalLevelParam, 0.0f));
+    const auto makeup = 1.0f / std::tanh(drive * 0.35f);
+    auto* channel0Data = buffer.getWritePointer(0);
+    for (int i = 0; i < numSamples; ++i) {
+        channel0Data[i] = std::tanh(channel0Data[i] * drive) * makeup * level;
+    }
+
+    updatePedalToneCoefficients();
+    _pedalToneFilter.process(context);
+}
+
+void ProfilerAudioProcessor::updatePedalToneCoefficients() {
+    const auto sampleRate = getSampleRate();
+    if (sampleRate <= 0.0) {
+        return;
+    }
+
+    const auto tone = juce::jlimit(0.0f, 1.0f, getParameterValue(_pedalToneParam, 65.0f) / 100.0f);
+    const auto hz = 400.0f * std::pow(30.0f, tone);
+    *_pedalToneFilter.state = juce::dsp::IIR::ArrayCoefficients<float>::makeLowPass(
+        sampleRate, juce::jlimit(400.0f, static_cast<float>(sampleRate * 0.45), hz));
 }
 
 void ProfilerAudioProcessor::updateEqCoefficients() {
@@ -435,20 +533,21 @@ juce::AudioProcessorEditor* ProfilerAudioProcessor::createEditor() {
 
 //==============================================================================
 void ProfilerAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-
+    _apvts.state.setProperty("chainLayout", static_cast<int>(_chainLayoutPacked.load(std::memory_order_relaxed)), nullptr);
     if (auto xml = _apvts.copyState().createXml())
         copyXmlToBinary(*xml, destData);
 }
 
 void ProfilerAudioProcessor::setStateInformation(const void* data, int sizeInBytes) {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
-    if (auto xml = getXmlFromBinary(data, sizeInBytes))
-        if (xml->hasTagName(_apvts.state.getType()))
-            _apvts.replaceState(juce::ValueTree::fromXml(*xml));
+    if (auto xml = getXmlFromBinary(data, sizeInBytes)) {
+        if (xml->hasTagName(_apvts.state.getType())) {
+            auto tree = juce::ValueTree::fromXml(*xml);
+            const auto packed = static_cast<std::uint32_t>(static_cast<int>(
+                tree.getProperty("chainLayout", static_cast<int>(SignalChain::defaultPacked))));
+            _chainLayoutPacked.store(SignalChain::Layout::fromPacked(packed).packed(), std::memory_order_relaxed);
+            _apvts.replaceState(std::move(tree));
+        }
+    }
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::createParameterLayout() {
@@ -507,6 +606,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
     layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isCabEnabled", 1}, "Cab Enabled", true));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{"cabLowCut", 1}, "Cab Low Cut", juce::NormalisableRange<float>(20.0f, 250.0f, 1.0f), 80.0f));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isPedalEnabled", 1}, "Pedal Enabled", true));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"pedalDrive", 1}, "Pedal Drive", juce::NormalisableRange<float>(0.0f, 10.0f, 0.1f), 4.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"pedalTone", 1}, "Pedal Tone", juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f), 65.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"pedalLevel", 1}, "Pedal Level", juce::NormalisableRange<float>(-12.0f, 12.0f, 0.1f), 0.0f));
 
     return layout;
 }

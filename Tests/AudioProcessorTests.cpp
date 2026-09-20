@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "PluginProcessor.h"
+#include "SignalChainLayout.h"
 #include "TestRunner.h"
 
 namespace profiler_tests {
@@ -28,6 +29,10 @@ class AudioProcessorUnitTests : public juce::UnitTest {
 
         runCase("audio processor state round trip", [this] {
             testStateRoundTrip();
+        });
+
+        runCase("audio processor chain layout round trip", [this] {
+            testChainLayoutRoundTrip();
         });
 
         runCase("audio processor process block smoke", [this] {
@@ -204,7 +209,7 @@ class AudioProcessorUnitTests : public juce::UnitTest {
     void testParameterDefaults() {
         ProfilerAudioProcessor processor;
 
-        expect(processor.getParameters().size() == 23, "Unexpected processor parameter count.");
+        expect(processor.getParameters().size() == 27, "Unexpected processor parameter count.");
         expectClose(getParameterValue(processor, "master"), 50.0f, "master default");
         expectClose(getParameterValue(processor, "gain"), 0.0f, "gain default");
         expectClose(getParameterValue(processor, "noise"), 10.0f, "noise default");
@@ -228,6 +233,10 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         expectClose(getParameterValue(processor, "isAmpEnabled"), 1.0f, "isAmpEnabled default");
         expectClose(getParameterValue(processor, "isCabEnabled"), 1.0f, "isCabEnabled default");
         expectClose(getParameterValue(processor, "cabLowCut"), 80.0f, "cabLowCut default");
+        expectClose(getParameterValue(processor, "isPedalEnabled"), 1.0f, "isPedalEnabled default");
+        expectClose(getParameterValue(processor, "pedalDrive"), 4.0f, "pedalDrive default");
+        expectClose(getParameterValue(processor, "pedalTone"), 65.0f, "pedalTone default");
+        expectClose(getParameterValue(processor, "pedalLevel"), 0.0f, "pedalLevel default");
     }
 
     void testStateRoundTrip() {
@@ -254,6 +263,59 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         expectClose(getParameterValue(restored, "midFreq"), 750.0f, "restored midFreq");
         expectClose(getParameterValue(restored, "isMute"), 1.0f, "restored isMute");
         expectClose(getParameterValue(restored, "isEqEnabled"), 0.0f, "restored isEqEnabled");
+    }
+
+    void testChainLayoutRoundTrip() {
+        SignalChain::Layout layout;
+        expect(layout.slotFor(SignalChain::Stage::Amp) == 2, "Default Amp slot should be 2.");
+        expect(layout.slotFor(SignalChain::Stage::Cab) == 4, "Default Cab slot should be 4.");
+        expect(layout.slotFor(SignalChain::Stage::Eq) == 6, "Default EQ slot should be 6.");
+        expect(!layout.contains(SignalChain::Stage::Pedal), "Default layout should not include a pedal.");
+        expect(layout.isValid(), "Default layout should be valid.");
+        expect(SignalChain::Layout::fromPacked(0xFFFFFFFFu).isValid(),
+               "Invalid packed layout should fall back to the default.");
+
+        layout.place(SignalChain::Stage::Amp, 5);
+        layout.place(SignalChain::Stage::Cab, 1);
+        layout.place(SignalChain::Stage::Eq, 3);
+        expect(layout.slotFor(SignalChain::Stage::Cab) == 1, "Cab should move to slot 1.");
+        expect(layout.slotFor(SignalChain::Stage::Eq) == 3, "EQ should move to slot 3.");
+        expect(layout.slotFor(SignalChain::Stage::Amp) == 5, "Amp should move to slot 5.");
+
+        const auto order = layout.processingOrder();
+        expect(order[0] == SignalChain::Stage::Cab, "Left-most movable block should process first.");
+        expect(order[1] == SignalChain::Stage::Eq, "Middle movable block should process second.");
+        expect(order[2] == SignalChain::Stage::Amp, "Right-most movable block should process last.");
+
+        layout.place(SignalChain::Stage::Pedal, 2);
+        expect(layout.contains(SignalChain::Stage::Pedal), "Placing a pedal should add it to the chain.");
+        expect(layout.atSlot(2) == SignalChain::Stage::Pedal, "Pedal should occupy the chosen slot.");
+
+        ProfilerAudioProcessor source;
+        source.setChainLayout(layout);
+        expect(source.getChainLayout().slotFor(SignalChain::Stage::Amp) == 5, "Processor should store the Amp slot.");
+        expect(source.getChainLayout().slotFor(SignalChain::Stage::Cab) == 1, "Processor should store the Cab slot.");
+        expect(source.getChainLayout().slotFor(SignalChain::Stage::Eq) == 3, "Processor should store the EQ slot.");
+        expect(source.getChainLayout().slotFor(SignalChain::Stage::Pedal) == 2, "Processor should store the Pedal slot.");
+
+        juce::MemoryBlock state;
+        source.getStateInformation(state);
+        ProfilerAudioProcessor restored;
+        restored.setStateInformation(state.getData(), static_cast<int>(state.getSize()));
+        expect(restored.getChainLayout().packed() == layout.packed(),
+               "Chain layout should survive processor state round-trip.");
+
+        restored.resetChainLayout();
+        expect(restored.getChainLayout().packed() == SignalChain::defaultPacked,
+               "Reset should restore Amp/Cab/EQ to slots 2/4/6.");
+
+        ProfilerAudioProcessor reordered;
+        reordered.setChainLayout(layout);
+        prepareProcessor(reordered, 44100.0, 256);
+        setParameterValue(reordered, "gain", 6.0f);
+        const auto boostedRms = processSineAndMeasureRms(reordered);
+        reordered.releaseResources();
+        expect(boostedRms > 0.01f, "Amp gain should still apply after the chain is reordered.");
     }
 
     void testProcessBlockSmoke() {

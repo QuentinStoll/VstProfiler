@@ -63,6 +63,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomTextEditor.cpp
     Src/Components/CustomToggleButton.cpp
     Src/Components/FileDropZone.cpp
+    Src/Components/BlockPickerPage.cpp
     Src/Components/SignalChainStrip.cpp
     Src/Components/FormFields/FormComboField.cpp
     Src/Components/FormComponent.cpp

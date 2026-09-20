@@ -1,6 +1,7 @@
 #include "Components/SignalChainStrip.h"
 
 #include <cmath>
+#include <limits>
 
 namespace {
 constexpr int kSignalChainRadioGroup = 0x50524F46;  // "PROF"
@@ -8,6 +9,7 @@ constexpr float kMeterFloorDb = -54.0f;
 constexpr float kMeterCeilDb = -3.0f;
 constexpr float kMeterAttackSeconds = 0.045f;
 constexpr float kMeterReleaseSeconds = 0.22f;
+constexpr int kDragThresholdPx = 6;
 
 float meterFromDb(float db) {
     const auto normalised = juce::jmap(juce::jlimit(kMeterFloorDb, kMeterCeilDb, db),
@@ -44,6 +46,8 @@ void SignalChainBlock::setLedOn(bool shouldBeOn) {
 void SignalChainBlock::setIoNode(bool isIoNode) {
     _isIoNode = isIoNode;
     setOpaque(!isIoNode);
+    setMouseCursor(_isIoNode ? juce::MouseCursor::PointingHandCursor
+                             : juce::MouseCursor::DraggingHandCursor);
     repaint();
 }
 
@@ -92,7 +96,42 @@ bool SignalChainBlock::hitTest(int x, int y) {
     return bounds.getCentre().getDistanceFrom({static_cast<float>(x), static_cast<float>(y)}) <= radius + 3.0f;
 }
 
+void SignalChainBlock::mouseDown(const juce::MouseEvent& event) {
+    if (event.mods.isPopupMenu()) {
+        return;
+    }
+
+    juce::Button::mouseDown(event);
+    if (_isIoNode || isLedHit(event.getPosition()) || onDragBegin == nullptr) {
+        return;
+    }
+
+    onDragBegin(event);
+}
+
+void SignalChainBlock::mouseDrag(const juce::MouseEvent& event) {
+    if (event.mods.isPopupMenu()) {
+        return;
+    }
+
+    juce::Button::mouseDrag(event);
+    if (onDragMove != nullptr) {
+        onDragMove(event);
+    }
+}
+
 void SignalChainBlock::mouseUp(const juce::MouseEvent& event) {
+    if (event.mods.isPopupMenu()) {
+        if (event.mouseWasClicked() && onPickerRequested) {
+            onPickerRequested();
+        }
+        return;
+    }
+
+    if (onDragEnd != nullptr) {
+        onDragEnd(event);
+    }
+
     if (event.mouseWasClicked() && isLedHit(event.getPosition()) && onLedClicked) {
         onLedClicked();
         return;
@@ -151,7 +190,7 @@ SignalChainStrip::SignalChainStrip() {
     addAndMakeVisible(_busLayer);
     _busLayer.setInterceptsMouseClicks(false, false);
 
-    auto configure = [this](SignalChainBlock& block, BlockId id) {
+    auto configure = [this](SignalChainBlock& block, BlockId id, bool movable) {
         addAndMakeVisible(block);
         block.onClick = [this, id]() {
             handleBlockClick(id);
@@ -162,13 +201,30 @@ SignalChainStrip::SignalChainStrip() {
                 onBlockBypassToggled(id);
             }
         };
+        if (!movable) {
+            return;
+        }
+
+        block.onPickerRequested = [this, id]() {
+            requestPicker(slotForBlock(id));
+        };
+        block.onDragBegin = [this, id](const juce::MouseEvent& event) {
+            startBlockDrag(id, event);
+        };
+        block.onDragMove = [this](const juce::MouseEvent& event) {
+            updateBlockDrag(event);
+        };
+        block.onDragEnd = [this](const juce::MouseEvent& event) {
+            finishBlockDrag(event);
+        };
     };
 
-    configure(_inputGate, BlockId::InputGate);
-    configure(_ampProfiler, BlockId::AmpProfiler);
-    configure(_cabinetIr, BlockId::CabinetIr);
-    configure(_eqPostFx, BlockId::EqPostFx);
-    configure(_masterVolume, BlockId::MasterVolume);
+    configure(_inputGate, BlockId::InputGate, false);
+    configure(_ampProfiler, BlockId::AmpProfiler, true);
+    configure(_cabinetIr, BlockId::CabinetIr, true);
+    configure(_eqPostFx, BlockId::EqPostFx, true);
+    configure(_pedalDrive, BlockId::PedalDrive, true);
+    configure(_masterVolume, BlockId::MasterVolume, false);
 
     _inputGate.setIoNode(true);
     _masterVolume.setIoNode(true);
@@ -197,12 +253,19 @@ void SignalChainStrip::paint(juce::Graphics& g) {
             g.drawRoundedRectangle(outline.withSizeKeepingCentre(side, side), 3.0f, 1.2f);
         }
     }
+
+    if (_dropSlot >= SignalChain::firstMovableSlot && _dropSlot <= SignalChain::lastMovableSlot) {
+        auto dropBounds = _slotBounds[static_cast<size_t>(_dropSlot)].toFloat().reduced(4.0f);
+        g.setColour(ProfilerStyle::Colors::text.withAlpha(0.72f));
+        g.drawRoundedRectangle(dropBounds, 6.0f, 1.6f);
+    }
 }
 
 void SignalChainStrip::resized() {
     auto area = getLocalBounds();
     const auto slotWidth = area.getWidth() / static_cast<float>(kSlotCount);
-    const auto square = juce::jlimit(100, 110, juce::roundToInt(slotWidth) - 16);
+    constexpr float kBlockScale = 0.75f;
+    const auto square = juce::roundToInt(static_cast<float>(juce::jlimit(100, 110, juce::roundToInt(slotWidth) - 16)) * kBlockScale);
     const auto rowY = area.getY() + juce::jmax(0, (area.getHeight() - square) / 2);
 
     for (int slot = 0; slot < kSlotCount; ++slot) {
@@ -210,19 +273,46 @@ void SignalChainStrip::resized() {
         _slotBounds[static_cast<size_t>(slot)] = {centreX - square / 2, rowY, square, square};
     }
 
-    SignalChainBlock* blocks[] = {&_inputGate, &_ampProfiler, &_cabinetIr, &_eqPostFx, &_masterVolume};
-    const auto ioHit = juce::jlimit(36, 44, juce::roundToInt(static_cast<float>(square) * 0.38f));
-    for (int index = 0; index < 5; ++index) {
-        const auto slot = _slotBounds[static_cast<size_t>(kOccupiedSlots[index])];
+    placeBlocks();
+    updateBusLayer();
+    _busLayer.toBack();
+}
+
+void SignalChainStrip::mouseUp(const juce::MouseEvent& event) {
+    if (!event.mods.isPopupMenu() || !event.mouseWasClicked()) {
+        return;
+    }
+
+    const auto slot = slotAtPosition(event.getPosition());
+    if (slot >= SignalChain::firstMovableSlot && slot <= SignalChain::lastMovableSlot) {
+        requestPicker(slot);
+    }
+}
+
+void SignalChainStrip::placeBlocks() {
+    SignalChainBlock* blocks[] = {
+        &_inputGate, &_ampProfiler, &_cabinetIr, &_eqPostFx, &_pedalDrive, &_masterVolume};
+    const BlockId ids[] = {
+        BlockId::InputGate, BlockId::AmpProfiler, BlockId::CabinetIr,
+        BlockId::EqPostFx, BlockId::PedalDrive, BlockId::MasterVolume};
+    const auto square = _slotBounds.front().getWidth();
+    const auto ioHit = juce::jlimit(26, 34, juce::roundToInt(static_cast<float>(square) * 0.38f));
+
+    for (int index = 0; index < 6; ++index) {
+        const auto slotIndex = slotForBlock(ids[index]);
+        const auto onChain = slotIndex >= 0;
+        blocks[index]->setVisible(onChain);
+        if (!onChain || (_dragActive && ids[index] == _dragBlock)) {
+            continue;
+        }
+
+        const auto slot = _slotBounds[static_cast<size_t>(slotIndex)];
         if (blocks[index]->isIoNode()) {
             blocks[index]->setBounds(slot.withSizeKeepingCentre(ioHit, ioHit));
         } else {
             blocks[index]->setBounds(slot);
         }
     }
-
-    updateBusLayer();
-    _busLayer.toBack();
 }
 
 void SignalChainStrip::updateBusLayer() {
@@ -239,6 +329,10 @@ void SignalChainStrip::updateBusLayer() {
 }
 
 void SignalChainStrip::setSelectedBlock(BlockId blockId) {
+    if (!isBlockOnChain(blockId)) {
+        return;
+    }
+
     handleBlockClick(blockId);
     getBlock(blockId).setToggleState(true, juce::dontSendNotification);
 }
@@ -248,10 +342,22 @@ bool SignalChainStrip::selectAdjacentBlock(int delta) {
         return false;
     }
 
-    constexpr int blockCount = 5;
-    const auto current = static_cast<int>(_selected);
-    const auto next = (current + delta + blockCount) % blockCount;
-    setSelectedBlock(static_cast<BlockId>(next));
+    std::array<BlockId, 8> order{};
+    const auto blockCount = fillVisualOrder(order);
+    if (blockCount <= 0) {
+        return false;
+    }
+
+    int currentIndex = 0;
+    for (int index = 0; index < blockCount; ++index) {
+        if (order[static_cast<size_t>(index)] == _selected) {
+            currentIndex = index;
+            break;
+        }
+    }
+
+    const auto next = (currentIndex + delta % blockCount + blockCount) % blockCount;
+    setSelectedBlock(order[static_cast<size_t>(next)]);
     return true;
 }
 
@@ -284,6 +390,24 @@ void SignalChainStrip::setIoMeterLevels(float inputDb, float outputDb) {
     _masterVolume.setSignalLevel(_outputMeter);
 }
 
+void SignalChainStrip::setLayout(const SignalChain::Layout& layout) {
+    _layout = layout.isValid() ? layout : SignalChain::Layout{};
+    if (!isBlockOnChain(_selected)) {
+        _selected = BlockId::InputGate;
+        _inputGate.setToggleState(true, juce::dontSendNotification);
+        if (onBlockSelected) {
+            onBlockSelected(_selected);
+        }
+    }
+    placeBlocks();
+    updateBusLayer();
+    repaint();
+}
+
+bool SignalChainStrip::isBlockOnChain(BlockId blockId) const noexcept {
+    return slotForBlock(blockId) >= 0;
+}
+
 SignalChainBlock& SignalChainStrip::getBlock(BlockId blockId) {
     switch (blockId) {
         case BlockId::InputGate:
@@ -292,6 +416,8 @@ SignalChainBlock& SignalChainStrip::getBlock(BlockId blockId) {
             return _cabinetIr;
         case BlockId::EqPostFx:
             return _eqPostFx;
+        case BlockId::PedalDrive:
+            return _pedalDrive;
         case BlockId::MasterVolume:
             return _masterVolume;
         case BlockId::AmpProfiler:
@@ -312,11 +438,169 @@ void SignalChainStrip::handleBlockClick(BlockId blockId) {
 }
 
 bool SignalChainStrip::isOccupiedSlot(int slot) const {
-    for (const auto occupied : kOccupiedSlots) {
-        if (occupied == slot) {
-            return true;
-        }
+    if (_dragActive && slot == slotForBlock(_dragBlock)) {
+        return false;
     }
 
-    return false;
+    return _layout.occupies(slot);
+}
+
+int SignalChainStrip::slotForBlock(BlockId blockId) const noexcept {
+    switch (blockId) {
+        case BlockId::InputGate:
+            return SignalChain::inputSlot;
+        case BlockId::MasterVolume:
+            return SignalChain::outputSlot;
+        case BlockId::AmpProfiler:
+            return _layout.slotFor(SignalChain::Stage::Amp);
+        case BlockId::CabinetIr:
+            return _layout.slotFor(SignalChain::Stage::Cab);
+        case BlockId::EqPostFx:
+            return _layout.slotFor(SignalChain::Stage::Eq);
+        case BlockId::PedalDrive:
+            return _layout.slotFor(SignalChain::Stage::Pedal);
+        default:
+            return -1;
+    }
+}
+
+SignalChain::Stage SignalChainStrip::stageForBlock(BlockId blockId) noexcept {
+    switch (blockId) {
+        case BlockId::CabinetIr:
+            return SignalChain::Stage::Cab;
+        case BlockId::EqPostFx:
+            return SignalChain::Stage::Eq;
+        case BlockId::PedalDrive:
+            return SignalChain::Stage::Pedal;
+        case BlockId::AmpProfiler:
+        default:
+            return SignalChain::Stage::Amp;
+    }
+}
+
+SignalChainStrip::BlockId SignalChainStrip::blockForStage(SignalChain::Stage stage) noexcept {
+    switch (stage) {
+        case SignalChain::Stage::Cab:
+            return BlockId::CabinetIr;
+        case SignalChain::Stage::Eq:
+            return BlockId::EqPostFx;
+        case SignalChain::Stage::Pedal:
+            return BlockId::PedalDrive;
+        case SignalChain::Stage::Amp:
+        default:
+            return BlockId::AmpProfiler;
+    }
+}
+
+int SignalChainStrip::nearestMovableSlot(juce::Point<int> position) const noexcept {
+    int nearest = SignalChain::firstMovableSlot;
+    auto bestDistance = std::numeric_limits<float>::max();
+    for (int slot = SignalChain::firstMovableSlot; slot <= SignalChain::lastMovableSlot; ++slot) {
+        const auto centre = _slotBounds[static_cast<size_t>(slot)].getCentre().toFloat();
+        const auto distance = centre.getDistanceFrom(position.toFloat());
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            nearest = slot;
+        }
+    }
+    return nearest;
+}
+
+int SignalChainStrip::slotAtPosition(juce::Point<int> position) const noexcept {
+    for (int slot = SignalChain::firstMovableSlot; slot <= SignalChain::lastMovableSlot; ++slot) {
+        if (_slotBounds[static_cast<size_t>(slot)].expanded(10).contains(position)) {
+            return slot;
+        }
+    }
+    return -1;
+}
+
+void SignalChainStrip::startBlockDrag(BlockId blockId, const juce::MouseEvent& event) {
+    _dragBlock = blockId;
+    _dragTracking = true;
+    _dragActive = false;
+    _dropSlot = -1;
+    _dragStart = event.getEventRelativeTo(this).getPosition();
+    _dragOrigin = getBlock(blockId).getBounds();
+}
+
+void SignalChainStrip::updateBlockDrag(const juce::MouseEvent& event) {
+    if (!_dragTracking) {
+        return;
+    }
+
+    const auto position = event.getEventRelativeTo(this).getPosition();
+    if (!_dragActive && position.getDistanceFrom(_dragStart) < kDragThresholdPx) {
+        return;
+    }
+
+    if (!_dragActive) {
+        _dragActive = true;
+        auto& block = getBlock(_dragBlock);
+        block.toFront(false);
+        setSelectedBlock(_dragBlock);
+    }
+
+    const auto deltaX = position.x - _dragStart.x;
+    const auto minX = _slotBounds[static_cast<size_t>(SignalChain::firstMovableSlot)].getX() - 12;
+    const auto maxX = _slotBounds[static_cast<size_t>(SignalChain::lastMovableSlot)].getX() + 12;
+    auto bounds = _dragOrigin.withX(juce::jlimit(minX, maxX, _dragOrigin.getX() + deltaX));
+    getBlock(_dragBlock).setBounds(bounds);
+    _dropSlot = nearestMovableSlot(bounds.getCentre());
+    repaint();
+}
+
+void SignalChainStrip::finishBlockDrag(const juce::MouseEvent&) {
+    if (!_dragTracking) {
+        return;
+    }
+
+    const auto wasDragging = _dragActive;
+    const auto dropSlot = _dropSlot;
+    const auto blockId = _dragBlock;
+    _dragTracking = false;
+    _dragActive = false;
+    _dropSlot = -1;
+
+    if (wasDragging && dropSlot >= SignalChain::firstMovableSlot && dropSlot <= SignalChain::lastMovableSlot) {
+        commitDrop(blockId, dropSlot);
+    }
+
+    placeBlocks();
+    updateBusLayer();
+    _busLayer.toBack();
+    if (isBlockOnChain(blockId)) {
+        getBlock(blockId).toFront(false);
+    }
+    repaint();
+}
+
+void SignalChainStrip::commitDrop(BlockId blockId, int slot) {
+    _layout.place(stageForBlock(blockId), slot);
+    if (onLayoutChanged) {
+        onLayoutChanged(_layout);
+    }
+}
+
+void SignalChainStrip::requestPicker(int slot) {
+    if (slot < SignalChain::firstMovableSlot || slot > SignalChain::lastMovableSlot) {
+        return;
+    }
+
+    if (onBlockPickerRequested) {
+        onBlockPickerRequested(slot);
+    }
+}
+
+int SignalChainStrip::fillVisualOrder(std::array<BlockId, 8>& order) const noexcept {
+    int count = 0;
+    order[static_cast<size_t>(count++)] = BlockId::InputGate;
+    for (int slot = SignalChain::firstMovableSlot; slot <= SignalChain::lastMovableSlot; ++slot) {
+        const auto stage = _layout.atSlot(slot);
+        if (stage != SignalChain::Stage::Empty) {
+            order[static_cast<size_t>(count++)] = blockForStage(stage);
+        }
+    }
+    order[static_cast<size_t>(count++)] = BlockId::MasterVolume;
+    return count;
 }

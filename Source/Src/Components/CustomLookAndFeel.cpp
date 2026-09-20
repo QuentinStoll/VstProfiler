@@ -2,7 +2,6 @@
 
 #include <cmath>
 
-#include "BinaryData.h"
 #include "Stylesheet.h"
 
 namespace {
@@ -32,16 +31,11 @@ CustomLookAndFeel::CustomLookAndFeel() {
 }
 
 void CustomLookAndFeel::loadOrbitronTypefaces() {
-    _orbitronRegular = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronRegular_ttf,
-                                                               BinaryData::OrbitronRegular_ttfSize);
-    _orbitronMedium = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronMedium_ttf,
-                                                              BinaryData::OrbitronMedium_ttfSize);
-    _orbitronBold = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronBold_ttf,
-                                                            BinaryData::OrbitronBold_ttfSize);
-    _orbitronExtraBold = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronExtraBold_ttf,
-                                                                 BinaryData::OrbitronExtraBold_ttfSize);
-    _orbitronBlack = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronBlack_ttf,
-                                                             BinaryData::OrbitronBlack_ttfSize);
+    _orbitronRegular = ProfilerStyle::Fonts::typeface(ProfilerStyle::Fonts::Weight::Regular);
+    _orbitronMedium = ProfilerStyle::Fonts::typeface(ProfilerStyle::Fonts::Weight::Medium);
+    _orbitronBold = ProfilerStyle::Fonts::typeface(ProfilerStyle::Fonts::Weight::Bold);
+    _orbitronExtraBold = ProfilerStyle::Fonts::typeface(ProfilerStyle::Fonts::Weight::ExtraBold);
+    _orbitronBlack = ProfilerStyle::Fonts::typeface(ProfilerStyle::Fonts::Weight::Black);
 
     if (_orbitronRegular != nullptr) {
         setDefaultSansSerifTypeface(_orbitronRegular);
@@ -145,12 +139,15 @@ juce::Typeface::Ptr CustomLookAndFeel::getTypefaceForFont(const juce::Font& font
 
 juce::Font CustomLookAndFeel::getLabelFont(juce::Label& label) {
     const auto requested = label.getFont();
+    if (requested.getTypefacePtr() != nullptr
+        && requested.getTypefaceName().containsIgnoreCase(ProfilerStyle::Fonts::family())) {
+        return requested;
+    }
+
     const auto height = requested.getHeight() > 0.0f ? requested.getHeight() : 14.0f;
-    auto font = juce::Font(juce::FontOptions(requested.getTypefaceName(),
-                                             static_cast<float>(juce::jmax(1, juce::roundToInt(height))),
-                                             juce::Font::plain));
-    font.setExtraKerningFactor(requested.getExtraKerningFactor());
-    return font;
+    return ProfilerStyle::Fonts::make(height,
+                                      ProfilerStyle::Fonts::weightFromFont(requested),
+                                      requested.getExtraKerningFactor());
 }
 
 juce::Font CustomLookAndFeel::getTextButtonFont(juce::TextButton&, int buttonHeight) {
@@ -167,6 +164,26 @@ juce::Font CustomLookAndFeel::getPopupMenuFont() {
 
 juce::Font CustomLookAndFeel::getSliderPopupFont(juce::Slider&) {
     return ProfilerStyle::Fonts::medium(11.0f);
+}
+
+juce::Font CustomLookAndFeel::getAlertWindowFont() {
+    return ProfilerStyle::Fonts::regular(13.0f);
+}
+
+juce::Font CustomLookAndFeel::getAlertWindowTitleFont() {
+    return ProfilerStyle::Fonts::bold(16.0f);
+}
+
+juce::Font CustomLookAndFeel::getAlertWindowMessageFont() {
+    return ProfilerStyle::Fonts::regular(14.0f);
+}
+
+juce::Font CustomLookAndFeel::getMenuBarFont(juce::MenuBarComponent&, int, const juce::String&) {
+    return ProfilerStyle::Fonts::medium(13.0f);
+}
+
+juce::Font CustomLookAndFeel::getTabButtonFont(juce::TabBarButton&, float height) {
+    return ProfilerStyle::Fonts::medium(juce::jlimit(11.0f, 14.0f, height * 0.42f));
 }
 
 void CustomLookAndFeel::drawAccentGlow(juce::Graphics& g, juce::Rectangle<float> bounds, float intensity,
@@ -788,6 +805,17 @@ void CustomLookAndFeel::drawRigIcon(juce::Graphics& g, juce::Rectangle<float> bo
             const auto radius = bounds.getWidth() * 0.16f;
             g.drawEllipse(centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f, strokeW);
             g.fillEllipse(centre.x - radius * 0.35f, centre.y - radius * 0.35f, radius * 0.7f, radius * 0.7f);
+            break;
+        }
+        case RigIcon::Pedal: {
+            auto box = bounds.reduced(bounds.getWidth() * 0.12f, bounds.getHeight() * 0.08f);
+            g.drawRoundedRectangle(box, 3.0f, strokeW);
+            auto footswitch = juce::Rectangle<float>(0, 0, box.getWidth() * 0.28f, box.getWidth() * 0.28f)
+                                  .withCentre({box.getCentreX(), box.getBottom() - box.getHeight() * 0.28f});
+            g.drawEllipse(footswitch, strokeW);
+            auto jack = juce::Rectangle<float>(0, 0, box.getWidth() * 0.18f, strokeW * 1.6f)
+                            .withCentre({box.getCentreX(), box.getY() + box.getHeight() * 0.22f});
+            g.fillRoundedRectangle(jack, 1.0f);
             break;
         }
         case RigIcon::EqFaders: {

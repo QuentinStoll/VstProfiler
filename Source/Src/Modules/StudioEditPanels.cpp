@@ -758,6 +758,63 @@ void EqPostFxPanel::resized() {
     _eqModule.setBounds(area);
 }
 
+PedalDrivePanel::PedalDrivePanel(juce::AudioProcessorValueTreeState& apvts) {
+    configurePanelTitle(_title, "Overdrive");
+    configureBypassLabel(_bypassLabel);
+    _enabled.setLabelVisible(false);
+
+    addAndMakeVisible(_title);
+    addAndMakeVisible(_bypassLabel);
+    addAndMakeVisible(_enabled);
+    addAndMakeVisible(_driveKnob);
+    addAndMakeVisible(_toneKnob);
+    addAndMakeVisible(_levelKnob);
+
+    _enabledAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        apvts, "isPedalEnabled", _enabled);
+    _driveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvts, "pedalDrive", _driveKnob.getSlider());
+    _toneAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvts, "pedalTone", _toneKnob.getSlider());
+    _levelAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvts, "pedalLevel", _levelKnob.getSlider());
+
+    _enabled.onClick = [this]() {
+        refreshBypassState();
+    };
+    refreshBypassState();
+}
+
+void PedalDrivePanel::refreshBypassState() {
+    const auto enabled = _enabled.getToggleState();
+    _driveKnob.setEnabled(enabled);
+    _toneKnob.setEnabled(enabled);
+    _levelKnob.setEnabled(enabled);
+    _bypassLabel.setVisible(!enabled);
+    resized();
+}
+
+void PedalDrivePanel::paint(juce::Graphics&) {}
+
+void PedalDrivePanel::resized() {
+    auto area = getLocalBounds().reduced(10, 6);
+    auto header = area.removeFromTop(22);
+    _enabled.setBounds(header.removeFromRight(48).withSizeKeepingCentre(48, 20));
+    header.removeFromRight(8);
+    _bypassLabel.setBounds(header.removeFromRight(80));
+    header.removeFromRight(8);
+    _title.setBounds(header);
+
+    constexpr int knobWidth = 108;
+    constexpr int gap = 24;
+    auto row = juce::Rectangle<int>(knobWidth * 3 + gap * 2, juce::jmin(88, area.getHeight())).withCentre(area.getCentre());
+    _driveKnob.setBounds(row.removeFromLeft(knobWidth));
+    row.removeFromLeft(gap);
+    _toneKnob.setBounds(row.removeFromLeft(knobWidth));
+    row.removeFromLeft(gap);
+    _levelKnob.setBounds(row);
+}
+
 MasterVolumePanel::MasterVolumePanel(ProfilerAudioProcessor& processor)
     : _processor(processor) {
     configurePanelTitle(_title, "Master");

@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 
+#include "Components/BlockPickerPage.h"
 #include "Components/CustomLookAndFeel.h"
 #include "Components/NotificationBanner.h"
 #include "Components/SignalChainStrip.h"
@@ -15,6 +16,7 @@
 class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
                                      private juce::ChangeListener,
                                      private juce::AudioProcessorValueTreeState::Listener,
+                                     private juce::ValueTree::Listener,
                                      private juce::Timer {
    public:
     ProfilerAudioProcessorEditor(ProfilerAudioProcessor&);
@@ -47,7 +49,9 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     AmpProfilerPanel _ampPanel;
     CabinetIrPanel _cabinetPanel;
     EqPostFxPanel _eqPanel;
+    PedalDrivePanel _pedalPanel;
     MasterVolumePanel _masterPanel;
+    BlockPickerPage _blockPicker;
 
     SettingsView _settingsView;
     juce::TextButton _resetButton{"Reset Chain"};
@@ -69,6 +73,9 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     void showStudio();
     void showOverlay(OverlayMode mode);
     void showEditPanel(SignalChainStrip::BlockId blockId);
+    void openBlockPicker(int slot);
+    void closeBlockPicker();
+    void placeChosenBlock(int slot, SignalChain::Stage stage);
     void updateChainStatus();
     void toggleBlockBypass(SignalChainStrip::BlockId blockId);
     void showStatus(const juce::String& message, bool success);
@@ -79,6 +86,9 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
     void parameterChanged(const juce::String& parameterID, float newValue) override;
     void timerCallback() override;
+    void valueTreePropertyChanged(juce::ValueTree& treeWhosePropertyHasChanged,
+                                  const juce::Identifier& property) override;
+    void valueTreeRedirected(juce::ValueTree& treeWhichHasBeenChanged) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ProfilerAudioProcessorEditor)
 };

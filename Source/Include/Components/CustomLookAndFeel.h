@@ -13,6 +13,11 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
     juce::Font getComboBoxFont(juce::ComboBox& box) override;
     juce::Font getPopupMenuFont() override;
     juce::Font getSliderPopupFont(juce::Slider& slider) override;
+    juce::Font getAlertWindowFont() override;
+    juce::Font getAlertWindowTitleFont() override;
+    juce::Font getAlertWindowMessageFont() override;
+    juce::Font getMenuBarFont(juce::MenuBarComponent& menuBar, int itemIndex, const juce::String& itemText) override;
+    juce::Font getTabButtonFont(juce::TabBarButton& button, float height) override;
     juce::Font getUiFont(float height, juce::Font::FontStyleFlags style = juce::Font::plain) const;
 
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
@@ -93,6 +98,7 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
         AmpHead,
         Cabinet,
         EqFaders,
+        Pedal,
         Speaker
     };
 
@@ -143,6 +149,7 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
 
     void drawGearIcon(juce::Graphics& g, juce::Rectangle<float> bounds, juce::Colour colour) const;
     void drawLibraryIcon(juce::Graphics& g, juce::Rectangle<float> bounds, juce::Colour colour) const;
+    void drawRigIcon(juce::Graphics& g, juce::Rectangle<float> bounds, RigIcon icon, juce::Colour colour) const;
 
    private:
     juce::Typeface::Ptr _orbitronRegular;
@@ -158,7 +165,6 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
                         juce::Colour colour = {}) const;
     void drawSwitch(juce::Graphics& g, juce::Rectangle<float> area,
                     bool ticked, bool isEnabled, bool isMouseOver, bool isMouseDown) const;
-    void drawRigIcon(juce::Graphics& g, juce::Rectangle<float> bounds, RigIcon icon, juce::Colour colour) const;
     juce::String ellipsize(const juce::Font& font, const juce::String& text, float maxWidth) const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CustomLookAndFeel)

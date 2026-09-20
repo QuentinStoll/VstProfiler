@@ -1,6 +1,8 @@
 #pragma once
 #include <JuceHeader.h>
 
+#include "BinaryData.h"
+
 namespace ProfilerStyle {
 enum class Theme {
     Darker,
@@ -27,6 +29,7 @@ inline const juce::Colour rigInput = juce::Colour(0xff10B981);
 inline const juce::Colour rigAmp = juce::Colour(0xffFF5500);
 inline const juce::Colour rigCab = juce::Colour(0xff3B82F6);
 inline const juce::Colour rigEq = juce::Colour(0xffA855F7);
+inline const juce::Colour rigPedal = juce::Colour(0xffE11D48);
 inline const juce::Colour rigMaster = juce::Colour(0xffF4F4F5);
 
 inline const juce::Colour white = text;
@@ -77,9 +80,55 @@ inline juce::String typefaceName(Weight weight) {
     }
 }
 
+inline Weight weightFromFont(const juce::Font& font) {
+    const auto name = font.getTypefaceName();
+    if (name.containsIgnoreCase("Black")) {
+        return Weight::Black;
+    }
+    if (name.containsIgnoreCase("ExtraBold")) {
+        return Weight::ExtraBold;
+    }
+    if (name.containsIgnoreCase("Medium")) {
+        return Weight::Medium;
+    }
+    if (name.containsIgnoreCase("Bold") || font.isBold()) {
+        return Weight::Bold;
+    }
+    return Weight::Regular;
+}
+
+inline juce::Typeface::Ptr typeface(Weight weight) {
+    static const auto regular = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronRegular_ttf,
+                                                                        BinaryData::OrbitronRegular_ttfSize);
+    static const auto medium = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronMedium_ttf,
+                                                                       BinaryData::OrbitronMedium_ttfSize);
+    static const auto bold = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronBold_ttf,
+                                                                     BinaryData::OrbitronBold_ttfSize);
+    static const auto extraBold = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronExtraBold_ttf,
+                                                                          BinaryData::OrbitronExtraBold_ttfSize);
+    static const auto black = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronBlack_ttf,
+                                                                      BinaryData::OrbitronBlack_ttfSize);
+    switch (weight) {
+        case Weight::Medium:
+            return medium != nullptr ? medium : regular;
+        case Weight::Bold:
+            return bold != nullptr ? bold : regular;
+        case Weight::ExtraBold:
+            return extraBold != nullptr ? extraBold : (bold != nullptr ? bold : regular);
+        case Weight::Black:
+            return black != nullptr ? black : (bold != nullptr ? bold : regular);
+        case Weight::Regular:
+        default:
+            return regular;
+    }
+}
+
 inline juce::Font make(float height, Weight weight, float tracking = 0.0f) {
     const auto px = static_cast<float>(juce::jmax(1, juce::roundToInt(height)));
-    juce::Font font{juce::FontOptions(typefaceName(weight), px, juce::Font::plain)};
+    auto* face = typeface(weight).get();
+    juce::Font font = face != nullptr
+                          ? juce::Font(juce::FontOptions(typeface(weight)).withHeight(px))
+                          : juce::Font(juce::FontOptions(typefaceName(weight), px, juce::Font::plain));
     if (tracking != 0.0f) {
         font.setExtraKerningFactor(tracking);
     }
