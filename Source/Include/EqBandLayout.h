@@ -22,16 +22,17 @@ struct Spec {
     const char* freqId;
     const char* label;
     float defaultHz;
+    float defaultDb;
     Type type;
 };
 
 inline constexpr Spec specs[count] = {
-    {"depth", "depthFreq", "LS", 80.0f, Type::LowShelf},
-    {"bass", "bassFreq", "B1", 200.0f, Type::Peak},
-    {"mid", "midFreq", "B2", 500.0f, Type::Peak},
-    {"highMid", "highMidFreq", "B3", 1600.0f, Type::Peak},
-    {"treble", "trebleFreq", "B4", 4000.0f, Type::Peak},
-    {"presence", "presenceFreq", "HS", 10000.0f, Type::HighShelf},
+    {"depth", "depthFreq", "LS", 80.0f, 2.5f, Type::LowShelf},
+    {"bass", "bassFreq", "B1", 180.0f, 1.0f, Type::Peak},
+    {"mid", "midFreq", "B2", 450.0f, -3.5f, Type::Peak},
+    {"highMid", "highMidFreq", "B3", 1000.0f, 1.5f, Type::Peak},
+    {"treble", "trebleFreq", "B4", 2800.0f, 3.0f, Type::Peak},
+    {"presence", "presenceFreq", "HS", 6000.0f, -1.5f, Type::HighShelf},
 };
 
 inline juce::NormalisableRange<float> freqRange() {

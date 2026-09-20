@@ -5,7 +5,7 @@ AdvancedEqModule::AdvancedEqModule(juce::AudioProcessorValueTreeState& apvts) {
         const auto index = static_cast<size_t>(band);
         const auto& spec = EqBands::specs[band];
 
-        _gainKnobs[index] = std::make_unique<CustomKnob>(spec.label, EqBands::minDb, EqBands::maxDb, 0.0f, "dB");
+        _gainKnobs[index] = std::make_unique<CustomKnob>(spec.label, EqBands::minDb, EqBands::maxDb, spec.defaultDb, "dB");
         _freqKnobs[index] = std::make_unique<CustomKnob>("Hz", EqBands::minHz, EqBands::maxHz, spec.defaultHz, "Hz", 0.1f);
         addAndMakeVisible(*_gainKnobs[index]);
         addAndMakeVisible(*_freqKnobs[index]);

@@ -4,7 +4,7 @@ BasicEqModule::BasicEqModule(juce::AudioProcessorValueTreeState& apvts) {
     for (int band = 0; band < EqBands::count; ++band) {
         const auto index = static_cast<size_t>(band);
         const auto& spec = EqBands::specs[band];
-        _knobs[index] = std::make_unique<CustomKnob>(spec.label, EqBands::minDb, EqBands::maxDb, 0.0f, "dB");
+        _knobs[index] = std::make_unique<CustomKnob>(spec.label, EqBands::minDb, EqBands::maxDb, spec.defaultDb, "dB");
         addAndMakeVisible(*_knobs[index]);
         _attachments[index] = std::make_unique<SliderAttachment>(apvts, spec.gainId, _knobs[index]->getSlider());
     }

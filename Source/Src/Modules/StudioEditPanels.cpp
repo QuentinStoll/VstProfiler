@@ -274,7 +274,7 @@ float EqResponseDisplay::dbFromY(float y) const {
 }
 
 float EqResponseDisplay::bandGain(int band) const {
-    return eqParamValue(_apvts, EqBands::specs[band].gainId, 0.0f);
+    return eqParamValue(_apvts, EqBands::specs[band].gainId, EqBands::specs[band].defaultDb);
 }
 
 float EqResponseDisplay::bandFreq(int band) const {

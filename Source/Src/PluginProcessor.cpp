@@ -173,7 +173,8 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
         const auto index = static_cast<size_t>(band);
         _eqGainSmoothed[index].reset(sampleRate, PARAMETER_RAMP_SECONDS);
         _eqFreqSmoothed[index].reset(sampleRate, PARAMETER_RAMP_SECONDS);
-        _eqGainSmoothed[index].setCurrentAndTargetValue(getParameterValue(_eqGainParams[index], 0.0f));
+        _eqGainSmoothed[index].setCurrentAndTargetValue(
+            getParameterValue(_eqGainParams[index], EqBands::specs[band].defaultDb));
         _eqFreqSmoothed[index].setCurrentAndTargetValue(
             getParameterValue(_eqFreqParams[index], EqBands::specs[band].defaultHz));
     }
@@ -280,7 +281,7 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     bool eqSmoothing = false;
     for (int band = 0; band < EqBands::count; ++band) {
         const auto index = static_cast<size_t>(band);
-        _eqGainSmoothed[index].setTargetValue(getParameterValue(_eqGainParams[index], 0.0f));
+        _eqGainSmoothed[index].setTargetValue(getParameterValue(_eqGainParams[index], EqBands::specs[band].defaultDb));
         _eqFreqSmoothed[index].setTargetValue(
             getParameterValue(_eqFreqParams[index], EqBands::specs[band].defaultHz));
         eqSmoothing = eqSmoothing
@@ -476,17 +477,17 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
     // EQ parameters
     // ==============================================================================
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"depth", 1}, "Low Shelf", EqBands::gainRange(), 0.0f));
+        juce::ParameterID{"depth", 1}, "Low Shelf", EqBands::gainRange(), EqBands::specs[0].defaultDb));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"bass", 1}, "EQ Band 1", EqBands::gainRange(), 0.0f));
+        juce::ParameterID{"bass", 1}, "EQ Band 1", EqBands::gainRange(), EqBands::specs[1].defaultDb));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"mid", 1}, "EQ Band 2", EqBands::gainRange(), 0.0f));
+        juce::ParameterID{"mid", 1}, "EQ Band 2", EqBands::gainRange(), EqBands::specs[2].defaultDb));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"highMid", 1}, "EQ Band 3", EqBands::gainRange(), 0.0f));
+        juce::ParameterID{"highMid", 1}, "EQ Band 3", EqBands::gainRange(), EqBands::specs[3].defaultDb));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"treble", 1}, "EQ Band 4", EqBands::gainRange(), 0.0f));
+        juce::ParameterID{"treble", 1}, "EQ Band 4", EqBands::gainRange(), EqBands::specs[4].defaultDb));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"presence", 1}, "High Shelf", EqBands::gainRange(), 0.0f));
+        juce::ParameterID{"presence", 1}, "High Shelf", EqBands::gainRange(), EqBands::specs[5].defaultDb));
 
     for (const auto& band : EqBands::specs) {
         layout.add(std::make_unique<juce::AudioParameterFloat>(
