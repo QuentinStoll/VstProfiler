@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 
 #include "Components/CustomKnob.h"
+#include "Components/CustomLevelMeter.h"
 #include "Components/CustomToggleButton.h"
 #include "Components/FileDropZone.h"
 #include "Modules/BasicEqModule.h"
@@ -92,4 +93,26 @@ class EqPostFxPanel : public juce::Component {
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> _eqAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EqPostFxPanel)
+};
+
+class MasterVolumePanel : public juce::Component,
+                          private juce::Timer {
+   public:
+    explicit MasterVolumePanel(ProfilerAudioProcessor& processor);
+    ~MasterVolumePanel() override;
+
+    void paint(juce::Graphics& g) override;
+    void resized() override;
+
+   private:
+    ProfilerAudioProcessor& _processor;
+    juce::Label _title{"", "Master Volume"};
+    juce::Label _summary{"", "Output level after the signal chain."};
+    CustomKnob _masterKnob{"Master", 0.0f, 100.0f, 50.0f, "%", 1.0f};
+    Gui::VerticalLevelMeter _outputMeter;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> _masterAttachment;
+
+    void timerCallback() override;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MasterVolumePanel)
 };

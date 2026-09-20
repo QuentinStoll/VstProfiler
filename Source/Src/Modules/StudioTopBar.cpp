@@ -17,7 +17,7 @@ void StudioTopBar::IconButton::paintButton(juce::Graphics& g, bool isMouseOverBu
     if (laf != nullptr) {
         laf->paintFlatButtonBackground(g,
                                        bounds,
-                                       ProfilerStyle::Colors::elevated,
+                                       juce::Colours::black,
                                        isMouseOverButton,
                                        isButtonDown,
                                        getToggleState());
@@ -30,7 +30,7 @@ void StudioTopBar::IconButton::paintButton(juce::Graphics& g, bool isMouseOverBu
         return;
     }
 
-    g.setColour(ProfilerStyle::Colors::elevated);
+    g.setColour(juce::Colours::black);
     g.fillRoundedRectangle(bounds, ProfilerStyle::Surfaces::controlCorner);
 }
 
@@ -47,25 +47,10 @@ StudioTopBar::StudioTopBar(ProfilerAudioProcessor& processor)
     addAndMakeVisible(_presetMenu);
     addAndMakeVisible(_libraryButton);
     addAndMakeVisible(_muteButton);
-    addAndMakeVisible(_masterLabel);
-    addAndMakeVisible(_masterSlider);
-    addAndMakeVisible(_outputMeter);
     addAndMakeVisible(_settingsButton);
-
-    _masterLabel.setText("VOL", juce::dontSendNotification);
-    _masterLabel.setFont(ProfilerStyle::Fonts::bold(12.0f));
-    _masterLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::textMuted);
-    _masterLabel.setJustificationType(juce::Justification::centred);
-    _masterLabel.setInterceptsMouseClicks(false, false);
-
-    _masterSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    _masterSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    _masterSlider.setRange(0.0, 100.0, 1.0);
-    _masterSlider.setTextValueSuffix(" %");
 
     _muteButton.setClickingTogglesState(true);
     _muteAttach = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(_apvts, "isMute", _muteButton);
-    _masterAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(_apvts, "master", _masterSlider);
 
     _audioProcessor.getProfileManager().addChangeListener(this);
     refreshProfileMenu();
@@ -86,36 +71,23 @@ StudioTopBar::StudioTopBar(ProfilerAudioProcessor& processor)
             onSettingsClicked();
         }
     };
-
-    startTimerHz(30);
 }
 
 StudioTopBar::~StudioTopBar() {
-    stopTimer();
     _audioProcessor.getProfileManager().removeChangeListener(this);
     _presetMenu.setLookAndFeel(nullptr);
 }
 
 void StudioTopBar::paint(juce::Graphics& g) {
-    ProfilerStyle::Surfaces::fillPanel(g, getLocalBounds().toFloat());
-
-    auto accent = juce::Rectangle<float>(10.0f, static_cast<float>(getHeight()) * 0.32f, 3.0f, static_cast<float>(getHeight()) * 0.36f);
-    g.setColour(ProfilerStyle::Colors::accent);
-    g.fillRoundedRectangle(accent, 1.5f);
+    g.fillAll(juce::Colours::black);
 }
 
 void StudioTopBar::resized() {
     auto area = getLocalBounds().reduced(12, 6);
     _logoLabel.setBounds(area.removeFromLeft(128));
 
-    auto right = area.removeFromRight(228);
+    auto right = area.removeFromRight(94);
     _settingsButton.setBounds(right.removeFromRight(32).withSizeKeepingCentre(32, 32));
-    right.removeFromRight(6);
-    _outputMeter.setBounds(right.removeFromRight(7).reduced(0, 4));
-    right.removeFromRight(5);
-    auto masterArea = right.removeFromRight(44);
-    _masterLabel.setBounds(masterArea.removeFromBottom(14));
-    _masterSlider.setBounds(masterArea);
     right.removeFromRight(6);
     _muteButton.setBounds(right.removeFromRight(56).withSizeKeepingCentre(56, 26));
 
@@ -256,8 +228,4 @@ void StudioTopBar::changeListenerCallback(juce::ChangeBroadcaster* source) {
     if (source == &_audioProcessor.getProfileManager()) {
         refreshProfileMenu();
     }
-}
-
-void StudioTopBar::timerCallback() {
-    _outputMeter.setLevel(_audioProcessor.getRmsLevelOutput());
 }

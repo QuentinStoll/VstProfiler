@@ -4,13 +4,11 @@
 
 #include "Components/CustomComboBox.h"
 #include "Components/CustomTextButton.h"
-#include "Components/CustomLevelMeter.h"
 
 class ProfilerAudioProcessor;
 
 class StudioTopBar : public juce::Component,
-                     private juce::ChangeListener,
-                     private juce::Timer {
+                     private juce::ChangeListener {
    public:
     explicit StudioTopBar(ProfilerAudioProcessor& processor);
     ~StudioTopBar() override;
@@ -46,13 +44,9 @@ class StudioTopBar : public juce::Component,
     CustomComboBox _presetMenu;
     IconButton _libraryButton{"Library", IconButton::Icon::Library};
     CustomTextButton _muteButton{"MUTE"};
-    juce::Label _masterLabel;
-    juce::Slider _masterSlider;
-    Gui::VerticalLevelMeter _outputMeter;
     IconButton _settingsButton{"Settings", IconButton::Icon::Gear};
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> _muteAttach;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> _masterAttach;
     bool _isUpdatingProfileMenu = false;
 
     void refreshProfileMenu();
@@ -61,7 +55,6 @@ class StudioTopBar : public juce::Component,
     void resetParametersToDefaults();
     void resetLoadedFiles();
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
-    void timerCallback() override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StudioTopBar)
 };

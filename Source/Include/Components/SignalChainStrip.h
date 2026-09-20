@@ -17,9 +17,12 @@ class SignalChainBlock : public juce::Button {
 
     void setSubtitle(const juce::String& subtitle);
     void setLedOn(bool shouldBeOn);
+    void setIoNode(bool isIoNode);
+    bool isIoNode() const noexcept { return _isIoNode; }
 
    protected:
     void paintButton(juce::Graphics& g, bool isMouseOverButton, bool isButtonDown) override;
+    bool hitTest(int x, int y) override;
 
    private:
     juce::String _title;
@@ -27,6 +30,7 @@ class SignalChainBlock : public juce::Button {
     juce::Colour _categoryColour;
     CustomLookAndFeel::RigIcon _icon;
     bool _ledOn = false;
+    bool _isIoNode = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SignalChainBlock)
 };
@@ -37,7 +41,8 @@ class SignalChainStrip : public juce::Component {
         InputGate = 0,
         AmpProfiler,
         CabinetIr,
-        EqPostFx
+        EqPostFx,
+        MasterVolume
     };
 
     SignalChainStrip();
@@ -56,7 +61,7 @@ class SignalChainStrip : public juce::Component {
 
    private:
     static constexpr int kSlotCount = 8;
-    static constexpr int kOccupiedSlots[4] = {0, 2, 4, 6};
+    static constexpr int kOccupiedSlots[5] = {0, 2, 4, 6, 7};
 
     SignalChainBlock _inputGate{"Input / Gate", "Gate", ProfilerStyle::Colors::rigInput,
                                 CustomLookAndFeel::RigIcon::InputJack};
@@ -66,12 +71,15 @@ class SignalChainStrip : public juce::Component {
                                 CustomLookAndFeel::RigIcon::Cabinet};
     SignalChainBlock _eqPostFx{"EQ / Post-FX", "Bypassed", ProfilerStyle::Colors::rigEq,
                                CustomLookAndFeel::RigIcon::EqFaders};
+    SignalChainBlock _masterVolume{"Master Volume", "Vol", ProfilerStyle::Colors::rigMaster,
+                                   CustomLookAndFeel::RigIcon::Speaker};
     std::array<juce::Rectangle<int>, kSlotCount> _slotBounds{};
     BlockId _selected = BlockId::AmpProfiler;
 
     SignalChainBlock& getBlock(BlockId blockId);
     const SignalChainBlock& getBlock(BlockId blockId) const;
     void handleBlockClick(BlockId blockId);
+    bool isOccupiedSlot(int slot) const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SignalChainStrip)
 };

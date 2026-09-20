@@ -4,5 +4,5 @@
 
 CustomComboBox::CustomComboBox() {
     setColour(juce::ComboBox::textColourId, ProfilerStyle::Colors::text);
-    setColour(juce::ComboBox::backgroundColourId, ProfilerStyle::Colors::elevated);
+    setColour(juce::ComboBox::backgroundColourId, juce::Colours::black);
 }

@@ -10,10 +10,14 @@ enum class Theme {
 };
 
 namespace Colors {
-inline const juce::Colour background = juce::Colour(0xff0F0F12);
-inline const juce::Colour container = juce::Colour(0xff1E1E24);
-inline const juce::Colour elevated = juce::Colour(0xff1E1E24);
-inline const juce::Colour border = juce::Colour(0xff2A2A35);
+inline const juce::Colour background = juce::Colours::black;
+inline const juce::Colour header = juce::Colours::black;
+inline const juce::Colour container = juce::Colours::black;
+inline const juce::Colour elevated = juce::Colours::black;
+inline const juce::Colour border = juce::Colour(0xff22232A);
+inline const juce::Colour slotBorder = juce::Colour(0xff22232A);
+inline const juce::Colour blockFill = juce::Colours::black;
+inline const juce::Colour tooltip = juce::Colour(0xff1A1A1A);
 inline const juce::Colour text = juce::Colour(0xffE8E8ED);
 inline const juce::Colour textMuted = juce::Colour(0xff8A8A96);
 inline const juce::Colour caption = juce::Colour(0xff8A8A93);
@@ -23,6 +27,7 @@ inline const juce::Colour rigInput = juce::Colour(0xff10B981);
 inline const juce::Colour rigAmp = juce::Colour(0xffFF5500);
 inline const juce::Colour rigCab = juce::Colour(0xff3B82F6);
 inline const juce::Colour rigEq = juce::Colour(0xffA855F7);
+inline const juce::Colour rigMaster = juce::Colour(0xffF4F4F5);
 
 inline const juce::Colour white = text;
 inline const juce::Colour lightestGrey = juce::Colour(0xff5C5C64);
@@ -90,6 +95,16 @@ inline void fillPanel(juce::Graphics& g, juce::Rectangle<float> area, float corn
     g.fillRoundedRectangle(area, cornerRadius);
     g.setColour(Colors::border);
     g.drawRoundedRectangle(area.reduced(0.5f), cornerRadius, 1.0f);
+}
+
+inline void fillBar(juce::Graphics& g, juce::Rectangle<float> area) {
+    g.setColour(Colors::background);
+    g.fillRect(area);
+}
+
+inline void drawHairline(juce::Graphics& g, juce::Rectangle<float> line) {
+    g.setColour(Colors::border);
+    g.fillRect(line);
 }
 }  // namespace Surfaces
 

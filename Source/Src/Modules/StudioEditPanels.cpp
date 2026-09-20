@@ -248,3 +248,43 @@ void EqPostFxPanel::resized() {
     const auto knobRowHeight = juce::jlimit(72, 92, area.getHeight());
     _eqModule.setBounds(area.withSizeKeepingCentre(area.getWidth(), knobRowHeight));
 }
+
+MasterVolumePanel::MasterVolumePanel(ProfilerAudioProcessor& processor)
+    : _processor(processor) {
+    configurePanelTitle(_title, "Master Volume");
+    _summary.setFont(ProfilerStyle::Fonts::regular(13.0f));
+    _summary.setColour(juce::Label::textColourId, ProfilerStyle::Colors::caption);
+    _summary.setJustificationType(juce::Justification::centredLeft);
+    _summary.setInterceptsMouseClicks(false, false);
+
+    addAndMakeVisible(_title);
+    addAndMakeVisible(_summary);
+    addAndMakeVisible(_masterKnob);
+    addAndMakeVisible(_outputMeter);
+
+    _masterAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        processor._apvts, "master", _masterKnob.getSlider());
+    startTimerHz(30);
+}
+
+MasterVolumePanel::~MasterVolumePanel() {
+    stopTimer();
+}
+
+void MasterVolumePanel::paint(juce::Graphics&) {}
+
+void MasterVolumePanel::resized() {
+    auto area = getLocalBounds().reduced(10, 6);
+    auto header = area.removeFromTop(22);
+    _title.setBounds(header.removeFromLeft(150));
+    _summary.setBounds(header);
+
+    auto meter = area.removeFromRight(14).reduced(4, 8);
+    area.removeFromRight(16);
+    _outputMeter.setBounds(meter);
+    _masterKnob.setBounds(area.withSizeKeepingCentre(108, juce::jmin(88, area.getHeight())));
+}
+
+void MasterVolumePanel::timerCallback() {
+    _outputMeter.setLevel(_processor.getRmsLevelOutput());
+}

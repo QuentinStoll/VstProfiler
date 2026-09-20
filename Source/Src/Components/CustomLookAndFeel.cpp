@@ -36,6 +36,7 @@ void CustomLookAndFeel::applyColourScheme() {
 
     setColour(juce::ResizableWindow::backgroundColourId, background);
     setColour(juce::DocumentWindow::backgroundColourId, background);
+    setColour(juce::DocumentWindow::textColourId, text);
 
     setColour(juce::TextButton::buttonColourId, elevated);
     setColour(juce::TextButton::buttonOnColourId, accent);
@@ -80,6 +81,12 @@ void CustomLookAndFeel::applyColourScheme() {
 
     setColour(juce::ScrollBar::thumbColourId, accent);
     setColour(juce::ScrollBar::trackColourId, container);
+
+    setColour(juce::TooltipWindow::backgroundColourId, tooltip);
+    setColour(juce::TooltipWindow::textColourId, juce::Colours::white);
+    setColour(juce::TooltipWindow::outlineColourId, juce::Colours::transparentBlack);
+    setColour(juce::BubbleComponent::backgroundColourId, tooltip);
+    setColour(juce::BubbleComponent::outlineColourId, juce::Colours::transparentBlack);
 }
 
 juce::Font CustomLookAndFeel::getUiFont(float height, juce::Font::FontStyleFlags style) const {
@@ -148,14 +155,9 @@ void CustomLookAndFeel::drawRaisedPanel(juce::Graphics& g,
                                         juce::Rectangle<float> bounds,
                                         bool glow,
                                         float cornerRadius) const {
-    if (glow) {
-        drawAccentGlow(g, bounds.reduced(2.0f), 0.7f);
-    }
-
-    g.setColour(ProfilerStyle::Colors::elevated);
-    g.fillRoundedRectangle(bounds, cornerRadius);
-    g.setColour(glow ? ProfilerStyle::Colors::accent.withAlpha(0.85f) : ProfilerStyle::Colors::border);
-    g.drawRoundedRectangle(bounds.reduced(0.5f), cornerRadius, 1.0f);
+    juce::ignoreUnused(glow, cornerRadius);
+    g.setColour(juce::Colours::black);
+    g.fillRect(bounds);
 }
 
 void CustomLookAndFeel::paintFlatButtonBackground(juce::Graphics& g,
@@ -521,6 +523,55 @@ void CustomLookAndFeel::drawLabel(juce::Graphics& g, juce::Label& label) {
     }
 }
 
+juce::Font CustomLookAndFeel::getTooltipFont() {
+    return getUiFont(11.0f);
+}
+
+juce::Rectangle<int> CustomLookAndFeel::getTooltipBounds(const juce::String& tipText,
+                                                         juce::Point<int> screenPos,
+                                                         juce::Rectangle<int> parentArea) {
+    const auto font = getTooltipFont();
+    const auto textWidth = juce::GlyphArrangement::getStringWidth(font, tipText);
+    const auto width = juce::jlimit(40, juce::jmax(80, parentArea.getWidth() - 16), juce::roundToInt(textWidth + 16.0f));
+    const auto height = juce::roundToInt(font.getHeight() + 10.0f);
+    auto bounds = juce::Rectangle<int>(screenPos.x, screenPos.y + 14, width, height);
+    return bounds.constrainedWithin(parentArea.reduced(4));
+}
+
+void CustomLookAndFeel::drawTooltip(juce::Graphics& g, const juce::String& text, int width, int height) {
+    auto bounds = juce::Rectangle<float>(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
+    g.setColour(ProfilerStyle::Colors::tooltip);
+    g.fillRoundedRectangle(bounds, 4.0f);
+    g.setColour(juce::Colours::white);
+    g.setFont(getTooltipFont());
+    g.drawFittedText(text, bounds.reduced(8.0f, 3.0f).toNearestInt(), juce::Justification::centredLeft, 3);
+}
+
+void CustomLookAndFeel::drawDocumentWindowTitleBar(juce::DocumentWindow& window, juce::Graphics& g,
+                                                   int w, int h, int titleSpaceX, int titleSpaceW,
+                                                   const juce::Image*, bool drawTitleTextOnLeft) {
+    g.setColour(juce::Colours::black);
+    g.fillRect(0, 0, w, h);
+    g.setColour(ProfilerStyle::Colors::text);
+    g.setFont(getUiFont(13.0f));
+    g.drawText(window.getName(),
+               titleSpaceX, 0, titleSpaceW, h,
+               drawTitleTextOnLeft ? juce::Justification::centredLeft : juce::Justification::centred,
+               true);
+}
+
+void CustomLookAndFeel::fillResizableWindowBackground(juce::Graphics& g, int w, int h,
+                                                      const juce::BorderSize<int>&,
+                                                      juce::ResizableWindow&) {
+    g.setColour(juce::Colours::black);
+    g.fillRect(0, 0, w, h);
+}
+
+void CustomLookAndFeel::drawResizableWindowBorder(juce::Graphics&, int, int,
+                                                  const juce::BorderSize<int>&,
+                                                  juce::ResizableWindow&) {
+}
+
 void CustomLookAndFeel::drawSignalChainBlock(juce::Graphics& g,
                                              juce::Rectangle<float> bounds,
                                              juce::Colour categoryColour,
@@ -528,24 +579,16 @@ void CustomLookAndFeel::drawSignalChainBlock(juce::Graphics& g,
                                              bool isActive,
                                              bool isMouseOver,
                                              bool ledOn) const {
-    if (isActive) {
-        drawAccentGlow(g, bounds.reduced(1.0f), 0.72f, categoryColour);
-    } else if (isMouseOver) {
-        drawAccentGlow(g, bounds.reduced(3.0f), 0.28f, categoryColour);
-    }
+    const auto borderAlpha = isActive ? 1.0f : (isMouseOver ? 0.92f : 0.72f);
+    const auto borderWidth = isActive ? 2.0f : 1.0f;
+    const auto glow = isActive ? 0.48f : (isMouseOver ? 0.28f : 0.12f);
+    drawAccentGlow(g, bounds.reduced(1.0f), glow, categoryColour);
 
-    g.setColour(ProfilerStyle::Colors::elevated);
-    g.fillRoundedRectangle(bounds, 5.0f);
+    g.setColour(ProfilerStyle::Colors::blockFill);
+    g.fillRoundedRectangle(bounds, 6.0f);
 
-    if (isActive) {
-        g.setColour(categoryColour.withAlpha(0.12f));
-        g.fillRoundedRectangle(bounds, 5.0f);
-        g.setColour(categoryColour);
-        g.drawRoundedRectangle(bounds.reduced(0.5f), 5.0f, 1.2f);
-    } else {
-        g.setColour(ProfilerStyle::Colors::border);
-        g.drawRoundedRectangle(bounds.reduced(0.5f), 5.0f, 1.0f);
-    }
+    g.setColour(categoryColour.withAlpha(borderAlpha));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), 6.0f, borderWidth);
 
     const auto side = juce::jmin(bounds.getWidth(), bounds.getHeight());
     const auto ledSize = juce::jlimit(6.0f, 8.0f, side * 0.07f);
@@ -553,7 +596,7 @@ void CustomLookAndFeel::drawSignalChainBlock(juce::Graphics& g,
                    .withX(bounds.getRight() - ledSize - side * 0.08f)
                    .withY(bounds.getY() + side * 0.08f);
     if (ledOn) {
-        juce::DropShadow(categoryColour.withAlpha(0.7f), 4, {}).drawForRectangle(g, led.toNearestInt());
+        juce::DropShadow(categoryColour.withAlpha(0.35f), 3, {}).drawForRectangle(g, led.toNearestInt());
         g.setColour(categoryColour);
     } else {
         g.setColour(ProfilerStyle::Colors::border.brighter(0.2f));
@@ -564,19 +607,39 @@ void CustomLookAndFeel::drawSignalChainBlock(juce::Graphics& g,
     drawRigIcon(g, bounds.withSizeKeepingCentre(iconSize, iconSize), icon, categoryColour);
 }
 
+void CustomLookAndFeel::drawSignalIoNode(juce::Graphics& g,
+                                         juce::Rectangle<float> bounds,
+                                         bool isActive,
+                                         bool isMouseOver) const {
+    const auto side = juce::jmin(bounds.getWidth(), bounds.getHeight());
+    auto ring = bounds.withSizeKeepingCentre(side * 0.62f, side * 0.62f);
+    const auto colour = juce::Colour(0xffF4F4F5);
+    const auto alpha = isActive ? 1.0f : (isMouseOver ? 0.96f : 0.92f);
+
+    if (isActive || isMouseOver) {
+        g.setColour(colour.withAlpha(isActive ? 0.22f : 0.12f));
+        g.drawEllipse(ring.expanded(2.2f), 3.0f);
+    }
+
+    g.setColour(juce::Colours::black);
+    g.fillEllipse(ring);
+    g.setColour(colour.withAlpha(alpha));
+    g.drawEllipse(ring, kSignalBusCoreWidth);
+}
+
 void CustomLookAndFeel::drawSignalBus(juce::Graphics& g, float y, float x1, float x2) const {
     const auto colour = juce::Colour(0xffC5C5CE);
     g.setColour(colour.withAlpha(0.16f));
-    g.drawLine(x1, y, x2, y, 5.1f);
+    g.drawLine(x1, y, x2, y, kSignalBusGlowWidth);
     g.setColour(colour.withAlpha(0.88f));
-    g.drawLine(x1, y, x2, y, 1.72f);
+    g.drawLine(x1, y, x2, y, kSignalBusCoreWidth);
 }
 
 void CustomLookAndFeel::drawEmptySignalSlot(juce::Graphics& g, juce::Rectangle<float> bounds) const {
     const auto side = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.5f;
     auto outline = bounds.withSizeKeepingCentre(side, side);
-    g.setColour(ProfilerStyle::Colors::border.brighter(0.15f).withAlpha(0.7f));
-    g.drawRoundedRectangle(outline, 3.0f, 1.2f);
+    g.setColour(ProfilerStyle::Colors::slotBorder);
+    g.drawRoundedRectangle(outline, 6.0f, 1.0f);
 }
 
 void CustomLookAndFeel::drawRigIcon(juce::Graphics& g, juce::Rectangle<float> bounds, RigIcon icon, juce::Colour colour) const {
@@ -645,6 +708,14 @@ void CustomLookAndFeel::drawRigIcon(juce::Graphics& g, juce::Rectangle<float> bo
             }
             break;
         }
+        case RigIcon::Speaker: {
+            auto ring = bounds.withSizeKeepingCentre(bounds.getWidth() * 0.58f, bounds.getHeight() * 0.58f);
+            g.setColour(juce::Colours::black);
+            g.fillEllipse(ring);
+            g.setColour(colour);
+            g.drawEllipse(ring, juce::jmax(1.8f, strokeW * 1.6f));
+            break;
+        }
     }
 }
 
@@ -680,20 +751,22 @@ void CustomLookAndFeel::drawDropZone(juce::Graphics& g,
         drawAccentGlow(g, bounds.reduced(2.0f), 0.8f, categoryColour);
     }
 
-    g.setColour(ProfilerStyle::Colors::background.brighter(isDragOver ? 0.06f : 0.02f));
+    g.setColour(ProfilerStyle::Colors::blockFill);
     g.fillRoundedRectangle(bounds, kPanelCorner);
 
     g.setColour(isDragOver ? categoryColour
-                           : (isLoaded ? categoryColour.withAlpha(0.7f) : ProfilerStyle::Colors::border));
-    g.drawRoundedRectangle(bounds.reduced(0.5f), kPanelCorner, isDragOver || isLoaded ? 1.3f : 1.0f);
+                           : (isLoaded ? categoryColour.withAlpha(0.55f) : ProfilerStyle::Colors::border));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), kPanelCorner, 1.0f);
 
-    auto dashBounds = bounds.reduced(10.0f);
-    g.setColour((isDragOver ? categoryColour : ProfilerStyle::Colors::border).withAlpha(0.5f));
-    const float dash[] = {5.0f, 4.0f};
-    g.drawDashedLine({dashBounds.getX(), dashBounds.getY(), dashBounds.getRight(), dashBounds.getY()}, dash, 2, 1.0f);
-    g.drawDashedLine({dashBounds.getRight(), dashBounds.getY(), dashBounds.getRight(), dashBounds.getBottom()}, dash, 2, 1.0f);
-    g.drawDashedLine({dashBounds.getRight(), dashBounds.getBottom(), dashBounds.getX(), dashBounds.getBottom()}, dash, 2, 1.0f);
-    g.drawDashedLine({dashBounds.getX(), dashBounds.getBottom(), dashBounds.getX(), dashBounds.getY()}, dash, 2, 1.0f);
+    if (isDragOver) {
+        auto dashBounds = bounds.reduced(10.0f);
+        g.setColour(categoryColour.withAlpha(0.55f));
+        const float dash[] = {5.0f, 4.0f};
+        g.drawDashedLine({dashBounds.getX(), dashBounds.getY(), dashBounds.getRight(), dashBounds.getY()}, dash, 2, 1.0f);
+        g.drawDashedLine({dashBounds.getRight(), dashBounds.getY(), dashBounds.getRight(), dashBounds.getBottom()}, dash, 2, 1.0f);
+        g.drawDashedLine({dashBounds.getRight(), dashBounds.getBottom(), dashBounds.getX(), dashBounds.getBottom()}, dash, 2, 1.0f);
+        g.drawDashedLine({dashBounds.getX(), dashBounds.getBottom(), dashBounds.getX(), dashBounds.getY()}, dash, 2, 1.0f);
+    }
 
     auto content = bounds.reduced(14.0f, 8.0f);
     const auto hintSize = juce::jlimit(11.0f, 13.0f, bounds.getHeight() * 0.12f);

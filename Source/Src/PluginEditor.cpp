@@ -12,9 +12,12 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
       _ampPanel(p),
       _cabinetPanel(p),
       _eqPanel(p._apvts),
+      _masterPanel(p),
       _libraryView(p) {
     SettingsView::applySavedBackgroundColour();
     setLookAndFeel(&_customLookAndFeel);
+    setOpaque(true);
+    setColour(juce::ResizableWindow::backgroundColourId, juce::Colours::black);
 
     setResizable(true, true);
     getConstrainer()->setFixedAspectRatio(editorWidth / static_cast<double>(editorHeight));
@@ -30,6 +33,7 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
     _editHost.addAndMakeVisible(_ampPanel);
     _editHost.addAndMakeVisible(_cabinetPanel);
     _editHost.addAndMakeVisible(_eqPanel);
+    _editHost.addAndMakeVisible(_masterPanel);
 
     _settingsHost.addAndMakeVisible(_settingsView);
     _settingsHost.addAndMakeVisible(_resetButton);
@@ -94,6 +98,7 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
     _audioProcessor.getProfileManager().addChangeListener(this);
     _audioProcessor._apvts.addParameterListener("isEqEnabled", this);
     _audioProcessor._apvts.addParameterListener("noise", this);
+    _audioProcessor._apvts.addParameterListener("master", this);
 
     showEditPanel(SignalChainStrip::BlockId::AmpProfiler);
     updateChainStatus();
@@ -101,27 +106,40 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
 }
 
 ProfilerAudioProcessorEditor::~ProfilerAudioProcessorEditor() {
+    if (auto* window = findParentComponentOfClass<juce::DocumentWindow>()) {
+        window->setLookAndFeel(nullptr);
+    }
     _audioProcessor.getProfileManager().removeChangeListener(this);
     _audioProcessor._apvts.removeParameterListener("isEqEnabled", this);
     _audioProcessor._apvts.removeParameterListener("noise", this);
+    _audioProcessor._apvts.removeParameterListener("master", this);
     setLookAndFeel(nullptr);
 }
 
 void ProfilerAudioProcessorEditor::paint(juce::Graphics& g) {
-    ProfilerStyle::Surfaces::fillWindow(g, getLocalBounds().toFloat());
+    g.fillAll(juce::Colours::black);
+}
 
-    if (_overlayMode != OverlayMode::None) {
+void ProfilerAudioProcessorEditor::parentHierarchyChanged() {
+    applyStandaloneWindowChrome();
+}
+
+void ProfilerAudioProcessorEditor::applyStandaloneWindowChrome() {
+    auto* window = findParentComponentOfClass<juce::DocumentWindow>();
+    if (window == nullptr) {
         return;
     }
 
-    juce::Graphics::ScopedSaveState saved(g);
-    g.addTransform(_content.getTransform());
-
-    if (auto* laf = dynamic_cast<CustomLookAndFeel*>(&getLookAndFeel())) {
-        laf->drawRaisedPanel(g, _editHost.getBounds().toFloat());
-    } else {
-        ProfilerStyle::Surfaces::fillPanel(g, _editHost.getBounds().toFloat());
+    window->setLookAndFeel(&_customLookAndFeel);
+    if (window->isUsingNativeTitleBar()) {
+        window->setUsingNativeTitleBar(false);
     }
+    window->setBackgroundColour(juce::Colours::black);
+    window->setColour(juce::ResizableWindow::backgroundColourId, juce::Colours::black);
+    window->setColour(juce::DocumentWindow::backgroundColourId, juce::Colours::black);
+    window->setTitleBarHeight(32);
+    window->setTitleBarButtonsRequired(juce::DocumentWindow::minimiseButton | juce::DocumentWindow::closeButton, false);
+    window->repaint();
 }
 
 void ProfilerAudioProcessorEditor::resized() {
@@ -129,23 +147,23 @@ void ProfilerAudioProcessorEditor::resized() {
     _content.setTransform(juce::AffineTransform::scale(scale));
     _content.setBounds(0, 0, editorWidth, editorHeight);
 
-    auto area = _content.getLocalBounds().reduced(12);
+    auto area = _content.getLocalBounds();
     _topBar.setBounds(area.removeFromTop(48));
-    area.removeFromTop(8);
 
     if (_overlayMode == OverlayMode::None) {
         constexpr int editHeight = 126;
         _editHost.setBounds(area.removeFromBottom(juce::jmin(editHeight, juce::jmax(0, area.getHeight() - 160))));
-        area.removeFromBottom(8);
-        _signalChain.setBounds(0, area.getY(), editorWidth, area.getHeight());
+        _signalChain.setBounds(area);
 
         auto panelBounds = _editHost.getLocalBounds();
         _inputGatePanel.setBounds(panelBounds);
         _ampPanel.setBounds(panelBounds);
         _cabinetPanel.setBounds(panelBounds);
         _eqPanel.setBounds(panelBounds);
+        _masterPanel.setBounds(panelBounds);
         _closeOverlayButton.setBounds({});
     } else {
+        area = area.reduced(12, 8);
         auto header = area.removeFromTop(36);
         _closeOverlayButton.setBounds(header.removeFromRight(88));
         area.removeFromTop(8);
@@ -220,6 +238,7 @@ void ProfilerAudioProcessorEditor::showEditPanel(SignalChainStrip::BlockId block
     _ampPanel.setVisible(blockId == SignalChainStrip::BlockId::AmpProfiler);
     _cabinetPanel.setVisible(blockId == SignalChainStrip::BlockId::CabinetIr);
     _eqPanel.setVisible(blockId == SignalChainStrip::BlockId::EqPostFx);
+    _masterPanel.setVisible(blockId == SignalChainStrip::BlockId::MasterVolume);
 }
 
 void ProfilerAudioProcessorEditor::updateChainStatus() {
@@ -228,11 +247,13 @@ void ProfilerAudioProcessorEditor::updateChainStatus() {
     const auto eqEnabled = _audioProcessor._apvts.getRawParameterValue("isEqEnabled") != nullptr
                            && _audioProcessor._apvts.getRawParameterValue("isEqEnabled")->load() > 0.5f;
     const auto noise = _audioProcessor._apvts.getRawParameterValue("noise");
+    const auto master = _audioProcessor._apvts.getRawParameterValue("master");
 
     _signalChain.setBlockLed(SignalChainStrip::BlockId::InputGate, true);
     _signalChain.setBlockLed(SignalChainStrip::BlockId::AmpProfiler, ampLoaded);
     _signalChain.setBlockLed(SignalChainStrip::BlockId::CabinetIr, irLoaded);
     _signalChain.setBlockLed(SignalChainStrip::BlockId::EqPostFx, eqEnabled);
+    _signalChain.setBlockLed(SignalChainStrip::BlockId::MasterVolume, true);
 
     _signalChain.setBlockSubtitle(SignalChainStrip::BlockId::InputGate,
                                   noise != nullptr ? juce::String(noise->load(), 1) + " dB" : "Gate");
@@ -241,6 +262,8 @@ void ProfilerAudioProcessorEditor::updateChainStatus() {
     _signalChain.setBlockSubtitle(SignalChainStrip::BlockId::CabinetIr,
                                   irLoaded ? _audioProcessor.getCurrentIRFile().getFileNameWithoutExtension() : "");
     _signalChain.setBlockSubtitle(SignalChainStrip::BlockId::EqPostFx, eqEnabled ? "On" : "Off");
+    _signalChain.setBlockSubtitle(SignalChainStrip::BlockId::MasterVolume,
+                                  master != nullptr ? juce::String(static_cast<int>(master->load())) + " %" : "Vol");
 }
 
 void ProfilerAudioProcessorEditor::showStatus(const juce::String& message, bool success) {
@@ -302,7 +325,7 @@ void ProfilerAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaste
 }
 
 void ProfilerAudioProcessorEditor::parameterChanged(const juce::String& parameterID, float /*newValue*/) {
-    if (parameterID == "isEqEnabled" || parameterID == "noise") {
+    if (parameterID == "isEqEnabled" || parameterID == "noise" || parameterID == "master") {
         juce::MessageManager::callAsync([safeThis = juce::Component::SafePointer<ProfilerAudioProcessorEditor>(this)]() {
             if (safeThis != nullptr) {
                 safeThis->_eqPanel.refreshBypassState();

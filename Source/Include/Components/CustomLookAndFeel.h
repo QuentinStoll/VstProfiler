@@ -63,6 +63,22 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
 
     void drawLabel(juce::Graphics& g, juce::Label& label) override;
 
+    juce::Font getTooltipFont();
+    juce::Rectangle<int> getTooltipBounds(const juce::String& tipText,
+                                          juce::Point<int> screenPos,
+                                          juce::Rectangle<int> parentArea) override;
+    void drawTooltip(juce::Graphics& g, const juce::String& text, int width, int height) override;
+
+    void drawDocumentWindowTitleBar(juce::DocumentWindow& window, juce::Graphics& g,
+                                    int w, int h, int titleSpaceX, int titleSpaceW,
+                                    const juce::Image* icon, bool drawTitleTextOnLeft) override;
+    void fillResizableWindowBackground(juce::Graphics& g, int w, int h,
+                                       const juce::BorderSize<int>& border,
+                                       juce::ResizableWindow& window) override;
+    void drawResizableWindowBorder(juce::Graphics& g, int w, int h,
+                                   const juce::BorderSize<int>& border,
+                                   juce::ResizableWindow& window) override;
+
     void paintFlatButtonBackground(juce::Graphics& g,
                                    juce::Rectangle<float> bounds,
                                    juce::Colour backgroundColour,
@@ -76,13 +92,17 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
         InputJack,
         AmpHead,
         Cabinet,
-        EqFaders
+        EqFaders,
+        Speaker
     };
 
     void drawRaisedPanel(juce::Graphics& g,
                          juce::Rectangle<float> bounds,
                          bool glow = false,
                          float cornerRadius = 6.0f) const;
+
+    static constexpr float kSignalBusGlowWidth = 5.1f;
+    static constexpr float kSignalBusCoreWidth = 1.72f;
 
     void drawSignalChainBlock(juce::Graphics& g,
                               juce::Rectangle<float> bounds,
@@ -91,6 +111,11 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
                               bool isActive,
                               bool isMouseOver,
                               bool ledOn) const;
+
+    void drawSignalIoNode(juce::Graphics& g,
+                          juce::Rectangle<float> bounds,
+                          bool isActive,
+                          bool isMouseOver) const;
 
     void drawSignalBus(juce::Graphics& g, float y, float x1, float x2) const;
 

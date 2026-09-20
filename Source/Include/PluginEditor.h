@@ -21,6 +21,7 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
 
     void paint(juce::Graphics&) override;
     void resized() override;
+    void parentHierarchyChanged() override;
 
    private:
     enum class OverlayMode {
@@ -41,6 +42,7 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     AmpProfilerPanel _ampPanel;
     CabinetIrPanel _cabinetPanel;
     EqPostFxPanel _eqPanel;
+    MasterVolumePanel _masterPanel;
 
     SettingsView _settingsView;
     juce::TextButton _resetButton{"Reset Chain"};
@@ -54,6 +56,8 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     NotificationBanner _notificationBanner;
     juce::TooltipWindow _tooltipWindow{this, 700};
     OverlayMode _overlayMode = OverlayMode::None;
+
+    void applyStandaloneWindowChrome();
 
     void showStudio();
     void showOverlay(OverlayMode mode);

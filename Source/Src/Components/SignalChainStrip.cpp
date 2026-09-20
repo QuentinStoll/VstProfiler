@@ -16,7 +16,6 @@ SignalChainBlock::SignalChainBlock(const juce::String& title,
     setClickingTogglesState(true);
     setRadioGroupId(kSignalChainRadioGroup);
     setMouseCursor(juce::MouseCursor::PointingHandCursor);
-    setTooltip(title);
 }
 
 void SignalChainBlock::setSubtitle(const juce::String& subtitle) {
@@ -29,7 +28,7 @@ void SignalChainBlock::setSubtitle(const juce::String& subtitle) {
 }
 
 void SignalChainBlock::setLedOn(bool shouldBeOn) {
-    if (_ledOn == shouldBeOn) {
+    if (_isIoNode || _ledOn == shouldBeOn) {
         return;
     }
 
@@ -37,8 +36,29 @@ void SignalChainBlock::setLedOn(bool shouldBeOn) {
     repaint();
 }
 
+void SignalChainBlock::setIoNode(bool isIoNode) {
+    _isIoNode = isIoNode;
+    setOpaque(false);
+    repaint();
+}
+
+bool SignalChainBlock::hitTest(int x, int y) {
+    if (!_isIoNode) {
+        return juce::Button::hitTest(x, y);
+    }
+
+    const auto bounds = getLocalBounds().toFloat();
+    const auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.31f;
+    return bounds.getCentre().getDistanceFrom({static_cast<float>(x), static_cast<float>(y)}) <= radius + 3.0f;
+}
+
 void SignalChainBlock::paintButton(juce::Graphics& g, bool isMouseOverButton, bool /*isButtonDown*/) {
     if (auto* laf = dynamic_cast<CustomLookAndFeel*>(&getLookAndFeel())) {
+        if (_isIoNode) {
+            laf->drawSignalIoNode(g, getLocalBounds().toFloat(), getToggleState(), isMouseOverButton);
+            return;
+        }
+
         laf->drawSignalChainBlock(g,
                                   getLocalBounds().toFloat(),
                                   _categoryColour,
@@ -64,27 +84,32 @@ SignalChainStrip::SignalChainStrip() {
     configure(_ampProfiler, BlockId::AmpProfiler);
     configure(_cabinetIr, BlockId::CabinetIr);
     configure(_eqPostFx, BlockId::EqPostFx);
+    configure(_masterVolume, BlockId::MasterVolume);
 
+    _inputGate.setIoNode(true);
+    _masterVolume.setIoNode(true);
     _ampProfiler.setToggleState(true, juce::dontSendNotification);
 }
 
 void SignalChainStrip::paint(juce::Graphics& g) {
     auto* laf = dynamic_cast<CustomLookAndFeel*>(&getLookAndFeel());
-    const auto busY = _slotBounds.front().isEmpty()
+    const auto inputCentre = _inputGate.getBounds().toFloat().getCentre();
+    const auto outputCentre = _masterVolume.getBounds().toFloat().getCentre();
+    const auto busY = inputCentre.isOrigin()
                           ? static_cast<float>(getLocalBounds().getCentreY())
-                          : _slotBounds.front().toFloat().getCentreY();
+                          : inputCentre.y;
+    const auto busStartX = inputCentre.isOrigin() ? 0.0f : inputCentre.x;
+    const auto busEndX = outputCentre.isOrigin() ? static_cast<float>(getWidth()) : outputCentre.x;
 
     if (laf != nullptr) {
-        laf->drawSignalBus(g, busY, 0.0f, static_cast<float>(getWidth()));
+        laf->drawSignalBus(g, busY, busStartX, busEndX);
     } else {
         g.setColour(ProfilerStyle::Colors::caption);
-        g.drawLine(0.0f, busY, static_cast<float>(getWidth()), busY, 1.2f);
+        g.drawLine(busStartX, busY, busEndX, busY, 1.2f);
     }
 
     for (int slot = 0; slot < kSlotCount; ++slot) {
-        const auto occupied = slot == kOccupiedSlots[0] || slot == kOccupiedSlots[1]
-                              || slot == kOccupiedSlots[2] || slot == kOccupiedSlots[3];
-        if (occupied || _slotBounds[static_cast<size_t>(slot)].isEmpty()) {
+        if (isOccupiedSlot(slot) || _slotBounds[static_cast<size_t>(slot)].isEmpty()) {
             continue;
         }
 
@@ -110,9 +135,15 @@ void SignalChainStrip::resized() {
         _slotBounds[static_cast<size_t>(slot)] = {centreX - square / 2, rowY, square, square};
     }
 
-    SignalChainBlock* blocks[] = {&_inputGate, &_ampProfiler, &_cabinetIr, &_eqPostFx};
-    for (int index = 0; index < 4; ++index) {
-        blocks[index]->setBounds(_slotBounds[static_cast<size_t>(kOccupiedSlots[index])]);
+    SignalChainBlock* blocks[] = {&_inputGate, &_ampProfiler, &_cabinetIr, &_eqPostFx, &_masterVolume};
+    const auto ioHit = juce::jlimit(36, 44, juce::roundToInt(static_cast<float>(square) * 0.38f));
+    for (int index = 0; index < 5; ++index) {
+        const auto slot = _slotBounds[static_cast<size_t>(kOccupiedSlots[index])];
+        if (blocks[index]->isIoNode()) {
+            blocks[index]->setBounds(slot.withSizeKeepingCentre(ioHit, ioHit));
+        } else {
+            blocks[index]->setBounds(slot);
+        }
     }
 }
 
@@ -137,6 +168,8 @@ SignalChainBlock& SignalChainStrip::getBlock(BlockId blockId) {
             return _cabinetIr;
         case BlockId::EqPostFx:
             return _eqPostFx;
+        case BlockId::MasterVolume:
+            return _masterVolume;
         case BlockId::AmpProfiler:
         default:
             return _ampProfiler;
@@ -152,4 +185,14 @@ void SignalChainStrip::handleBlockClick(BlockId blockId) {
     if (onBlockSelected) {
         onBlockSelected(blockId);
     }
+}
+
+bool SignalChainStrip::isOccupiedSlot(int slot) const {
+    for (const auto occupied : kOccupiedSlots) {
+        if (occupied == slot) {
+            return true;
+        }
+    }
+
+    return false;
 }
