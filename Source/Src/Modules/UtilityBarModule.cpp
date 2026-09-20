@@ -99,6 +99,8 @@ void UtilityBarModule::resetParametersToDefaults() {
     resetParam("master");
     resetParam("gain");
     resetParam("noise");
+    resetParam("input");
+    resetParam("output");
     resetParam("bass");
     resetParam("depth");
     resetParam("mid");
@@ -106,6 +108,10 @@ void UtilityBarModule::resetParametersToDefaults() {
     resetParam("treble");
     resetParam("isMute");
     resetParam("isEqEnabled");
+    resetParam("isGateEnabled");
+    resetParam("isAmpEnabled");
+    resetParam("isCabEnabled");
+    resetParam("cabLowCut");
 }
 
 void UtilityBarModule::resetLoadedFiles() {

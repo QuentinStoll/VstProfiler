@@ -78,8 +78,11 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
    private:
     enum ChainPositions {
         Gain = 0,
-        NoiseGate,
-        Depth,
+        NoiseGate
+    };
+
+    enum EqPositions {
+        Depth = 0,
         Bass,
         Mid,
         Treble,
@@ -92,7 +95,9 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     using Chain = juce::dsp::ProcessorChain<
         juce::dsp::Gain<float>,
-        juce::dsp::NoiseGate<float>,
+        juce::dsp::NoiseGate<float>>;
+
+    using EqChain = juce::dsp::ProcessorChain<
         Filter,
         Filter,
         Filter,
@@ -100,7 +105,10 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
         Filter>;
 
     Chain _chain;
+    EqChain _eqChain;
+    juce::dsp::Gain<float> _inputTrim;
     juce::dsp::Gain<float> _masterVolume;
+    juce::dsp::Gain<float> _outputTrim;
     std::atomic<float> _rmsLevelOutput{-60.0f};
 
     static constexpr float DEPTH_FREQ{60.0f};
@@ -110,10 +118,13 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     static constexpr float PRESENCE_FREQ{8000.0f};
     static constexpr float SHELF_Q{0.707f};
     static constexpr float PEAK_Q{1.0f};
+    static constexpr double PARAMETER_RAMP_SECONDS{0.05};
 
     std::atomic<float>* _masterParam{nullptr};
     std::atomic<float>* _gainParam{nullptr};
     std::atomic<float>* _noiseParam{nullptr};
+    std::atomic<float>* _inputParam{nullptr};
+    std::atomic<float>* _outputParam{nullptr};
 
     std::atomic<float>* _depthParam{nullptr};
     std::atomic<float>* _bassParam{nullptr};
@@ -123,11 +134,25 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     std::atomic<float>* _isMuteParam{nullptr};
     std::atomic<float>* _isEqEnabledParam{nullptr};
+    std::atomic<float>* _isGateEnabledParam{nullptr};
+    std::atomic<float>* _isAmpEnabledParam{nullptr};
+    std::atomic<float>* _isCabEnabledParam{nullptr};
+    std::atomic<float>* _cabLowCutParam{nullptr};
+
+    juce::SmoothedValue<float> _depthSmoothed;
+    juce::SmoothedValue<float> _bassSmoothed;
+    juce::SmoothedValue<float> _midSmoothed;
+    juce::SmoothedValue<float> _trebleSmoothed;
+    juce::SmoothedValue<float> _presenceSmoothed;
+    juce::SmoothedValue<float> _cabLowCutSmoothed;
+
+    Filter _cabLowCut;
 
     ProfileManager _profileManager;
     juce::String _appliedProfileId;
 
     void updateEqCoefficients();
+    void updateCabLowCutCoefficients();
     void applyProfileFileValues(const juce::NamedValueSet& values);
     static float getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept;
     static bool isCompatibleAmpModel(const RTNeural::Model<float>& model);

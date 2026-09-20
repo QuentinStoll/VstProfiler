@@ -70,6 +70,8 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
     _masterParam = _apvts.getRawParameterValue("master");
     _gainParam = _apvts.getRawParameterValue("gain");
     _noiseParam = _apvts.getRawParameterValue("noise");
+    _inputParam = _apvts.getRawParameterValue("input");
+    _outputParam = _apvts.getRawParameterValue("output");
 
     _depthParam = _apvts.getRawParameterValue("depth");
     _bassParam = _apvts.getRawParameterValue("bass");
@@ -79,6 +81,10 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
 
     _isMuteParam = _apvts.getRawParameterValue("isMute");
     _isEqEnabledParam = _apvts.getRawParameterValue("isEqEnabled");
+    _isGateEnabledParam = _apvts.getRawParameterValue("isGateEnabled");
+    _isAmpEnabledParam = _apvts.getRawParameterValue("isAmpEnabled");
+    _isCabEnabledParam = _apvts.getRawParameterValue("isCabEnabled");
+    _cabLowCutParam = _apvts.getRawParameterValue("cabLowCut");
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() = default;
@@ -128,37 +134,62 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
     _convolver.prepare(spec);
 
+    _inputTrim.prepare(spec);
+    _inputTrim.setRampDurationSeconds(PARAMETER_RAMP_SECONDS);
+    _inputTrim.setGainDecibels(getParameterValue(_inputParam, 0.0f));
+
     _chain.reset();
     _chain.prepare(spec);
 
     _chain.get<Gain>().setGainDecibels(getParameterValue(_gainParam, 0.0f));
-    _chain.get<Gain>().setRampDurationSeconds(0.05);
+    _chain.get<Gain>().setRampDurationSeconds(PARAMETER_RAMP_SECONDS);
 
     _masterVolume.prepare(spec);
-    _masterVolume.setRampDurationSeconds(0.05);
+    _masterVolume.setRampDurationSeconds(PARAMETER_RAMP_SECONDS);
     _masterVolume.setGainLinear(getMasterGainLinear(getParameterValue(_masterParam, 50.0f)));
+
+    _outputTrim.prepare(spec);
+    _outputTrim.setRampDurationSeconds(PARAMETER_RAMP_SECONDS);
+    _outputTrim.setGainDecibels(getParameterValue(_outputParam, 0.0f));
 
     _chain.get<NoiseGate>().setThreshold(getParameterValue(_noiseParam, 10.0f) - 60.0f);
     _chain.get<NoiseGate>().setAttack(5.0f);
     _chain.get<NoiseGate>().setRelease(100.0f);
     _chain.get<NoiseGate>().setRatio(10.0f);
-    _chain.setBypassed<NoiseGate>(getParameterValue(_noiseParam, 0.0f) <= 0.0f);
+    _chain.setBypassed<NoiseGate>(getParameterValue(_isGateEnabledParam, 1.0f) <= 0.5f
+                                 || getParameterValue(_noiseParam, 0.0f) <= 0.0f);
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
 
-    _chain.setBypassed<Depth>(!eqEnabled);
-    _chain.setBypassed<Bass>(!eqEnabled);
-    _chain.setBypassed<Mid>(!eqEnabled);
-    _chain.setBypassed<Treble>(!eqEnabled);
-    _chain.setBypassed<Presence>(!eqEnabled);
+    _eqChain.reset();
+    _eqChain.prepare(spec);
+    _eqChain.setBypassed<Depth>(!eqEnabled);
+    _eqChain.setBypassed<Bass>(!eqEnabled);
+    _eqChain.setBypassed<Mid>(!eqEnabled);
+    _eqChain.setBypassed<Treble>(!eqEnabled);
+    _eqChain.setBypassed<Presence>(!eqEnabled);
 
-    *_chain.get<Depth>().state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate, DEPTH_FREQ, SHELF_Q, 1.0f);
-    *_chain.get<Bass>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, BASS_FREQ, PEAK_Q, 1.0f);
-    *_chain.get<Mid>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, MID_FREQ, PEAK_Q, 1.0f);
-    *_chain.get<Treble>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, TREBLE_FREQ, PEAK_Q, 1.0f);
-    *_chain.get<Presence>().state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate, PRESENCE_FREQ, SHELF_Q, 1.0f);
+    _depthSmoothed.reset(sampleRate, PARAMETER_RAMP_SECONDS);
+    _bassSmoothed.reset(sampleRate, PARAMETER_RAMP_SECONDS);
+    _midSmoothed.reset(sampleRate, PARAMETER_RAMP_SECONDS);
+    _trebleSmoothed.reset(sampleRate, PARAMETER_RAMP_SECONDS);
+    _presenceSmoothed.reset(sampleRate, PARAMETER_RAMP_SECONDS);
+    _depthSmoothed.setCurrentAndTargetValue(getParameterValue(_depthParam, 0.0f));
+    _bassSmoothed.setCurrentAndTargetValue(getParameterValue(_bassParam, 0.0f));
+    _midSmoothed.setCurrentAndTargetValue(getParameterValue(_midParam, 0.0f));
+    _trebleSmoothed.setCurrentAndTargetValue(getParameterValue(_trebleParam, 0.0f));
+    _presenceSmoothed.setCurrentAndTargetValue(getParameterValue(_presenceParam, 0.0f));
+    updateEqCoefficients();
+    _eqChain.reset();
 
-    *_dcBlocker.state = *juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 35.0f);
+    _cabLowCutSmoothed.reset(sampleRate, PARAMETER_RAMP_SECONDS);
+    _cabLowCutSmoothed.setCurrentAndTargetValue(getParameterValue(_cabLowCutParam, 80.0f));
+    _cabLowCut.reset();
+    _cabLowCut.prepare(spec);
+    updateCabLowCutCoefficients();
+    _cabLowCut.reset();
+
+    *_dcBlocker.state = juce::dsp::IIR::ArrayCoefficients<float>::makeHighPass(sampleRate, 35.0f);
     _dcBlocker.prepare(spec);
     _dcBlocker.reset();
 
@@ -175,7 +206,11 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
 void ProfilerAudioProcessor::releaseResources() {
     _chain.reset();
+    _eqChain.reset();
+    _cabLowCut.reset();
+    _inputTrim.reset();
     _masterVolume.reset();
+    _outputTrim.reset();
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -233,19 +268,26 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     for (auto i = getTotalNumInputChannels(); i < juce::jmin(getTotalNumOutputChannels(), numChannels); ++i)
         buffer.clear(i, 0, numSamples);
 
+    _inputTrim.setGainDecibels(getParameterValue(_inputParam, 0.0f));
     _chain.get<Gain>().setGainDecibels(getParameterValue(_gainParam, 0.0f));
     const auto noiseGateValue = getParameterValue(_noiseParam, 0.0f);
+    const bool gateEnabled = getParameterValue(_isGateEnabledParam, 1.0f) > 0.5f;
     _chain.get<NoiseGate>().setThreshold(noiseGateValue - 60.0f);
     // A zero control value is a true bypass, rather than a -60 dB gate.
-    _chain.setBypassed<NoiseGate>(noiseGateValue <= 0.0f);
+    _chain.setBypassed<NoiseGate>(!gateEnabled || noiseGateValue <= 0.0f);
+
+    _depthSmoothed.setTargetValue(getParameterValue(_depthParam, 0.0f));
+    _bassSmoothed.setTargetValue(getParameterValue(_bassParam, 0.0f));
+    _midSmoothed.setTargetValue(getParameterValue(_midParam, 0.0f));
+    _trebleSmoothed.setTargetValue(getParameterValue(_trebleParam, 0.0f));
+    _presenceSmoothed.setTargetValue(getParameterValue(_presenceParam, 0.0f));
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
-
-    _chain.setBypassed<Depth>(!eqEnabled);
-    _chain.setBypassed<Bass>(!eqEnabled);
-    _chain.setBypassed<Mid>(!eqEnabled);
-    _chain.setBypassed<Treble>(!eqEnabled);
-    _chain.setBypassed<Presence>(!eqEnabled);
+    _eqChain.setBypassed<Depth>(!eqEnabled);
+    _eqChain.setBypassed<Bass>(!eqEnabled);
+    _eqChain.setBypassed<Mid>(!eqEnabled);
+    _eqChain.setBypassed<Treble>(!eqEnabled);
+    _eqChain.setBypassed<Presence>(!eqEnabled);
 
     if (eqEnabled) {
         updateEqCoefficients();
@@ -253,11 +295,12 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     juce::dsp::AudioBlock<float> block(buffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
+    _inputTrim.process(context);
     _chain.process(context);
 
     {
         const juce::ScopedLock ampLock(_ampModelLock);
-        if (_ampLoaded && _neuralAmp != nullptr) {
+        if (_ampLoaded && _neuralAmp != nullptr && getParameterValue(_isAmpEnabledParam, 1.0f) > 0.5f) {
             auto* channel0Data = buffer.getWritePointer(0);
 
             for (int i = 0; i < numSamples; ++i) {
@@ -291,12 +334,26 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     _dcBlocker.process(postAmpContext);
 
     // 4. Cabinet Simulation
-    if (_irLoaded) {
+    const bool cabEnabled = getParameterValue(_isCabEnabledParam, 1.0f) > 0.5f;
+    _cabLowCutSmoothed.setTargetValue(getParameterValue(_cabLowCutParam, 80.0f));
+    if (_irLoaded && cabEnabled) {
         _convolver.process(postAmpContext);
+        updateCabLowCutCoefficients();
+        _cabLowCut.process(postAmpContext);
     }
+    _cabLowCutSmoothed.skip(numSamples);
+
+    _eqChain.process(postAmpContext);
+    _depthSmoothed.skip(numSamples);
+    _bassSmoothed.skip(numSamples);
+    _midSmoothed.skip(numSamples);
+    _trebleSmoothed.skip(numSamples);
+    _presenceSmoothed.skip(numSamples);
 
     _masterVolume.setGainLinear(getMasterGainLinear(getParameterValue(_masterParam, 50.0f)));
     _masterVolume.process(postAmpContext);
+    _outputTrim.setGainDecibels(getParameterValue(_outputParam, 0.0f));
+    _outputTrim.process(postAmpContext);
     _rmsLevelOutput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
                           std::memory_order_relaxed);
 }
@@ -306,20 +363,28 @@ float ProfilerAudioProcessor::getRmsLevelOutput() const noexcept {
 }
 
 void ProfilerAudioProcessor::updateEqCoefficients() {
-    *_chain.get<Depth>().state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf(
-        getSampleRate(), DEPTH_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(getParameterValue(_depthParam, 0.0f)));
+    const auto sampleRate = getSampleRate();
+    *_eqChain.get<Depth>().state = juce::dsp::IIR::ArrayCoefficients<float>::makeLowShelf(
+        sampleRate, DEPTH_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_depthSmoothed.getCurrentValue()));
 
-    *_chain.get<Bass>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-        getSampleRate(), BASS_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(getParameterValue(_bassParam, 0.0f)));
+    *_eqChain.get<Bass>().state = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
+        sampleRate, BASS_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_bassSmoothed.getCurrentValue()));
 
-    *_chain.get<Mid>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-        getSampleRate(), MID_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(getParameterValue(_midParam, 0.0f)));
+    *_eqChain.get<Mid>().state = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
+        sampleRate, MID_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_midSmoothed.getCurrentValue()));
 
-    *_chain.get<Treble>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-        getSampleRate(), TREBLE_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(getParameterValue(_trebleParam, 0.0f)));
+    *_eqChain.get<Treble>().state = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
+        sampleRate, TREBLE_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(_trebleSmoothed.getCurrentValue()));
 
-    *_chain.get<Presence>().state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(
-        getSampleRate(), PRESENCE_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(getParameterValue(_presenceParam, 0.0f)));
+    *_eqChain.get<Presence>().state = juce::dsp::IIR::ArrayCoefficients<float>::makeHighShelf(
+        sampleRate, PRESENCE_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(_presenceSmoothed.getCurrentValue()));
+}
+
+void ProfilerAudioProcessor::updateCabLowCutCoefficients() {
+    *_cabLowCut.state = juce::dsp::IIR::ArrayCoefficients<float>::makeHighPass(
+        getSampleRate(),
+        juce::jlimit(20.0f, 250.0f, _cabLowCutSmoothed.getCurrentValue()),
+        SHELF_Q);
 }
 
 //==============================================================================
@@ -398,6 +463,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
     // ==============================================================================
     layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isMute", 1}, "Mute", false));
     layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isEqEnabled", 1}, "EQ", true));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isGateEnabled", 1}, "Gate Enabled", true));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isAmpEnabled", 1}, "Amp Enabled", true));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isCabEnabled", 1}, "Cab Enabled", true));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"cabLowCut", 1}, "Cab Low Cut", juce::NormalisableRange<float>(20.0f, 250.0f, 1.0f), 80.0f));
 
     return layout;
 }

@@ -9,28 +9,32 @@
 
 class SignalChainBlock : public juce::Button {
    public:
-    SignalChainBlock(const juce::String& title,
-                     const juce::String& subtitle,
-                     juce::Colour categoryColour,
-                     CustomLookAndFeel::RigIcon icon);
+    SignalChainBlock(juce::Colour categoryColour, CustomLookAndFeel::RigIcon icon);
     ~SignalChainBlock() override = default;
 
-    void setSubtitle(const juce::String& subtitle);
     void setLedOn(bool shouldBeOn);
     void setIoNode(bool isIoNode);
+    void setShowsLed(bool shouldShowLed);
     bool isIoNode() const noexcept { return _isIoNode; }
 
+    std::function<void()> onLedClicked;
+
    protected:
+    void paint(juce::Graphics& g) override;
     void paintButton(juce::Graphics& g, bool isMouseOverButton, bool isButtonDown) override;
     bool hitTest(int x, int y) override;
+    void mouseUp(const juce::MouseEvent& event) override;
 
    private:
-    juce::String _title;
-    juce::String _subtitle;
     juce::Colour _categoryColour;
     CustomLookAndFeel::RigIcon _icon;
-    bool _ledOn = false;
+    bool _ledOn = true;
     bool _isIoNode = false;
+    bool _showsLed = true;
+
+    juce::Rectangle<float> getLedBounds() const;
+    bool isLedHit(juce::Point<int> position) const;
+    void paintContents(juce::Graphics& g, bool isMouseOverButton);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SignalChainBlock)
 };
@@ -53,26 +57,36 @@ class SignalChainStrip : public juce::Component {
 
     void setSelectedBlock(BlockId blockId);
     BlockId getSelectedBlock() const noexcept { return _selected; }
+    bool selectAdjacentBlock(int delta);
 
-    void setBlockSubtitle(BlockId blockId, const juce::String& subtitle);
+    bool keyPressed(const juce::KeyPress& key) override;
+
     void setBlockLed(BlockId blockId, bool isOn);
 
     std::function<void(BlockId)> onBlockSelected;
+    std::function<void(BlockId)> onBlockBypassToggled;
 
    private:
+    class SignalBusLayer : public juce::Component {
+       public:
+        void setLine(float y, float x1, float x2);
+        void paint(juce::Graphics& g) override;
+
+       private:
+        float _y = 0.0f;
+        float _x1 = 0.0f;
+        float _x2 = 0.0f;
+    };
+
     static constexpr int kSlotCount = 8;
     static constexpr int kOccupiedSlots[5] = {0, 2, 4, 6, 7};
 
-    SignalChainBlock _inputGate{"Input / Gate", "Gate", ProfilerStyle::Colors::rigInput,
-                                CustomLookAndFeel::RigIcon::InputJack};
-    SignalChainBlock _ampProfiler{"Amp Profiler", "Load", ProfilerStyle::Colors::rigAmp,
-                                  CustomLookAndFeel::RigIcon::AmpHead};
-    SignalChainBlock _cabinetIr{"Cabinet / IR", "Load IR", ProfilerStyle::Colors::rigCab,
-                                CustomLookAndFeel::RigIcon::Cabinet};
-    SignalChainBlock _eqPostFx{"EQ / Post-FX", "Bypassed", ProfilerStyle::Colors::rigEq,
-                               CustomLookAndFeel::RigIcon::EqFaders};
-    SignalChainBlock _masterVolume{"Master Volume", "Vol", ProfilerStyle::Colors::rigMaster,
-                                   CustomLookAndFeel::RigIcon::Speaker};
+    SignalBusLayer _busLayer;
+    SignalChainBlock _inputGate{ProfilerStyle::Colors::rigInput, CustomLookAndFeel::RigIcon::InputJack};
+    SignalChainBlock _ampProfiler{ProfilerStyle::Colors::rigAmp, CustomLookAndFeel::RigIcon::AmpHead};
+    SignalChainBlock _cabinetIr{ProfilerStyle::Colors::rigCab, CustomLookAndFeel::RigIcon::Cabinet};
+    SignalChainBlock _eqPostFx{ProfilerStyle::Colors::rigEq, CustomLookAndFeel::RigIcon::EqFaders};
+    SignalChainBlock _masterVolume{ProfilerStyle::Colors::rigMaster, CustomLookAndFeel::RigIcon::Speaker};
     std::array<juce::Rectangle<int>, kSlotCount> _slotBounds{};
     BlockId _selected = BlockId::AmpProfiler;
 
@@ -80,6 +94,7 @@ class SignalChainStrip : public juce::Component {
     const SignalChainBlock& getBlock(BlockId blockId) const;
     void handleBlockClick(BlockId blockId);
     bool isOccupiedSlot(int slot) const;
+    void updateBusLayer();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SignalChainStrip)
 };

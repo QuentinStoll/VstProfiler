@@ -115,7 +115,12 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
     void drawSignalIoNode(juce::Graphics& g,
                           juce::Rectangle<float> bounds,
                           bool isActive,
-                          bool isMouseOver) const;
+                          bool isMouseOver,
+                          bool ledOn = true,
+                          bool showLed = true) const;
+
+    static juce::Rectangle<float> getSignalChainLedBounds(juce::Rectangle<float> bounds);
+    static juce::Rectangle<float> getSignalIoLedBounds(juce::Rectangle<float> bounds);
 
     void drawSignalBus(juce::Graphics& g, float y, float x1, float x2) const;
 

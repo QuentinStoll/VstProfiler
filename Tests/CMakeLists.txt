@@ -159,6 +159,7 @@ add_profiler_audio_processor_test(StateRoundTrip "audio processor state round tr
 add_profiler_audio_processor_test(ProcessBlockSmoke "audio processor process block smoke")
 add_profiler_audio_processor_test(MuteClearsBuffer "audio processor mute clears buffer")
 add_profiler_audio_processor_test(MasterZeroSilencesBuffer "audio processor master zero silences buffer")
+add_profiler_audio_processor_test(NoiseGateZeroBypasses "audio processor noise gate zero bypasses")
 add_profiler_audio_processor_test(GainChangesOutputLevel "audio processor gain changes output level")
 add_profiler_audio_processor_test(SilentInputStaysSilent "audio processor silent input stays silent")
 add_profiler_audio_processor_test(PrepareBlockSizes "audio processor handles prepare block sizes")

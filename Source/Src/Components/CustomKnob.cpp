@@ -2,6 +2,35 @@
 
 #include "Stylesheet.h"
 
+namespace {
+constexpr int kNormalDragSensitivity = 220;
+constexpr int kFineDragSensitivity = 900;
+}
+
+void CustomKnob::FineSlider::applyDragSensitivity(const juce::MouseEvent& event) {
+    setMouseDragSensitivity(event.mods.isShiftDown() ? kFineDragSensitivity : kNormalDragSensitivity);
+}
+
+void CustomKnob::FineSlider::mouseDown(const juce::MouseEvent& event) {
+    applyDragSensitivity(event);
+    juce::Slider::mouseDown(event);
+}
+
+void CustomKnob::FineSlider::mouseDrag(const juce::MouseEvent& event) {
+    applyDragSensitivity(event);
+    juce::Slider::mouseDrag(event);
+}
+
+void CustomKnob::FineSlider::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) {
+    auto details = wheel;
+    if (event.mods.isShiftDown()) {
+        details.deltaX *= 0.18f;
+        details.deltaY *= 0.18f;
+    }
+
+    juce::Slider::mouseWheelMove(event, details);
+}
+
 //==============================================================================
 // CustomKnob Implementation
 //==============================================================================
@@ -12,6 +41,9 @@ CustomKnob::CustomKnob(const juce::String& name, float min, float max, float def
     _slider.setRange(min, max, step);
     _slider.setValue(defaultValue);
     _slider.setTextValueSuffix(" " + suffix);
+    _slider.setWantsKeyboardFocus(false);
+    _slider.setDoubleClickReturnValue(true, defaultValue);
+    _slider.setMouseDragSensitivity(kNormalDragSensitivity);
 
     _label.setText(name, juce::dontSendNotification);
     _label.setJustificationType(juce::Justification::centred);

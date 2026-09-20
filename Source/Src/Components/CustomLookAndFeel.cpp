@@ -590,27 +590,43 @@ void CustomLookAndFeel::drawSignalChainBlock(juce::Graphics& g,
     g.setColour(categoryColour.withAlpha(borderAlpha));
     g.drawRoundedRectangle(bounds.reduced(0.5f), 6.0f, borderWidth);
 
-    const auto side = juce::jmin(bounds.getWidth(), bounds.getHeight());
-    const auto ledSize = juce::jlimit(6.0f, 8.0f, side * 0.07f);
-    auto led = juce::Rectangle<float>(ledSize, ledSize)
-                   .withX(bounds.getRight() - ledSize - side * 0.08f)
-                   .withY(bounds.getY() + side * 0.08f);
+    const auto led = getSignalChainLedBounds(bounds);
     if (ledOn) {
         juce::DropShadow(categoryColour.withAlpha(0.35f), 3, {}).drawForRectangle(g, led.toNearestInt());
         g.setColour(categoryColour);
     } else {
-        g.setColour(ProfilerStyle::Colors::border.brighter(0.2f));
+        g.setColour(ProfilerStyle::Colors::border.brighter(0.12f));
     }
     g.fillEllipse(led);
 
+    const auto side = juce::jmin(bounds.getWidth(), bounds.getHeight());
     const auto iconSize = side * 0.50f;
-    drawRigIcon(g, bounds.withSizeKeepingCentre(iconSize, iconSize), icon, categoryColour);
+    drawRigIcon(g, bounds.withSizeKeepingCentre(iconSize, iconSize), icon,
+                categoryColour.withAlpha(ledOn ? 1.0f : 0.38f));
+}
+
+juce::Rectangle<float> CustomLookAndFeel::getSignalChainLedBounds(juce::Rectangle<float> bounds) {
+    const auto side = juce::jmin(bounds.getWidth(), bounds.getHeight());
+    const auto ledSize = juce::jlimit(6.0f, 8.0f, side * 0.07f);
+    return juce::Rectangle<float>(ledSize, ledSize)
+        .withX(bounds.getRight() - ledSize - side * 0.08f)
+        .withY(bounds.getY() + side * 0.08f);
+}
+
+juce::Rectangle<float> CustomLookAndFeel::getSignalIoLedBounds(juce::Rectangle<float> bounds) {
+    const auto side = juce::jmin(bounds.getWidth(), bounds.getHeight());
+    const auto ledSize = juce::jlimit(5.0f, 6.5f, side * 0.14f);
+    return juce::Rectangle<float>(ledSize, ledSize)
+        .withX(bounds.getRight() - ledSize)
+        .withY(bounds.getY());
 }
 
 void CustomLookAndFeel::drawSignalIoNode(juce::Graphics& g,
                                          juce::Rectangle<float> bounds,
                                          bool isActive,
-                                         bool isMouseOver) const {
+                                         bool isMouseOver,
+                                         bool ledOn,
+                                         bool showLed) const {
     const auto side = juce::jmin(bounds.getWidth(), bounds.getHeight());
     auto ring = bounds.withSizeKeepingCentre(side * 0.62f, side * 0.62f);
     const auto colour = juce::Colour(0xffF4F4F5);
@@ -623,8 +639,20 @@ void CustomLookAndFeel::drawSignalIoNode(juce::Graphics& g,
 
     g.setColour(juce::Colours::black);
     g.fillEllipse(ring);
-    g.setColour(colour.withAlpha(alpha));
+    g.setColour(colour.withAlpha(ledOn ? alpha : 0.32f));
     g.drawEllipse(ring, kSignalBusCoreWidth);
+
+    if (!showLed) {
+        return;
+    }
+
+    const auto led = getSignalIoLedBounds(bounds);
+    if (ledOn) {
+        g.setColour(colour);
+    } else {
+        g.setColour(ProfilerStyle::Colors::border.brighter(0.12f));
+    }
+    g.fillEllipse(led);
 }
 
 void CustomLookAndFeel::drawSignalBus(juce::Graphics& g, float y, float x1, float x2) const {

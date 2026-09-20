@@ -26,7 +26,7 @@ void BasicEqModule::resized() {
     const auto totalWidth = count * knobWidth + (count - 1) * gap;
     auto row = juce::Rectangle<int>(totalWidth, juce::jmin(108, area.getHeight())).withCentre(area.getCentre());
 
-    juce::Component* knobs[] = {&_bassKnob, &_midKnob, &_trebleKnob, &_presenceKnob, &_depthKnob};
+    juce::Component* knobs[] = {&_depthKnob, &_bassKnob, &_midKnob, &_trebleKnob, &_presenceKnob};
     for (int index = 0; index < count; ++index) {
         knobs[index]->setBounds(row.removeFromLeft(knobWidth));
         if (index + 1 < count) {

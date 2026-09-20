@@ -16,6 +16,16 @@ class CustomKnob : public juce::Component {
     juce::Slider& getSlider() { return _slider; };
 
    private:
-    juce::Slider _slider;
+    class FineSlider : public juce::Slider {
+       public:
+        void mouseDown(const juce::MouseEvent& event) override;
+        void mouseDrag(const juce::MouseEvent& event) override;
+        void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
+
+       private:
+        void applyDragSensitivity(const juce::MouseEvent& event);
+    };
+
+    FineSlider _slider;
     juce::Label _label;
 };

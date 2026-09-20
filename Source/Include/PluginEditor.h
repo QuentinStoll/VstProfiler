@@ -22,6 +22,7 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     void paint(juce::Graphics&) override;
     void resized() override;
     void parentHierarchyChanged() override;
+    bool keyPressed(const juce::KeyPress& key) override;
 
    private:
     enum class OverlayMode {
@@ -63,6 +64,7 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     void showOverlay(OverlayMode mode);
     void showEditPanel(SignalChainStrip::BlockId blockId);
     void updateChainStatus();
+    void toggleBlockBypass(SignalChainStrip::BlockId blockId);
     void showStatus(const juce::String& message, bool success);
     void exportProfil(const juce::NamedValueSet& values, const juce::File& destinationFile);
     void createProfil(const juce::NamedValueSet& values);

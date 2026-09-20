@@ -42,6 +42,10 @@ class AudioProcessorUnitTests : public juce::UnitTest {
             testMasterZeroSilencesBuffer();
         });
 
+        runCase("audio processor noise gate zero bypasses", [this] {
+            testNoiseGateZeroBypasses();
+        });
+
         runCase("audio processor gain changes output level", [this] {
             testGainChangesOutputLevel();
         });
@@ -200,7 +204,7 @@ class AudioProcessorUnitTests : public juce::UnitTest {
     void testParameterDefaults() {
         ProfilerAudioProcessor processor;
 
-        expect(processor.getParameters().size() == 12, "Unexpected processor parameter count.");
+        expect(processor.getParameters().size() == 16, "Unexpected processor parameter count.");
         expectClose(getParameterValue(processor, "master"), 50.0f, "master default");
         expectClose(getParameterValue(processor, "gain"), 0.0f, "gain default");
         expectClose(getParameterValue(processor, "noise"), 10.0f, "noise default");
@@ -213,6 +217,10 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         expectClose(getParameterValue(processor, "depth"), 0.0f, "depth default");
         expectClose(getParameterValue(processor, "isMute"), 0.0f, "isMute default");
         expectClose(getParameterValue(processor, "isEqEnabled"), 1.0f, "isEqEnabled default");
+        expectClose(getParameterValue(processor, "isGateEnabled"), 1.0f, "isGateEnabled default");
+        expectClose(getParameterValue(processor, "isAmpEnabled"), 1.0f, "isAmpEnabled default");
+        expectClose(getParameterValue(processor, "isCabEnabled"), 1.0f, "isCabEnabled default");
+        expectClose(getParameterValue(processor, "cabLowCut"), 80.0f, "cabLowCut default");
     }
 
     void testStateRoundTrip() {
@@ -276,6 +284,17 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         const auto rms = processSineAndMeasureRms(processor);
 
         expect(rms <= 0.001f, "Master volume at zero should silence the processed output.");
+        processor.releaseResources();
+    }
+
+    void testNoiseGateZeroBypasses() {
+        ProfilerAudioProcessor processor;
+        setParameterValue(processor, "noise", 0.0f);
+        prepareProcessor(processor, 44100.0, 256);
+
+        const auto rms = processSineAndMeasureRms(processor);
+
+        expect(rms > 0.01f, "Noise gate at zero should bypass and pass signal.");
         processor.releaseResources();
     }
 
