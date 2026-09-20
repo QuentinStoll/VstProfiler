@@ -15,6 +15,7 @@ class SignalChainBlock : public juce::Button {
     void setLedOn(bool shouldBeOn);
     void setIoNode(bool isIoNode);
     void setShowsLed(bool shouldShowLed);
+    void setSignalLevel(float level);
     bool isIoNode() const noexcept { return _isIoNode; }
 
     std::function<void()> onLedClicked;
@@ -31,6 +32,7 @@ class SignalChainBlock : public juce::Button {
     bool _ledOn = true;
     bool _isIoNode = false;
     bool _showsLed = true;
+    float _signalLevel = 0.0f;
 
     juce::Rectangle<float> getLedBounds() const;
     bool isLedHit(juce::Point<int> position) const;
@@ -62,6 +64,7 @@ class SignalChainStrip : public juce::Component {
     bool keyPressed(const juce::KeyPress& key) override;
 
     void setBlockLed(BlockId blockId, bool isOn);
+    void setIoMeterLevels(float inputDb, float outputDb);
 
     std::function<void(BlockId)> onBlockSelected;
     std::function<void(BlockId)> onBlockBypassToggled;
@@ -89,6 +92,9 @@ class SignalChainStrip : public juce::Component {
     SignalChainBlock _masterVolume{ProfilerStyle::Colors::rigMaster, CustomLookAndFeel::RigIcon::Speaker};
     std::array<juce::Rectangle<int>, kSlotCount> _slotBounds{};
     BlockId _selected = BlockId::AmpProfiler;
+    float _inputMeter = 0.0f;
+    float _outputMeter = 0.0f;
+    double _lastMeterMs = 0.0;
 
     SignalChainBlock& getBlock(BlockId blockId);
     const SignalChainBlock& getBlock(BlockId blockId) const;

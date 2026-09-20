@@ -73,6 +73,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void clearAppliedProfile();
     ProfileManager& getProfileManager() noexcept;
     const ProfileManager& getProfileManager() const noexcept;
+    float getRmsLevelInput() const noexcept;
     float getRmsLevelOutput() const noexcept;
 
    private:
@@ -109,6 +110,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     juce::dsp::Gain<float> _inputTrim;
     juce::dsp::Gain<float> _masterVolume;
     juce::dsp::Gain<float> _outputTrim;
+    std::atomic<float> _rmsLevelInput{-60.0f};
     std::atomic<float> _rmsLevelOutput{-60.0f};
 
     static constexpr float DEPTH_FREQ{60.0f};

@@ -14,7 +14,8 @@
 
 class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
                                      private juce::ChangeListener,
-                                     private juce::AudioProcessorValueTreeState::Listener {
+                                     private juce::AudioProcessorValueTreeState::Listener,
+                                     private juce::Timer {
    public:
     ProfilerAudioProcessorEditor(ProfilerAudioProcessor&);
     ~ProfilerAudioProcessorEditor() override;
@@ -72,6 +73,7 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     juce::File getDefaultExportFile(const juce::String& profileName) const;
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
     void parameterChanged(const juce::String& parameterID, float newValue) override;
+    void timerCallback() override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ProfilerAudioProcessorEditor)
 };

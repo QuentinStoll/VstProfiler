@@ -258,6 +258,7 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         expect(allSamplesFinite(buffer), "Processed samples should stay finite.");
         expect(buffer.getMagnitude(0, buffer.getNumSamples()) > 0.0f,
                "Processor should leave an audible signal for a non-muted input.");
+        expect(processor.getRmsLevelInput() > -40.0f, "Input meter should react to incoming audio.");
         processor.releaseResources();
     }
 
@@ -273,6 +274,8 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         processor.processBlock(buffer, midi);
 
         expectClose(buffer.getMagnitude(0, buffer.getNumSamples()), 0.0f, "muted buffer magnitude");
+        expect(processor.getRmsLevelInput() > -20.0f, "Input meter should still see audio while muted.");
+        expectClose(processor.getRmsLevelOutput(), -60.0f, "Output meter should go silent while muted");
         processor.releaseResources();
     }
 

@@ -258,9 +258,13 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         return;
     }
 
+    _rmsLevelInput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
+                         std::memory_order_relaxed);
+
     // Handle Mute
     if (getParameterValue(_isMuteParam, 0.0f) > 0.5f) {
         buffer.clear();
+        _rmsLevelOutput.store(-60.0f, std::memory_order_relaxed);
         return;
     }
 
@@ -356,6 +360,10 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     _outputTrim.process(postAmpContext);
     _rmsLevelOutput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
                           std::memory_order_relaxed);
+}
+
+float ProfilerAudioProcessor::getRmsLevelInput() const noexcept {
+    return _rmsLevelInput.load(std::memory_order_relaxed);
 }
 
 float ProfilerAudioProcessor::getRmsLevelOutput() const noexcept {

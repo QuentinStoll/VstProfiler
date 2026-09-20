@@ -1,7 +1,25 @@
 #include "Components/SignalChainStrip.h"
 
+#include <cmath>
+
 namespace {
 constexpr int kSignalChainRadioGroup = 0x50524F46;  // "PROF"
+constexpr float kMeterFloorDb = -54.0f;
+constexpr float kMeterCeilDb = -3.0f;
+constexpr float kMeterAttackSeconds = 0.045f;
+constexpr float kMeterReleaseSeconds = 0.22f;
+
+float meterFromDb(float db) {
+    const auto normalised = juce::jmap(juce::jlimit(kMeterFloorDb, kMeterCeilDb, db),
+                                       kMeterFloorDb, kMeterCeilDb, 0.0f, 1.0f);
+    return std::pow(normalised, 0.62f);
+}
+
+float smoothMeter(float current, float target, float deltaSeconds) {
+    const auto tau = target > current ? kMeterAttackSeconds : kMeterReleaseSeconds;
+    const auto coeff = 1.0f - std::exp(-deltaSeconds / tau);
+    return current + (target - current) * coeff;
+}
 }
 
 SignalChainBlock::SignalChainBlock(juce::Colour categoryColour, CustomLookAndFeel::RigIcon icon)
@@ -32,6 +50,18 @@ void SignalChainBlock::setIoNode(bool isIoNode) {
 void SignalChainBlock::setShowsLed(bool shouldShowLed) {
     _showsLed = shouldShowLed;
     repaint();
+}
+
+void SignalChainBlock::setSignalLevel(float level) {
+    const auto clamped = juce::jlimit(0.0f, 1.0f, level);
+    if (std::abs(_signalLevel - clamped) < 0.001f) {
+        return;
+    }
+
+    _signalLevel = clamped;
+    if (_isIoNode) {
+        repaint();
+    }
 }
 
 juce::Rectangle<float> SignalChainBlock::getLedBounds() const {
@@ -84,7 +114,7 @@ void SignalChainBlock::paintContents(juce::Graphics& g, bool isMouseOverButton) 
 
     if (auto* laf = dynamic_cast<CustomLookAndFeel*>(&getLookAndFeel())) {
         if (_isIoNode) {
-            laf->drawSignalIoNode(g, getLocalBounds().toFloat(), getToggleState(), isMouseOverButton, _ledOn, _showsLed);
+            laf->drawSignalIoNode(g, getLocalBounds().toFloat(), getToggleState(), isMouseOverButton, _ledOn, _showsLed, _signalLevel);
             return;
         }
 
@@ -237,6 +267,19 @@ bool SignalChainStrip::keyPressed(const juce::KeyPress& key) {
 
 void SignalChainStrip::setBlockLed(BlockId blockId, bool isOn) {
     getBlock(blockId).setLedOn(isOn);
+}
+
+void SignalChainStrip::setIoMeterLevels(float inputDb, float outputDb) {
+    const auto nowMs = juce::Time::getMillisecondCounterHiRes();
+    const auto deltaSeconds = _lastMeterMs > 0.0
+                                  ? static_cast<float>(juce::jlimit(0.001, 0.05, (nowMs - _lastMeterMs) * 0.001))
+                                  : (1.0f / 60.0f);
+    _lastMeterMs = nowMs;
+
+    _inputMeter = smoothMeter(_inputMeter, meterFromDb(inputDb), deltaSeconds);
+    _outputMeter = smoothMeter(_outputMeter, meterFromDb(outputDb), deltaSeconds);
+    _inputGate.setSignalLevel(_inputMeter);
+    _masterVolume.setSignalLevel(_outputMeter);
 }
 
 SignalChainBlock& SignalChainStrip::getBlock(BlockId blockId) {

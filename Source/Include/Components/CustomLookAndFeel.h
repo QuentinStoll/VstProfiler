@@ -117,7 +117,8 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
                           bool isActive,
                           bool isMouseOver,
                           bool ledOn = true,
-                          bool showLed = true) const;
+                          bool showLed = true,
+                          float signalLevel = 0.0f) const;
 
     static juce::Rectangle<float> getSignalChainLedBounds(juce::Rectangle<float> bounds);
     static juce::Rectangle<float> getSignalIoLedBounds(juce::Rectangle<float> bounds);

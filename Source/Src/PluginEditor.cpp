@@ -109,6 +109,7 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
     showEditPanel(SignalChainStrip::BlockId::AmpProfiler);
     updateChainStatus();
     setWantsKeyboardFocus(true);
+    startTimerHz(60);
     resized();
     juce::MessageManager::callAsync([safeThis = juce::Component::SafePointer<ProfilerAudioProcessorEditor>(this)]() {
         if (safeThis != nullptr) {
@@ -118,6 +119,7 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
 }
 
 ProfilerAudioProcessorEditor::~ProfilerAudioProcessorEditor() {
+    stopTimer();
     if (auto* window = findParentComponentOfClass<juce::DocumentWindow>()) {
         window->setLookAndFeel(nullptr);
     }
@@ -403,4 +405,8 @@ void ProfilerAudioProcessorEditor::parameterChanged(const juce::String& paramete
             }
         });
     }
+}
+
+void ProfilerAudioProcessorEditor::timerCallback() {
+    _signalChain.setIoMeterLevels(_audioProcessor.getRmsLevelInput(), _audioProcessor.getRmsLevelOutput());
 }

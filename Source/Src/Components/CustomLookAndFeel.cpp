@@ -1,5 +1,7 @@
 #include "Components/CustomLookAndFeel.h"
 
+#include <cmath>
+
 #include "Stylesheet.h"
 
 namespace {
@@ -626,11 +628,13 @@ void CustomLookAndFeel::drawSignalIoNode(juce::Graphics& g,
                                          bool isActive,
                                          bool isMouseOver,
                                          bool ledOn,
-                                         bool showLed) const {
+                                         bool showLed,
+                                         float signalLevel) const {
     const auto side = juce::jmin(bounds.getWidth(), bounds.getHeight());
     auto ring = bounds.withSizeKeepingCentre(side * 0.62f, side * 0.62f);
     const auto colour = juce::Colour(0xffF4F4F5);
     const auto alpha = isActive ? 1.0f : (isMouseOver ? 0.96f : 0.92f);
+    const auto level = juce::jlimit(0.0f, 1.0f, signalLevel);
 
     if (isActive || isMouseOver) {
         g.setColour(colour.withAlpha(isActive ? 0.22f : 0.12f));
@@ -639,6 +643,32 @@ void CustomLookAndFeel::drawSignalIoNode(juce::Graphics& g,
 
     g.setColour(juce::Colours::black);
     g.fillEllipse(ring);
+
+    if (level > 0.004f) {
+        juce::Graphics::ScopedSaveState clip(g);
+        juce::Path disc;
+        disc.addEllipse(ring.reduced(0.6f));
+        g.reduceClipRegion(disc);
+
+        const auto centre = ring.getCentre();
+        const auto maxRadius = ring.getWidth() * 0.5f;
+        const auto glowRadius = maxRadius * std::pow(level, 0.72f);
+        const auto cyan = juce::Colour(0xff20F2FF);
+
+        juce::ColourGradient wash(cyan.withAlpha(0.10f + 0.16f * level), centre,
+                                  cyan.withAlpha(0.0f), {centre.x + glowRadius, centre.y},
+                                  true);
+        g.setGradientFill(wash);
+        g.fillEllipse(centre.x - glowRadius, centre.y - glowRadius, glowRadius * 2.0f, glowRadius * 2.0f);
+
+        const auto coreRadius = juce::jmax(1.2f, glowRadius * 0.42f);
+        juce::ColourGradient core(cyan.withAlpha(0.28f + 0.62f * level), centre,
+                                  cyan.withAlpha(0.0f), {centre.x + coreRadius, centre.y},
+                                  true);
+        g.setGradientFill(core);
+        g.fillEllipse(centre.x - coreRadius, centre.y - coreRadius, coreRadius * 2.0f, coreRadius * 2.0f);
+    }
+
     g.setColour(colour.withAlpha(ledOn ? alpha : 0.32f));
     g.drawEllipse(ring, kSignalBusCoreWidth);
 
