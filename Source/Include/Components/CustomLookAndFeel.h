@@ -145,9 +145,15 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
     void drawLibraryIcon(juce::Graphics& g, juce::Rectangle<float> bounds, juce::Colour colour) const;
 
    private:
-    juce::String _typefaceName;
+    juce::Typeface::Ptr _orbitronRegular;
+    juce::Typeface::Ptr _orbitronMedium;
+    juce::Typeface::Ptr _orbitronBold;
+    juce::Typeface::Ptr _orbitronExtraBold;
+    juce::Typeface::Ptr _orbitronBlack;
 
     void applyColourScheme();
+    void loadOrbitronTypefaces();
+    juce::Typeface::Ptr typefaceForFont(const juce::Font& font) const;
     void drawAccentGlow(juce::Graphics& g, juce::Rectangle<float> bounds, float intensity,
                         juce::Colour colour = {}) const;
     void drawSwitch(juce::Graphics& g, juce::Rectangle<float> area,

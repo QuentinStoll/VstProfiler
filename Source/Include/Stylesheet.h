@@ -49,35 +49,81 @@ inline const juce::Identifier toggleLabelVisible{"toggleLabelVisible"};
 }  // namespace Properties
 
 namespace Fonts {
+enum class Weight {
+    Regular,
+    Medium,
+    Bold,
+    ExtraBold,
+    Black
+};
+
+inline constexpr const char* family() noexcept {
+    return "Orbitron";
+}
+
+inline juce::String typefaceName(Weight weight) {
+    switch (weight) {
+        case Weight::Medium:
+            return "Orbitron Medium";
+        case Weight::Bold:
+            return "Orbitron Bold";
+        case Weight::ExtraBold:
+            return "Orbitron ExtraBold";
+        case Weight::Black:
+            return "Orbitron Black";
+        case Weight::Regular:
+        default:
+            return "Orbitron";
+    }
+}
+
+inline juce::Font make(float height, Weight weight, float tracking = 0.0f) {
+    const auto px = static_cast<float>(juce::jmax(1, juce::roundToInt(height)));
+    juce::Font font{juce::FontOptions(typefaceName(weight), px, juce::Font::plain)};
+    if (tracking != 0.0f) {
+        font.setExtraKerningFactor(tracking);
+    }
+    return font;
+}
+
 inline juce::String defaultFamily() {
-    static const juce::String family = [] {
-        const juce::StringArray preferred{"Inter", "SF Pro Text", "SF Pro Display", "Roboto"};
-        const auto available = juce::Font::findAllTypefaceNames();
-
-        for (const auto& name : preferred) {
-            if (available.contains(name)) {
-                return name;
-            }
-        }
-
-#if JUCE_WINDOWS
-        return juce::String("Segoe UI");
-#elif JUCE_MAC
-        return juce::String("Helvetica Neue");
-#else
-        return juce::Font::getDefaultSansSerifFontName();
-#endif
-    }();
-
-    return family;
+    return family();
 }
 
 inline juce::Font regular(float height) {
-    return juce::Font(juce::FontOptions(defaultFamily(), height, juce::Font::plain));
+    return make(height, Weight::Regular);
+}
+
+inline juce::Font medium(float height) {
+    return make(height, Weight::Medium);
 }
 
 inline juce::Font bold(float height) {
-    return juce::Font(juce::FontOptions(defaultFamily(), height, juce::Font::bold));
+    return make(height, Weight::Bold);
+}
+
+inline juce::Font extraBold(float height) {
+    return make(height, Weight::ExtraBold);
+}
+
+inline juce::Font black(float height) {
+    return make(height, Weight::Black);
+}
+
+inline juce::Font logo(float height) {
+    return make(height, Weight::Black, 0.22f);
+}
+
+inline juce::Font moduleTitle() {
+    return make(11.0f, Weight::Bold);
+}
+
+inline juce::Font control() {
+    return make(10.0f, Weight::Medium);
+}
+
+inline juce::Font micro() {
+    return make(9.0f, Weight::Medium);
 }
 }  // namespace Fonts
 

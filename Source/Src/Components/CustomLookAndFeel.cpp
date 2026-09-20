@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "BinaryData.h"
 #include "Stylesheet.h"
 
 namespace {
@@ -25,10 +26,47 @@ juce::Colour getStoredColour(const juce::Component& component,
 }
 }  // namespace
 
-CustomLookAndFeel::CustomLookAndFeel()
-    : _typefaceName(ProfilerStyle::Fonts::defaultFamily()) {
-    setDefaultSansSerifTypefaceName(_typefaceName);
+CustomLookAndFeel::CustomLookAndFeel() {
+    loadOrbitronTypefaces();
     applyColourScheme();
+}
+
+void CustomLookAndFeel::loadOrbitronTypefaces() {
+    _orbitronRegular = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronRegular_ttf,
+                                                               BinaryData::OrbitronRegular_ttfSize);
+    _orbitronMedium = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronMedium_ttf,
+                                                              BinaryData::OrbitronMedium_ttfSize);
+    _orbitronBold = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronBold_ttf,
+                                                            BinaryData::OrbitronBold_ttfSize);
+    _orbitronExtraBold = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronExtraBold_ttf,
+                                                                 BinaryData::OrbitronExtraBold_ttfSize);
+    _orbitronBlack = juce::Typeface::createSystemTypefaceFor(BinaryData::OrbitronBlack_ttf,
+                                                             BinaryData::OrbitronBlack_ttfSize);
+
+    if (_orbitronRegular != nullptr) {
+        setDefaultSansSerifTypeface(_orbitronRegular);
+        setDefaultSansSerifTypefaceName(ProfilerStyle::Fonts::family());
+    }
+}
+
+juce::Typeface::Ptr CustomLookAndFeel::typefaceForFont(const juce::Font& font) const {
+    const auto name = font.getTypefaceName();
+    if (name.containsIgnoreCase("Black") && _orbitronBlack != nullptr) {
+        return _orbitronBlack;
+    }
+    if (name.containsIgnoreCase("ExtraBold") && _orbitronExtraBold != nullptr) {
+        return _orbitronExtraBold;
+    }
+    if (name.containsIgnoreCase("Medium") && _orbitronMedium != nullptr) {
+        return _orbitronMedium;
+    }
+    if ((name.containsIgnoreCase("Bold") || font.isBold()) && _orbitronBold != nullptr) {
+        return _orbitronBold;
+    }
+    if (_orbitronRegular != nullptr) {
+        return _orbitronRegular;
+    }
+    return {};
 }
 
 void CustomLookAndFeel::applyColourScheme() {
@@ -92,34 +130,43 @@ void CustomLookAndFeel::applyColourScheme() {
 }
 
 juce::Font CustomLookAndFeel::getUiFont(float height, juce::Font::FontStyleFlags style) const {
-    return juce::Font(juce::FontOptions(_typefaceName, height, style));
+    return ProfilerStyle::Fonts::make(height,
+                                      (style & juce::Font::bold) != 0 ? ProfilerStyle::Fonts::Weight::Bold
+                                                                      : ProfilerStyle::Fonts::Weight::Regular);
 }
 
 juce::Typeface::Ptr CustomLookAndFeel::getTypefaceForFont(const juce::Font& font) {
-    auto named = font;
-    named.setTypefaceName(_typefaceName);
-    return juce::LookAndFeel_V4::getTypefaceForFont(named);
+    if (auto typeface = typefaceForFont(font)) {
+        return typeface;
+    }
+
+    return juce::LookAndFeel_V4::getTypefaceForFont(font);
 }
 
 juce::Font CustomLookAndFeel::getLabelFont(juce::Label& label) {
-    const auto height = label.getFont().getHeight() > 0.0f ? label.getFont().getHeight() : 14.0f;
-    return getUiFont(height);
+    const auto requested = label.getFont();
+    const auto height = requested.getHeight() > 0.0f ? requested.getHeight() : 14.0f;
+    auto font = juce::Font(juce::FontOptions(requested.getTypefaceName(),
+                                             static_cast<float>(juce::jmax(1, juce::roundToInt(height))),
+                                             juce::Font::plain));
+    font.setExtraKerningFactor(requested.getExtraKerningFactor());
+    return font;
 }
 
 juce::Font CustomLookAndFeel::getTextButtonFont(juce::TextButton&, int buttonHeight) {
-    return getUiFont(juce::jlimit(12.0f, 16.0f, static_cast<float>(buttonHeight) * 0.42f));
+    return ProfilerStyle::Fonts::medium(juce::jlimit(10.0f, 13.0f, static_cast<float>(buttonHeight) * 0.38f));
 }
 
 juce::Font CustomLookAndFeel::getComboBoxFont(juce::ComboBox& box) {
-    return getUiFont(juce::jlimit(13.0f, 17.0f, static_cast<float>(box.getHeight()) * 0.45f));
+    return ProfilerStyle::Fonts::medium(juce::jlimit(10.0f, 13.0f, static_cast<float>(box.getHeight()) * 0.42f));
 }
 
 juce::Font CustomLookAndFeel::getPopupMenuFont() {
-    return getUiFont(15.0f);
+    return ProfilerStyle::Fonts::regular(12.0f);
 }
 
 juce::Font CustomLookAndFeel::getSliderPopupFont(juce::Slider&) {
-    return getUiFont(14.0f);
+    return ProfilerStyle::Fonts::medium(11.0f);
 }
 
 void CustomLookAndFeel::drawAccentGlow(juce::Graphics& g, juce::Rectangle<float> bounds, float intensity,
@@ -264,8 +311,8 @@ void CustomLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int wi
 
     if (slider.getTextBoxPosition() == juce::Slider::NoTextBox) {
         const auto valueText = slider.getTextFromValue(slider.getValue()).trim();
-        const auto fontHeight = juce::jlimit(10.0f, 14.0f, radius * 0.36f);
-        g.setFont(getUiFont(fontHeight, juce::Font::bold));
+        const auto fontHeight = juce::jlimit(9.0f, 10.0f, radius * 0.32f);
+        g.setFont(ProfilerStyle::Fonts::medium(fontHeight));
         g.setColour(ProfilerStyle::Colors::text.withAlpha(enabledAlpha));
         g.drawFittedText(valueText,
                          knobArea.reduced(radius * 0.28f).toNearestInt(),
@@ -389,7 +436,7 @@ void CustomLookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& 
     auto labelArea = area.removeFromTop(labelHeight);
 
     g.setColour(button.findColour(juce::ToggleButton::textColourId).withAlpha(button.isEnabled() ? 1.0f : 0.45f));
-    g.setFont(getUiFont(juce::jlimit(8.0f, 14.0f, labelHeight * 0.8f)));
+    g.setFont(ProfilerStyle::Fonts::medium(juce::jlimit(8.0f, 11.0f, labelHeight * 0.8f)));
     g.drawFittedText(button.getButtonText(), labelArea.toNearestInt(), juce::Justification::centred, 1);
 
     drawSwitch(g, area, button.getToggleState(), button.isEnabled(),
@@ -501,7 +548,7 @@ void CustomLookAndFeel::drawTabButton(juce::TabBarButton& button, juce::Graphics
     }
 
     g.setColour(isFront ? ProfilerStyle::Colors::text : ProfilerStyle::Colors::textMuted);
-    g.setFont(getUiFont(14.0f));
+    g.setFont(ProfilerStyle::Fonts::medium(12.0f));
     g.drawText(button.getButtonText(), button.getLocalBounds().toFloat().reduced(2.0f),
                juce::Justification::centred);
 }
@@ -520,13 +567,12 @@ void CustomLookAndFeel::drawLabel(juce::Graphics& g, juce::Label& label) {
         const auto font = getLabelFont(label);
         g.setColour(label.findColour(juce::Label::textColourId).withMultipliedAlpha(label.isEnabled() ? 1.0f : 0.45f));
         g.setFont(font);
-        const auto maxLines = juce::jmax(1, static_cast<int>(label.getHeight() / juce::jmax(1.0f, font.getHeight())));
-        g.drawFittedText(label.getText(), label.getLocalBounds(), label.getJustificationType(), maxLines);
+        g.drawText(label.getText(), label.getLocalBounds(), label.getJustificationType(), false);
     }
 }
 
 juce::Font CustomLookAndFeel::getTooltipFont() {
-    return getUiFont(11.0f);
+    return ProfilerStyle::Fonts::medium(11.0f);
 }
 
 juce::Rectangle<int> CustomLookAndFeel::getTooltipBounds(const juce::String& tipText,
@@ -549,17 +595,11 @@ void CustomLookAndFeel::drawTooltip(juce::Graphics& g, const juce::String& text,
     g.drawFittedText(text, bounds.reduced(8.0f, 3.0f).toNearestInt(), juce::Justification::centredLeft, 3);
 }
 
-void CustomLookAndFeel::drawDocumentWindowTitleBar(juce::DocumentWindow& window, juce::Graphics& g,
-                                                   int w, int h, int titleSpaceX, int titleSpaceW,
-                                                   const juce::Image*, bool drawTitleTextOnLeft) {
+void CustomLookAndFeel::drawDocumentWindowTitleBar(juce::DocumentWindow&, juce::Graphics& g,
+                                                   int w, int h, int, int,
+                                                   const juce::Image*, bool) {
     g.setColour(juce::Colours::black);
     g.fillRect(0, 0, w, h);
-    g.setColour(ProfilerStyle::Colors::text);
-    g.setFont(getUiFont(13.0f));
-    g.drawText(window.getName(),
-               titleSpaceX, 0, titleSpaceW, h,
-               drawTitleTextOnLeft ? juce::Justification::centredLeft : juce::Justification::centred,
-               true);
 }
 
 void CustomLookAndFeel::fillResizableWindowBackground(juce::Graphics& g, int w, int h,
@@ -837,20 +877,20 @@ void CustomLookAndFeel::drawDropZone(juce::Graphics& g,
 
     const auto titleSize = juce::jlimit(12.0f, 14.0f, bounds.getHeight() * 0.14f);
     g.setColour(ProfilerStyle::Colors::caption);
-    g.setFont(getUiFont(titleSize));
+    g.setFont(ProfilerStyle::Fonts::moduleTitle());
     auto titleBounds = content.removeFromTop(titleSize + 4.0f);
     g.drawFittedText(title, titleBounds.toNearestInt(), juce::Justification::centred, 1);
 
     const auto detailSize = juce::jlimit(isLoaded ? 14.0f : 12.0f, 16.0f, bounds.getHeight() * 0.16f);
-    const auto detailFont = getUiFont(detailSize, isLoaded ? juce::Font::bold : juce::Font::plain);
+    const auto detailFont = isLoaded ? ProfilerStyle::Fonts::bold(detailSize) : ProfilerStyle::Fonts::medium(detailSize);
     g.setFont(detailFont);
     g.setColour(isLoaded ? ProfilerStyle::Colors::text : ProfilerStyle::Colors::caption);
-    g.drawFittedText(ellipsize(detailFont, detail, content.getWidth()),
-                     content.toNearestInt(),
-                     juce::Justification::centred,
-                     2);
+    g.drawText(ellipsize(detailFont, detail, content.getWidth()),
+               content.toNearestInt(),
+               juce::Justification::centred,
+               false);
 
-    g.setFont(getUiFont(hintSize));
+    g.setFont(ProfilerStyle::Fonts::medium(hintSize));
     g.setColour(ProfilerStyle::Colors::caption.withAlpha(0.85f));
     g.drawFittedText("Left click / Drag & Drop to load  •  Right click to unload",
                      hintBounds.toNearestInt(),

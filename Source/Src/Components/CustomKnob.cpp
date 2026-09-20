@@ -45,11 +45,11 @@ CustomKnob::CustomKnob(const juce::String& name, float min, float max, float def
     _slider.setDoubleClickReturnValue(true, defaultValue);
     _slider.setMouseDragSensitivity(kNormalDragSensitivity);
 
-    _label.setText(name, juce::dontSendNotification);
+    _label.setText(juce::String(name).toUpperCase(), juce::dontSendNotification);
     _label.setJustificationType(juce::Justification::centred);
     _label.setColour(juce::Label::textColourId, ProfilerStyle::Colors::textMuted);
-    _label.setMinimumHorizontalScale(0.7f);
-    _label.setFont(ProfilerStyle::Fonts::regular(13.0f));
+    _label.setMinimumHorizontalScale(1.0f);
+    _label.setFont(ProfilerStyle::Fonts::control());
 
     addAndMakeVisible(_slider);
     addAndMakeVisible(_label);
@@ -61,7 +61,7 @@ void CustomKnob::paint(juce::Graphics& /*g*/) {
 void CustomKnob::resized() {
     auto area = getLocalBounds();
 
-    constexpr auto labelHeight = 16;
+    constexpr auto labelHeight = 14;
     constexpr auto labelToKnobGap = 2;
 
     const auto availableKnobHeight = juce::jmax(0, area.getHeight() - labelHeight - labelToKnobGap);

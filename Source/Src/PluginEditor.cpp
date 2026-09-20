@@ -109,7 +109,7 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
     showEditPanel(SignalChainStrip::BlockId::AmpProfiler);
     updateChainStatus();
     setWantsKeyboardFocus(true);
-    startTimerHz(60);
+    startTimerHz(30);
     resized();
     juce::MessageManager::callAsync([safeThis = juce::Component::SafePointer<ProfilerAudioProcessorEditor>(this)]() {
         if (safeThis != nullptr) {
@@ -174,9 +174,8 @@ void ProfilerAudioProcessorEditor::applyStandaloneWindowChrome() {
 }
 
 void ProfilerAudioProcessorEditor::resized() {
-    const auto scale = getWidth() / static_cast<float>(editorWidth);
-    _content.setTransform(juce::AffineTransform::scale(scale));
-    _content.setBounds(0, 0, editorWidth, editorHeight);
+    _content.setTransform({});
+    _content.setBounds(getLocalBounds());
 
     auto area = _content.getLocalBounds();
     _topBar.setBounds(area.removeFromTop(48));
@@ -215,10 +214,10 @@ void ProfilerAudioProcessorEditor::resized() {
         _exportModule.setBounds(0, 0, area.getWidth(), exportHeight);
     }
 
-    const auto bannerWidth = juce::jmin(_notificationBanner.getIdealWidth(), juce::jmax(220, editorWidth - 50));
+    const auto bannerWidth = juce::jmin(_notificationBanner.getIdealWidth(), juce::jmax(220, _content.getWidth() - 50));
     _notificationBanner.setBounds(_content.getLocalBounds()
                                       .withSizeKeepingCentre(bannerWidth, _notificationBanner.getIdealHeight())
-                                      .withRightX(editorWidth - 22)
+                                      .withRightX(_content.getWidth() - 22)
                                       .withY(18));
 }
 
@@ -395,15 +394,23 @@ void ProfilerAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaste
 void ProfilerAudioProcessorEditor::parameterChanged(const juce::String& parameterID, float /*newValue*/) {
     if (parameterID == "isEqEnabled" || parameterID == "isGateEnabled" || parameterID == "isAmpEnabled"
         || parameterID == "isCabEnabled" || parameterID == "noise") {
-        juce::MessageManager::callAsync([safeThis = juce::Component::SafePointer<ProfilerAudioProcessorEditor>(this)]() {
-            if (safeThis != nullptr) {
-                safeThis->_eqPanel.refreshBypassState();
-                safeThis->_inputGatePanel.refreshBypassState();
-                safeThis->_ampPanel.refreshAssets();
-                safeThis->_cabinetPanel.refreshAssets();
-                safeThis->updateChainStatus();
+        auto refresh = [safeThis = juce::Component::SafePointer<ProfilerAudioProcessorEditor>(this)]() {
+            if (safeThis == nullptr) {
+                return;
             }
-        });
+
+            safeThis->_eqPanel.refreshBypassState();
+            safeThis->_inputGatePanel.refreshBypassState();
+            safeThis->_ampPanel.refreshAssets();
+            safeThis->_cabinetPanel.refreshAssets();
+            safeThis->updateChainStatus();
+        };
+
+        if (juce::MessageManager::existsAndIsCurrentThread()) {
+            refresh();
+        } else {
+            juce::MessageManager::callAsync(std::move(refresh));
+        }
     }
 }
 

@@ -175,10 +175,12 @@ SignalChainStrip::SignalChainStrip() {
     _masterVolume.setShowsLed(false);
     _ampProfiler.setToggleState(true, juce::dontSendNotification);
     _busLayer.toBack();
+    setOpaque(true);
     setWantsKeyboardFocus(true);
 }
 
 void SignalChainStrip::paint(juce::Graphics& g) {
+    g.fillAll(juce::Colours::black);
     auto* laf = dynamic_cast<CustomLookAndFeel*>(&getLookAndFeel());
 
     for (int slot = 0; slot < kSlotCount; ++slot) {

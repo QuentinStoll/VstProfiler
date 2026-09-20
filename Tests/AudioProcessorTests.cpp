@@ -204,7 +204,7 @@ class AudioProcessorUnitTests : public juce::UnitTest {
     void testParameterDefaults() {
         ProfilerAudioProcessor processor;
 
-        expect(processor.getParameters().size() == 16, "Unexpected processor parameter count.");
+        expect(processor.getParameters().size() == 23, "Unexpected processor parameter count.");
         expectClose(getParameterValue(processor, "master"), 50.0f, "master default");
         expectClose(getParameterValue(processor, "gain"), 0.0f, "gain default");
         expectClose(getParameterValue(processor, "noise"), 10.0f, "noise default");
@@ -212,9 +212,16 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         expectClose(getParameterValue(processor, "output"), 0.0f, "output default");
         expectClose(getParameterValue(processor, "bass"), 0.0f, "bass default");
         expectClose(getParameterValue(processor, "mid"), 0.0f, "mid default");
+        expectClose(getParameterValue(processor, "highMid"), 0.0f, "highMid default");
         expectClose(getParameterValue(processor, "treble"), 0.0f, "treble default");
         expectClose(getParameterValue(processor, "presence"), 0.0f, "presence default");
         expectClose(getParameterValue(processor, "depth"), 0.0f, "depth default");
+        expectClose(getParameterValue(processor, "depthFreq"), 80.0f, "depthFreq default");
+        expectClose(getParameterValue(processor, "bassFreq"), 200.0f, "bassFreq default");
+        expectClose(getParameterValue(processor, "midFreq"), 500.0f, "midFreq default");
+        expectClose(getParameterValue(processor, "highMidFreq"), 1600.0f, "highMidFreq default");
+        expectClose(getParameterValue(processor, "trebleFreq"), 4000.0f, "trebleFreq default");
+        expectClose(getParameterValue(processor, "presenceFreq"), 10000.0f, "presenceFreq default");
         expectClose(getParameterValue(processor, "isMute"), 0.0f, "isMute default");
         expectClose(getParameterValue(processor, "isEqEnabled"), 1.0f, "isEqEnabled default");
         expectClose(getParameterValue(processor, "isGateEnabled"), 1.0f, "isGateEnabled default");
@@ -228,6 +235,8 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         setParameterValue(source, "master", 25.0f);
         setParameterValue(source, "gain", -4.0f);
         setParameterValue(source, "bass", 6.0f);
+        setParameterValue(source, "highMid", -3.0f);
+        setParameterValue(source, "midFreq", 750.0f);
         setParameterValue(source, "isMute", 1.0f);
         setParameterValue(source, "isEqEnabled", 0.0f);
 
@@ -241,6 +250,8 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         expectClose(getParameterValue(restored, "master"), 25.0f, "restored master");
         expectClose(getParameterValue(restored, "gain"), -4.0f, "restored gain");
         expectClose(getParameterValue(restored, "bass"), 6.0f, "restored bass");
+        expectClose(getParameterValue(restored, "highMid"), -3.0f, "restored highMid");
+        expectClose(getParameterValue(restored, "midFreq"), 750.0f, "restored midFreq");
         expectClose(getParameterValue(restored, "isMute"), 1.0f, "restored isMute");
         expectClose(getParameterValue(restored, "isEqEnabled"), 0.0f, "restored isEqEnabled");
     }

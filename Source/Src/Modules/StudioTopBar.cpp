@@ -37,10 +37,11 @@ void StudioTopBar::IconButton::paintButton(juce::Graphics& g, bool isMouseOverBu
 StudioTopBar::StudioTopBar(ProfilerAudioProcessor& processor)
     : _audioProcessor(processor),
       _apvts(processor._apvts) {
-    _logoLabel.setText("Profiler", juce::dontSendNotification);
-    _logoLabel.setFont(ProfilerStyle::Fonts::bold(20.0f));
+    _logoLabel.setText("PROFILER", juce::dontSendNotification);
+    _logoLabel.setFont(ProfilerStyle::Fonts::logo(18.0f));
     _logoLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
     _logoLabel.setJustificationType(juce::Justification::centredLeft);
+    _logoLabel.setMinimumHorizontalScale(1.0f);
     _logoLabel.setInterceptsMouseClicks(false, false);
     addAndMakeVisible(_logoLabel);
 
@@ -84,7 +85,7 @@ void StudioTopBar::paint(juce::Graphics& g) {
 
 void StudioTopBar::resized() {
     auto area = getLocalBounds().reduced(12, 6);
-    _logoLabel.setBounds(area.removeFromLeft(128));
+    _logoLabel.setBounds(area.removeFromLeft(196));
 
     auto right = area.removeFromRight(94);
     _settingsButton.setBounds(right.removeFromRight(32).withSizeKeepingCentre(32, 32));
@@ -211,11 +212,10 @@ void StudioTopBar::resetParametersToDefaults() {
     resetParam("noise");
     resetParam("input");
     resetParam("output");
-    resetParam("bass");
-    resetParam("depth");
-    resetParam("mid");
-    resetParam("presence");
-    resetParam("treble");
+    for (const auto& band : EqBands::specs) {
+        resetParam(band.gainId);
+        resetParam(band.freqId);
+    }
     resetParam("isMute");
     resetParam("isEqEnabled");
     resetParam("isGateEnabled");

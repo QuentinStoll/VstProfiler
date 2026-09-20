@@ -1,46 +1,38 @@
 #include "Modules/AdvancedEqModule.h"
 
 AdvancedEqModule::AdvancedEqModule(juce::AudioProcessorValueTreeState& apvts) {
-    addAndMakeVisible(_bassKnob);
-    addAndMakeVisible(_midKnob);
-    addAndMakeVisible(_trebleKnob);
-    addAndMakeVisible(_presenceKnob);
-    addAndMakeVisible(_depthKnob);
+    for (int band = 0; band < EqBands::count; ++band) {
+        const auto index = static_cast<size_t>(band);
+        const auto& spec = EqBands::specs[band];
 
-    _bassAttachment = std::make_unique<SliderAttachment>(apvts, "bass", _bassKnob.getSlider());
-    _midAttachment = std::make_unique<SliderAttachment>(apvts, "mid", _midKnob.getSlider());
-    _trebleAttachment = std::make_unique<SliderAttachment>(apvts, "treble", _trebleKnob.getSlider());
-    _presenceAttachment = std::make_unique<SliderAttachment>(apvts, "presence", _presenceKnob.getSlider());
-    _depthAttachment = std::make_unique<SliderAttachment>(apvts, "depth", _depthKnob.getSlider());
-
-    addAndMakeVisible(_bandLabelsZone);
+        _gainKnobs[index] = std::make_unique<CustomKnob>(spec.label, EqBands::minDb, EqBands::maxDb, 0.0f, "dB");
+        _freqKnobs[index] = std::make_unique<CustomKnob>("Hz", EqBands::minHz, EqBands::maxHz, spec.defaultHz, "Hz", 0.1f);
+        addAndMakeVisible(*_gainKnobs[index]);
+        addAndMakeVisible(*_freqKnobs[index]);
+        _gainAttachments[index] = std::make_unique<SliderAttachment>(apvts, spec.gainId, _gainKnobs[index]->getSlider());
+        _freqAttachments[index] = std::make_unique<SliderAttachment>(apvts, spec.freqId, _freqKnobs[index]->getSlider());
+    }
 }
 
-AdvancedEqModule::~AdvancedEqModule() {
-}
-
-void AdvancedEqModule::paint(juce::Graphics& g) {
-    g.setColour(juce::Colours::blue.withAlpha(0.2f));
-    g.fillRect(_bandLabelsZone.getBounds());
-}
+void AdvancedEqModule::paint(juce::Graphics& /*g*/) {}
 
 void AdvancedEqModule::resized() {
     auto area = getLocalBounds();
-    auto areaWidth = area.getWidth();
+    const auto count = EqBands::count;
+    const auto gap = 8;
+    auto gainRow = area.removeFromTop(area.getHeight() / 2);
+    auto freqRow = area;
+    const auto knobWidth = juce::jmin(92, juce::jmax(52, (gainRow.getWidth() - gap * (count - 1)) / count));
+    const auto totalWidth = count * knobWidth + (count - 1) * gap;
+    auto gainBounds = juce::Rectangle<int>(totalWidth, juce::jmin(108, gainRow.getHeight())).withCentre(gainRow.getCentre());
+    auto freqBounds = juce::Rectangle<int>(totalWidth, juce::jmin(108, freqRow.getHeight())).withCentre(freqRow.getCentre());
 
-    auto topArea = area.removeFromTop(static_cast<int>(getHeight() * 0.4f));
-
-    auto bassArea = topArea.removeFromLeft(areaWidth / 5);
-    auto midArea = topArea.removeFromLeft(areaWidth / 5);
-    auto trebleArea = topArea.removeFromLeft(areaWidth / 5);
-    auto presenceArea = topArea.removeFromLeft(areaWidth / 5);
-    auto depthArea = topArea;
-
-    _bassKnob.setBounds(bassArea);
-    _midKnob.setBounds(midArea);
-    _trebleKnob.setBounds(trebleArea);
-    _presenceKnob.setBounds(presenceArea);
-    _depthKnob.setBounds(depthArea);
-
-    _bandLabelsZone.setBounds(area);
+    for (int band = 0; band < count; ++band) {
+        _gainKnobs[static_cast<size_t>(band)]->setBounds(gainBounds.removeFromLeft(knobWidth));
+        _freqKnobs[static_cast<size_t>(band)]->setBounds(freqBounds.removeFromLeft(knobWidth));
+        if (band + 1 < count) {
+            gainBounds.removeFromLeft(gap);
+            freqBounds.removeFromLeft(gap);
+        }
+    }
 }

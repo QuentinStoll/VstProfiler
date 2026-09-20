@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+#include <atomic>
+
 #include <JuceHeader.h>
 
 #include "Components/CustomKnob.h"
@@ -17,13 +20,47 @@ class EqResponseDisplay : public juce::Component,
     ~EqResponseDisplay() override;
 
     void paint(juce::Graphics& g) override;
+    void mouseDown(const juce::MouseEvent& event) override;
+    void mouseDrag(const juce::MouseEvent& event) override;
+    void mouseUp(const juce::MouseEvent& event) override;
+    void mouseMove(const juce::MouseEvent& event) override;
+    void mouseExit(const juce::MouseEvent& event) override;
+    void mouseDoubleClick(const juce::MouseEvent& event) override;
     void setBypassed(bool shouldBeBypassed);
 
    private:
+    static constexpr int kCurvePoints = 256;
+
     juce::AudioProcessorValueTreeState& _apvts;
     bool _bypassed = false;
+    int _dragBand = -1;
+    int _hoverBand = -1;
+    bool _gestureActive = false;
+    mutable bool _curveValid = false;
+    mutable std::atomic<bool> _repaintPosted{false};
+    mutable std::array<double, kCurvePoints> _curveMagnitudes{};
 
     void parameterChanged(const juce::String& parameterID, float newValue) override;
+    void listenToEqParams(bool shouldListen);
+    juce::Rectangle<float> plotArea() const;
+    float xForHz(float hz) const;
+    float yForDb(float db) const;
+    float hzFromX(float x) const;
+    float dbFromY(float y) const;
+    juce::Point<float> bandPoint(int band) const;
+    int findBandAt(juce::Point<float> pos) const;
+    float bandGain(int band) const;
+    float bandFreq(int band) const;
+    float curveDbAt(float hz) const;
+    void ensureEqCurve() const;
+    void invalidateEqCurve();
+    void requestRepaint();
+    void setBandFromPosition(int band, juce::Point<float> pos);
+    void beginBandGesture(int band);
+    void endBandGesture();
+    void resetBand(int band);
+    void updateHover(juce::Point<float> pos);
+    void setRangedParam(const char* parameterId, float value);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EqResponseDisplay)
 };
@@ -69,7 +106,7 @@ class AmpProfilerPanel : public juce::Component {
     juce::Label _bypassLabel{"", "No model loaded"};
     CustomToggleButton _ampEnabled{"Amp Enabled"};
     FileDropZone _ampDrop;
-    CustomKnob _outputKnob{"Profil Output Volume", -12.0f, 12.0f, 0.0f, "dB"};
+    CustomKnob _outputKnob{"Gain", -12.0f, 12.0f, 0.0f, "dB"};
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> _ampEnabledAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> _outputAttachment;
 

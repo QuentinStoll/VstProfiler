@@ -1,25 +1,22 @@
+#pragma once
+
+#include <array>
+#include <memory>
+
 #include "Components/CustomKnob.h"
+#include "EqBandLayout.h"
 #include "JuceHeader.h"
 
 class BasicEqModule : public juce::Component {
    public:
-    BasicEqModule(juce::AudioProcessorValueTreeState& apvts);
-    ~BasicEqModule();
+    explicit BasicEqModule(juce::AudioProcessorValueTreeState& apvts);
+    ~BasicEqModule() override = default;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
 
    private:
-    CustomKnob _bassKnob{"Bass", -24.0f, 24.0f, 0.0f, "dB"};
-    CustomKnob _midKnob{"Mid", -24.0f, 24.0f, 0.0f, "dB"};
-    CustomKnob _trebleKnob{"Treble", -24.0f, 24.0f, 0.0f, "dB"};
-    CustomKnob _presenceKnob{"Presence", -24.0f, 24.0f, 0.0f, "dB"};
-    CustomKnob _depthKnob{"Depth", -24.0f, 24.0f, 0.0f, "dB"};
-
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
-    std::unique_ptr<SliderAttachment> _bassAttachment;
-    std::unique_ptr<SliderAttachment> _midAttachment;
-    std::unique_ptr<SliderAttachment> _trebleAttachment;
-    std::unique_ptr<SliderAttachment> _presenceAttachment;
-    std::unique_ptr<SliderAttachment> _depthAttachment;
+    std::array<std::unique_ptr<CustomKnob>, EqBands::count> _knobs;
+    std::array<std::unique_ptr<SliderAttachment>, EqBands::count> _attachments;
 };

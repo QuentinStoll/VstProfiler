@@ -101,11 +101,10 @@ void UtilityBarModule::resetParametersToDefaults() {
     resetParam("noise");
     resetParam("input");
     resetParam("output");
-    resetParam("bass");
-    resetParam("depth");
-    resetParam("mid");
-    resetParam("presence");
-    resetParam("treble");
+    for (const auto& band : EqBands::specs) {
+        resetParam(band.gainId);
+        resetParam(band.freqId);
+    }
     resetParam("isMute");
     resetParam("isEqEnabled");
     resetParam("isGateEnabled");

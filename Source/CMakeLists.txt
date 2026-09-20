@@ -43,6 +43,11 @@ juce_add_binary_data(ProfilerAssets
         Assets/Svg/cross-icon.svg
         Assets/Svg/music-note.svg
         Assets/Svg/plus-icon.svg
+        Assets/Fonts/Orbitron-Regular.ttf
+        Assets/Fonts/Orbitron-Medium.ttf
+        Assets/Fonts/Orbitron-Bold.ttf
+        Assets/Fonts/Orbitron-ExtraBold.ttf
+        Assets/Fonts/Orbitron-Black.ttf
 )
 
 # Collect source files

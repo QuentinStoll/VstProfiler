@@ -14,10 +14,11 @@ CustomLinearSlider::CustomLinearSlider(const juce::String& name, float min, floa
     _slider.setValue(defaultValue);
     _slider.setTextValueSuffix(" " + suffix);
 
-    _label.setText(name, juce::dontSendNotification);
+    _label.setText(juce::String(name).toUpperCase(), juce::dontSendNotification);
     _label.setJustificationType(isHorizontal() ? juce::Justification::centredLeft : juce::Justification::centred);
     _label.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
-    _label.setFont(ProfilerStyle::Fonts::regular(14.0f));
+    _label.setMinimumHorizontalScale(1.0f);
+    _label.setFont(ProfilerStyle::Fonts::control());
 
     addAndMakeVisible(_slider);
     addAndMakeVisible(_label);

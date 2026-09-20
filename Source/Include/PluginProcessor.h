@@ -1,7 +1,10 @@
 #pragma once
 
+#include <array>
+
 #include <JuceHeader.h>
 
+#include "EqBandLayout.h"
 #include "ProfileManager.h"
 
 namespace RTNeural {
@@ -83,11 +86,12 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     };
 
     enum EqPositions {
-        Depth = 0,
-        Bass,
-        Mid,
-        Treble,
-        Presence
+        LowShelf = 0,
+        Peak1,
+        Peak2,
+        Peak3,
+        Peak4,
+        HighShelf
     };
 
     using Filter = juce::dsp::ProcessorDuplicator<
@@ -103,6 +107,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
         Filter,
         Filter,
         Filter,
+        Filter,
         Filter>;
 
     Chain _chain;
@@ -113,13 +118,8 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     std::atomic<float> _rmsLevelInput{-60.0f};
     std::atomic<float> _rmsLevelOutput{-60.0f};
 
-    static constexpr float DEPTH_FREQ{60.0f};
-    static constexpr float BASS_FREQ{200.0f};
-    static constexpr float MID_FREQ{800.0f};
-    static constexpr float TREBLE_FREQ{3200.0f};
-    static constexpr float PRESENCE_FREQ{8000.0f};
-    static constexpr float SHELF_Q{0.707f};
-    static constexpr float PEAK_Q{1.0f};
+    static constexpr float SHELF_Q{EqBands::shelfQ};
+    static constexpr float PEAK_Q{EqBands::peakQ};
     static constexpr double PARAMETER_RAMP_SECONDS{0.05};
 
     std::atomic<float>* _masterParam{nullptr};
@@ -128,11 +128,8 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     std::atomic<float>* _inputParam{nullptr};
     std::atomic<float>* _outputParam{nullptr};
 
-    std::atomic<float>* _depthParam{nullptr};
-    std::atomic<float>* _bassParam{nullptr};
-    std::atomic<float>* _midParam{nullptr};
-    std::atomic<float>* _trebleParam{nullptr};
-    std::atomic<float>* _presenceParam{nullptr};
+    std::array<std::atomic<float>*, EqBands::count> _eqGainParams{};
+    std::array<std::atomic<float>*, EqBands::count> _eqFreqParams{};
 
     std::atomic<float>* _isMuteParam{nullptr};
     std::atomic<float>* _isEqEnabledParam{nullptr};
@@ -141,12 +138,10 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     std::atomic<float>* _isCabEnabledParam{nullptr};
     std::atomic<float>* _cabLowCutParam{nullptr};
 
-    juce::SmoothedValue<float> _depthSmoothed;
-    juce::SmoothedValue<float> _bassSmoothed;
-    juce::SmoothedValue<float> _midSmoothed;
-    juce::SmoothedValue<float> _trebleSmoothed;
-    juce::SmoothedValue<float> _presenceSmoothed;
+    std::array<juce::SmoothedValue<float>, EqBands::count> _eqGainSmoothed{};
+    std::array<juce::SmoothedValue<float>, EqBands::count> _eqFreqSmoothed{};
     juce::SmoothedValue<float> _cabLowCutSmoothed;
+    bool _eqCoeffsDirty{true};
 
     Filter _cabLowCut;
 
