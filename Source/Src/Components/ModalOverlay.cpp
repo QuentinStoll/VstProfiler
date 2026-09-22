@@ -78,11 +78,7 @@ void ModalOverlay::paint(juce::Graphics& g) {
 
     const auto panelBounds = getCentredContentBounds().toFloat();
 
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        panelBounds,
-        ProfilerStyle::Colors::lightestGrey.brighter(0.1f),
-        ProfilerStyle::Colors::lighterGrey.darker(0.1f),
-        0.8f));
+    g.setColour(ProfilerStyle::Colors::container);
     g.fillRoundedRectangle(panelBounds, _panelCornerRadius);
 }
 

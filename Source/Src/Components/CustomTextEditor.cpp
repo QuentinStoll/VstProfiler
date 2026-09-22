@@ -9,10 +9,11 @@ CustomTextEditor::CustomTextEditor() {
     setSelectAllWhenFocused(true);
     setJustification(juce::Justification::centredLeft);
     setIndents(8, 0);
-    setColour(juce::TextEditor::backgroundColourId, ProfilerStyle::Colors::darkGrey);
-    setColour(juce::TextEditor::textColourId, ProfilerStyle::Colors::white);
-    setColour(juce::TextEditor::outlineColourId, ProfilerStyle::Colors::darkerGrey);
-    setColour(juce::TextEditor::focusedOutlineColourId, ProfilerStyle::Colors::orange);
-    setColour(juce::TextEditor::highlightColourId, ProfilerStyle::Colors::orange.withAlpha(0.35f));
-    setColour(juce::TextEditor::highlightedTextColourId, ProfilerStyle::Colors::white);
+    setColour(juce::TextEditor::backgroundColourId, ProfilerStyle::Colors::elevated);
+    setColour(juce::TextEditor::textColourId, ProfilerStyle::Colors::text);
+    setColour(juce::TextEditor::outlineColourId, ProfilerStyle::Colors::darkGrey);
+    setColour(juce::TextEditor::focusedOutlineColourId, ProfilerStyle::Colors::accent);
+    setColour(juce::TextEditor::highlightColourId, ProfilerStyle::Colors::accent.withAlpha(0.28f));
+    setColour(juce::TextEditor::highlightedTextColourId, ProfilerStyle::Colors::text);
+    setFont(ProfilerStyle::Fonts::regular(15.0f));
 }

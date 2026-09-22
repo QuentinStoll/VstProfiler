@@ -8,8 +8,8 @@ FormField::FormField(const juce::Identifier& fieldId, const juce::String& labelT
 
     _label.setText(labelText, juce::dontSendNotification);
     _label.setJustificationType(juce::Justification::centredLeft);
-    _label.setColour(juce::Label::textColourId, ProfilerStyle::Colors::white);
-    _label.setFont(juce::Font(juce::FontOptions().withHeight(14.0f)));
+    _label.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
+    _label.setFont(ProfilerStyle::Fonts::regular(14.0f));
 }
 
 const juce::Identifier& FormField::getFieldId() const noexcept {

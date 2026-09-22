@@ -42,7 +42,7 @@ void applyBackgroundColourPreset(int presetId) {
 
         case defaultPreset:
         default:
-            ProfilerStyle::Colors::appBackground = ProfilerStyle::Colors::darkestGrey;
+            ProfilerStyle::Colors::appBackground = ProfilerStyle::Colors::background;
             break;
     }
 }
@@ -51,13 +51,13 @@ void applyBackgroundColourPreset(int presetId) {
 SettingsView::SettingsView() {
     _titleLabel.setText("Settings", juce::dontSendNotification);
     _titleLabel.setJustificationType(juce::Justification::centred);
-    _titleLabel.setFont(juce::FontOptions(24.0f, juce::Font::bold));
-    _titleLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::white);
+    _titleLabel.setFont(ProfilerStyle::Fonts::bold(24.0f));
+    _titleLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
 
     addAndMakeVisible(_titleLabel);
 
     _backgroundLabel.setText("Background colour", juce::dontSendNotification);
-    _backgroundLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::white);
+    _backgroundLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
 
     addAndMakeVisible(_backgroundLabel);
 
@@ -78,7 +78,7 @@ SettingsView::SettingsView() {
     addAndMakeVisible(_backgroundMenu);
 
     _troubleshootingLabel.setText("Allow troubleshooting logs", juce::dontSendNotification);
-    _troubleshootingLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::white);
+    _troubleshootingLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
     addAndMakeVisible(_troubleshootingLabel);
 
     _troubleshootingMenu.addItem("Don't allow", 1);
@@ -91,7 +91,7 @@ SettingsView::SettingsView() {
     addAndMakeVisible(_troubleshootingMenu);
 
     _hardwareInfoLabel.setText("Hardware info in logs", juce::dontSendNotification);
-    _hardwareInfoLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::white);
+    _hardwareInfoLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
     addAndMakeVisible(_hardwareInfoLabel);
 
     _hardwareInfoMenu.addItem("Don't allow", 1);
@@ -109,15 +109,7 @@ void SettingsView::applySavedBackgroundColour() {
 }
 
 void SettingsView::paint(juce::Graphics& g) {
-    const auto area = getLocalBounds().toFloat();
-
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        area,
-        ProfilerStyle::Colors::appBackground,
-        ProfilerStyle::Colors::appBackground.brighter(0.1f),
-        0.8f));
-
-    g.fillRoundedRectangle(area, 5.0f);
+    ProfilerStyle::Surfaces::fillPanel(g, getLocalBounds().toFloat());
 }
 
 void SettingsView::resized() {

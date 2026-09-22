@@ -12,8 +12,8 @@ AddProfilModule::AddProfilModule()
 
     _title.setText("Adding a profil", juce::dontSendNotification);
     _title.setJustificationType(juce::Justification::centred);
-    _title.setColour(juce::Label::textColourId, ProfilerStyle::Colors::white);
-    _title.setFont(juce::Font(juce::FontOptions(18.0f)));
+    _title.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
+    _title.setFont(ProfilerStyle::Fonts::regular(18.0f));
 
     _createProfilButton.onClick = [this]() {
         createProfilClicked();

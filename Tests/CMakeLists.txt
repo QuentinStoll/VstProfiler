@@ -44,6 +44,8 @@ target_link_libraries(ProfilerTests PRIVATE
     juce::juce_data_structures
     juce::juce_dsp
     juce::juce_events
+    juce::juce_graphics
+    juce::juce_gui_basics
     ProfilerAssets
     RTNeural
     simdjson
@@ -154,9 +156,11 @@ add_profiler_audio_processor_test(Metadata "audio processor metadata")
 add_profiler_audio_processor_test(BusLayouts "audio processor bus layouts")
 add_profiler_audio_processor_test(ParameterDefaults "audio processor parameter defaults")
 add_profiler_audio_processor_test(StateRoundTrip "audio processor state round trip")
+add_profiler_audio_processor_test(ChainLayoutRoundTrip "audio processor chain layout round trip")
 add_profiler_audio_processor_test(ProcessBlockSmoke "audio processor process block smoke")
 add_profiler_audio_processor_test(MuteClearsBuffer "audio processor mute clears buffer")
 add_profiler_audio_processor_test(MasterZeroSilencesBuffer "audio processor master zero silences buffer")
+add_profiler_audio_processor_test(NoiseGateZeroBypasses "audio processor noise gate zero bypasses")
 add_profiler_audio_processor_test(GainChangesOutputLevel "audio processor gain changes output level")
 add_profiler_audio_processor_test(SilentInputStaysSilent "audio processor silent input stays silent")
 add_profiler_audio_processor_test(PrepareBlockSizes "audio processor handles prepare block sizes")
