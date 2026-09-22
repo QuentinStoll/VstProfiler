@@ -64,18 +64,14 @@ void FileStatusCard::paint(juce::Graphics& g) {
     const auto card = getLocalBounds().toFloat();
     const auto accent = getStatusColour(_status);
 
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        card,
-        ProfilerStyle::Colors::lighterGrey.withAlpha(0.78f),
-        ProfilerStyle::Colors::darkerGrey.withAlpha(0.72f),
-        0.85f));
-    g.fillRoundedRectangle(card, 5.0f);
+    g.setColour(ProfilerStyle::Colors::elevated);
+    g.fillRoundedRectangle(card, ProfilerStyle::Surfaces::panelCorner);
 
-    g.setColour(accent.withAlpha(_status == Status::Empty ? 0.28f : 0.75f));
-    g.fillRoundedRectangle(card.withWidth(4.0f), 2.0f);
+    g.setColour(accent.withAlpha(_status == Status::Empty ? 0.28f : 0.85f));
+    g.fillRoundedRectangle(card.withWidth(3.0f), 1.5f);
 
-    g.setColour(accent.withAlpha(_status == Status::Empty ? 0.34f : 0.5f));
-    g.drawRoundedRectangle(card, 5.0f, 1.0f);
+    g.setColour(accent.withAlpha(_status == Status::Empty ? 0.22f : 0.4f));
+    g.drawRoundedRectangle(card.reduced(0.5f), ProfilerStyle::Surfaces::panelCorner, 1.0f);
 }
 
 void FileStatusCard::resized() {
@@ -112,8 +108,7 @@ void FileStatusCard::configureLabel(juce::Label& label,
                                     juce::Colour textColour,
                                     juce::Justification justification,
                                     bool isBold) {
-    auto font = juce::Font(juce::FontOptions(fontSize));
-    font.setBold(isBold);
+    auto font = isBold ? ProfilerStyle::Fonts::bold(fontSize) : ProfilerStyle::Fonts::regular(fontSize);
 
     label.setText(text, juce::dontSendNotification);
     label.setFont(font);

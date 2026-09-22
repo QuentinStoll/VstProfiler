@@ -11,12 +11,12 @@ FileAssetsModule::FileAssetsModule(juce::String title,
     configureHeaderLabel(_titleLabel,
                          _title,
                          24.0f,
-                         ProfilerStyle::Colors::white,
+                         ProfilerStyle::Colors::text,
                          true);
     configureHeaderLabel(_summaryLabel,
                          _summary,
                          14.0f,
-                         ProfilerStyle::Colors::white.withAlpha(0.72f));
+                         ProfilerStyle::Colors::text.withAlpha(0.72f));
 
     addAndMakeVisible(_titleLabel);
     addAndMakeVisible(_summaryLabel);
@@ -112,8 +112,7 @@ void FileAssetsModule::configureHeaderLabel(juce::Label& label,
                                             float fontSize,
                                             juce::Colour textColour,
                                             bool isBold) {
-    auto font = juce::Font(juce::FontOptions(fontSize));
-    font.setBold(isBold);
+    auto font = isBold ? ProfilerStyle::Fonts::bold(fontSize) : ProfilerStyle::Fonts::regular(fontSize);
 
     label.setText(text, juce::dontSendNotification);
     label.setFont(font);

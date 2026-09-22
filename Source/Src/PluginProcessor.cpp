@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 
+#include <cmath>
 #include <common/TracyColor.hpp>
 #include <fstream>
 #include <utility>
@@ -70,15 +71,25 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
     _masterParam = _apvts.getRawParameterValue("master");
     _gainParam = _apvts.getRawParameterValue("gain");
     _noiseParam = _apvts.getRawParameterValue("noise");
+    _inputParam = _apvts.getRawParameterValue("input");
+    _outputParam = _apvts.getRawParameterValue("output");
 
-    _depthParam = _apvts.getRawParameterValue("depth");
-    _bassParam = _apvts.getRawParameterValue("bass");
-    _midParam = _apvts.getRawParameterValue("mid");
-    _trebleParam = _apvts.getRawParameterValue("treble");
-    _presenceParam = _apvts.getRawParameterValue("presence");
+    for (int band = 0; band < EqBands::count; ++band) {
+        _eqGainParams[static_cast<size_t>(band)] = _apvts.getRawParameterValue(EqBands::specs[band].gainId);
+        _eqFreqParams[static_cast<size_t>(band)] = _apvts.getRawParameterValue(EqBands::specs[band].freqId);
+    }
 
     _isMuteParam = _apvts.getRawParameterValue("isMute");
     _isEqEnabledParam = _apvts.getRawParameterValue("isEqEnabled");
+    _isGateEnabledParam = _apvts.getRawParameterValue("isGateEnabled");
+    _isAmpEnabledParam = _apvts.getRawParameterValue("isAmpEnabled");
+    _isCabEnabledParam = _apvts.getRawParameterValue("isCabEnabled");
+    _cabLowCutParam = _apvts.getRawParameterValue("cabLowCut");
+    _isPedalEnabledParam = _apvts.getRawParameterValue("isPedalEnabled");
+    _pedalDriveParam = _apvts.getRawParameterValue("pedalDrive");
+    _pedalToneParam = _apvts.getRawParameterValue("pedalTone");
+    _pedalLevelParam = _apvts.getRawParameterValue("pedalLevel");
+    _apvts.state.setProperty("chainLayout", static_cast<int>(_chainLayoutPacked.load()), nullptr);
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() = default;
@@ -124,45 +135,73 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
     spec.maximumBlockSize = (juce::uint32)samplesPerBlock;
-    spec.numChannels = (juce::uint32)getTotalNumOutputChannels();
+    spec.numChannels = 1;
 
     _convolver.prepare(spec);
+
+    _inputTrim.prepare(spec);
+    _inputTrim.setRampDurationSeconds(PARAMETER_RAMP_SECONDS);
+    _inputTrim.setGainDecibels(getParameterValue(_inputParam, 0.0f));
 
     _chain.reset();
     _chain.prepare(spec);
 
     _chain.get<Gain>().setGainDecibels(getParameterValue(_gainParam, 0.0f));
-    _chain.get<Gain>().setRampDurationSeconds(0.05);
+    _chain.get<Gain>().setRampDurationSeconds(PARAMETER_RAMP_SECONDS);
 
     _masterVolume.prepare(spec);
-    _masterVolume.setRampDurationSeconds(0.05);
+    _masterVolume.setRampDurationSeconds(PARAMETER_RAMP_SECONDS);
     _masterVolume.setGainLinear(getMasterGainLinear(getParameterValue(_masterParam, 50.0f)));
+
+    _outputTrim.prepare(spec);
+    _outputTrim.setRampDurationSeconds(PARAMETER_RAMP_SECONDS);
+    _outputTrim.setGainDecibels(getParameterValue(_outputParam, 0.0f));
 
     _chain.get<NoiseGate>().setThreshold(getParameterValue(_noiseParam, 10.0f) - 60.0f);
     _chain.get<NoiseGate>().setAttack(5.0f);
     _chain.get<NoiseGate>().setRelease(100.0f);
     _chain.get<NoiseGate>().setRatio(10.0f);
-    _chain.setBypassed<NoiseGate>(getParameterValue(_noiseParam, 0.0f) <= 0.0f);
+    _chain.setBypassed<NoiseGate>(getParameterValue(_isGateEnabledParam, 1.0f) <= 0.5f || getParameterValue(_noiseParam, 0.0f) <= 0.0f);
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
 
-    _chain.setBypassed<Depth>(!eqEnabled);
-    _chain.setBypassed<Bass>(!eqEnabled);
-    _chain.setBypassed<Mid>(!eqEnabled);
-    _chain.setBypassed<Treble>(!eqEnabled);
-    _chain.setBypassed<Presence>(!eqEnabled);
+    _eqChain.reset();
+    _eqChain.prepare(spec);
+    _eqChain.setBypassed<LowShelf>(!eqEnabled);
+    _eqChain.setBypassed<Peak1>(!eqEnabled);
+    _eqChain.setBypassed<Peak2>(!eqEnabled);
+    _eqChain.setBypassed<Peak3>(!eqEnabled);
+    _eqChain.setBypassed<Peak4>(!eqEnabled);
+    _eqChain.setBypassed<HighShelf>(!eqEnabled);
 
-    *_chain.get<Depth>().state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf(sampleRate, DEPTH_FREQ, SHELF_Q, 1.0f);
-    *_chain.get<Bass>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, BASS_FREQ, PEAK_Q, 1.0f);
-    *_chain.get<Mid>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, MID_FREQ, PEAK_Q, 1.0f);
-    *_chain.get<Treble>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, TREBLE_FREQ, PEAK_Q, 1.0f);
-    *_chain.get<Presence>().state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate, PRESENCE_FREQ, SHELF_Q, 1.0f);
+    for (int band = 0; band < EqBands::count; ++band) {
+        const auto index = static_cast<size_t>(band);
+        _eqGainSmoothed[index].reset(sampleRate, PARAMETER_RAMP_SECONDS);
+        _eqFreqSmoothed[index].reset(sampleRate, PARAMETER_RAMP_SECONDS);
+        _eqGainSmoothed[index].setCurrentAndTargetValue(
+            getParameterValue(_eqGainParams[index], EqBands::specs[band].defaultDb));
+        _eqFreqSmoothed[index].setCurrentAndTargetValue(
+            getParameterValue(_eqFreqParams[index], EqBands::specs[band].defaultHz));
+    }
+    updateEqCoefficients();
+    _eqCoeffsDirty = false;
+    _eqChain.reset();
 
-    *_dcBlocker.state = *juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 35.0f);
+    _cabLowCutSmoothed.reset(sampleRate, PARAMETER_RAMP_SECONDS);
+    _cabLowCutSmoothed.setCurrentAndTargetValue(getParameterValue(_cabLowCutParam, 80.0f));
+    _cabLowCut.reset();
+    _cabLowCut.prepare(spec);
+    updateCabLowCutCoefficients();
+    _cabLowCut.reset();
+
+    _pedalToneFilter.reset();
+    _pedalToneFilter.prepare(spec);
+    updatePedalToneCoefficients();
+    _pedalToneFilter.reset();
+
+    *_dcBlocker.state = juce::dsp::IIR::ArrayCoefficients<float>::makeHighPass(sampleRate, 35.0f);
     _dcBlocker.prepare(spec);
     _dcBlocker.reset();
-
-    oversampler.initProcessing(samplesPerBlock);
 
     {
         const juce::ScopedLock ampLock(_ampModelLock);
@@ -175,7 +214,12 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
 void ProfilerAudioProcessor::releaseResources() {
     _chain.reset();
+    _eqChain.reset();
+    _cabLowCut.reset();
+    _pedalToneFilter.reset();
+    _inputTrim.reset();
     _masterVolume.reset();
+    _outputTrim.reset();
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -223,9 +267,13 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         return;
     }
 
+    _rmsLevelInput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
+                         std::memory_order_relaxed);
+
     // Handle Mute
     if (getParameterValue(_isMuteParam, 0.0f) > 0.5f) {
         buffer.clear();
+        _rmsLevelOutput.store(-60.0f, std::memory_order_relaxed);
         return;
     }
 
@@ -233,38 +281,134 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     for (auto i = getTotalNumInputChannels(); i < juce::jmin(getTotalNumOutputChannels(), numChannels); ++i)
         buffer.clear(i, 0, numSamples);
 
+    _inputTrim.setGainDecibels(getParameterValue(_inputParam, 0.0f));
     _chain.get<Gain>().setGainDecibels(getParameterValue(_gainParam, 0.0f));
     const auto noiseGateValue = getParameterValue(_noiseParam, 0.0f);
+    const bool gateEnabled = getParameterValue(_isGateEnabledParam, 1.0f) > 0.5f;
     _chain.get<NoiseGate>().setThreshold(noiseGateValue - 60.0f);
     // A zero control value is a true bypass, rather than a -60 dB gate.
-    _chain.setBypassed<NoiseGate>(noiseGateValue <= 0.0f);
+    _chain.setBypassed<NoiseGate>(!gateEnabled || noiseGateValue <= 0.0f);
+
+    bool eqSmoothing = false;
+    for (int band = 0; band < EqBands::count; ++band) {
+        const auto index = static_cast<size_t>(band);
+        _eqGainSmoothed[index].setTargetValue(getParameterValue(_eqGainParams[index], EqBands::specs[band].defaultDb));
+        _eqFreqSmoothed[index].setTargetValue(
+            getParameterValue(_eqFreqParams[index], EqBands::specs[band].defaultHz));
+        eqSmoothing = eqSmoothing || _eqGainSmoothed[index].isSmoothing() || _eqFreqSmoothed[index].isSmoothing();
+    }
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
+    _eqChain.setBypassed<LowShelf>(!eqEnabled);
+    _eqChain.setBypassed<Peak1>(!eqEnabled);
+    _eqChain.setBypassed<Peak2>(!eqEnabled);
+    _eqChain.setBypassed<Peak3>(!eqEnabled);
+    _eqChain.setBypassed<Peak4>(!eqEnabled);
+    _eqChain.setBypassed<HighShelf>(!eqEnabled);
 
-    _chain.setBypassed<Depth>(!eqEnabled);
-    _chain.setBypassed<Bass>(!eqEnabled);
-    _chain.setBypassed<Mid>(!eqEnabled);
-    _chain.setBypassed<Treble>(!eqEnabled);
-    _chain.setBypassed<Presence>(!eqEnabled);
-
-    if (eqEnabled) {
+    if (eqEnabled && (_eqCoeffsDirty || eqSmoothing)) {
         updateEqCoefficients();
+        _eqCoeffsDirty = eqSmoothing;
     }
 
     juce::dsp::AudioBlock<float> block(buffer);
-    juce::dsp::ProcessContextReplacing<float> context(block);
-    _chain.process(context);
+    auto monoBlock = block.getSingleChannelBlock(0);
+    juce::dsp::ProcessContextReplacing<float> context(monoBlock);
+    _inputTrim.process(context);
+    processGateStage(context);
+
+    _cabLowCutSmoothed.setTargetValue(getParameterValue(_cabLowCutParam, 80.0f));
+    const auto layout = SignalChain::Layout::fromPacked(_chainLayoutPacked.load(std::memory_order_relaxed));
+    for (int slot = SignalChain::firstMovableSlot; slot <= SignalChain::lastMovableSlot; ++slot) {
+        switch (layout.atSlot(slot)) {
+            case SignalChain::Stage::Cab:
+                processCabStage(context);
+                break;
+            case SignalChain::Stage::Eq:
+                processEqStage(context);
+                break;
+            case SignalChain::Stage::Pedal:
+                processPedalStage(buffer, context, numSamples);
+                break;
+            case SignalChain::Stage::Amp:
+                processAmpStage(buffer, context, numSamples);
+                break;
+            case SignalChain::Stage::Empty:
+            default:
+                break;
+        }
+    }
+
+    _cabLowCutSmoothed.skip(numSamples);
+    for (auto& smoothed : _eqGainSmoothed) {
+        smoothed.skip(numSamples);
+    }
+    for (auto& smoothed : _eqFreqSmoothed) {
+        smoothed.skip(numSamples);
+    }
+
+    _masterVolume.setGainLinear(getMasterGainLinear(getParameterValue(_masterParam, 50.0f)));
+    _masterVolume.process(context);
+    _outputTrim.setGainDecibels(getParameterValue(_outputParam, 0.0f));
+    _outputTrim.process(context);
+
+    if (numChannels > 1) {
+        juce::FloatVectorOperations::copy(buffer.getWritePointer(1), buffer.getReadPointer(0), numSamples);
+    }
+
+    _rmsLevelOutput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
+                          std::memory_order_relaxed);
+}
+
+float ProfilerAudioProcessor::getRmsLevelInput() const noexcept {
+    return _rmsLevelInput.load(std::memory_order_relaxed);
+}
+
+float ProfilerAudioProcessor::getRmsLevelOutput() const noexcept {
+    return _rmsLevelOutput.load(std::memory_order_relaxed);
+}
+
+SignalChain::Layout ProfilerAudioProcessor::getChainLayout() const noexcept {
+    return SignalChain::Layout::fromPacked(_chainLayoutPacked.load(std::memory_order_relaxed));
+}
+
+void ProfilerAudioProcessor::setChainLayout(const SignalChain::Layout& layout) {
+    const auto valid = layout.isValid() ? layout : SignalChain::Layout{};
+    const auto packed = valid.packed();
+    _chainLayoutPacked.store(packed, std::memory_order_relaxed);
+    if (_apvts.state.isValid()) {
+        _apvts.state.setProperty("chainLayout", static_cast<int>(packed), nullptr);
+    }
+}
+
+void ProfilerAudioProcessor::resetChainLayout() {
+    setChainLayout({});
+}
+
+void ProfilerAudioProcessor::placeChainStage(SignalChain::Stage stage, int slot) {
+    auto layout = getChainLayout();
+    layout.place(stage, slot);
+    setChainLayout(layout);
+}
+
+void ProfilerAudioProcessor::processGateStage(juce::dsp::ProcessContextReplacing<float>& context) {
+    if (!_chain.isBypassed<NoiseGate>()) {
+        _chain.get<NoiseGate>().process(context);
+    }
+}
+
+void ProfilerAudioProcessor::processAmpStage(juce::AudioBuffer<float>& buffer,
+                                             juce::dsp::ProcessContextReplacing<float>& context,
+                                             int numSamples) {
+    _chain.get<Gain>().process(context);
 
     {
         const juce::ScopedLock ampLock(_ampModelLock);
-        if (_ampLoaded && _neuralAmp != nullptr) {
+        if (_ampLoaded && _neuralAmp != nullptr && getParameterValue(_isAmpEnabledParam, 1.0f) > 0.5f) {
             auto* channel0Data = buffer.getWritePointer(0);
 
             for (int i = 0; i < numSamples; ++i) {
-                // 1. Protection entrée : on évite d'envoyer un signal trop fort qui ferait exploser le réseau
                 float input = juce::jlimit(-1.0f, 1.0f, channel0Data[i]);
-
-                // 2. Traitement par RTNeural
                 float inputSample[] = {input};
                 _neuralAmp->forward(inputSample);
                 float output = _neuralAmp->getOutputs()[0];
@@ -274,52 +418,97 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                     output = 0.0f;
                 }
 
-                // 4. On applique le signal traité au buffer (avec une limite de sécurité à 1.0)
                 channel0Data[i] = juce::jlimit(-1.0f, 1.0f, output);
             }
         }
     }
 
-    // The amp is intentionally mono; duplicate its completed mono signal to
-    // the stereo output so it is audible in both headphones/speakers.
-    if (numChannels > 1) {
-        juce::FloatVectorOperations::copy(buffer.getWritePointer(1), buffer.getReadPointer(0), numSamples);
-    }
-
-    juce::dsp::AudioBlock<float> postAmpBlock(buffer);
-    juce::dsp::ProcessContextReplacing<float> postAmpContext(postAmpBlock);
-    _dcBlocker.process(postAmpContext);
-
-    // 4. Cabinet Simulation
-    if (_irLoaded) {
-        _convolver.process(postAmpContext);
-    }
-
-    _masterVolume.setGainLinear(getMasterGainLinear(getParameterValue(_masterParam, 50.0f)));
-    _masterVolume.process(postAmpContext);
-    _rmsLevelOutput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
-                          std::memory_order_relaxed);
+    _dcBlocker.process(context);
 }
 
-float ProfilerAudioProcessor::getRmsLevelOutput() const noexcept {
-    return _rmsLevelOutput.load(std::memory_order_relaxed);
+void ProfilerAudioProcessor::processCabStage(juce::dsp::ProcessContextReplacing<float>& context) {
+    const bool cabEnabled = getParameterValue(_isCabEnabledParam, 1.0f) > 0.5f;
+    if (!_irLoaded || !cabEnabled) {
+        return;
+    }
+
+    _convolver.process(context);
+    if (_cabLowCutSmoothed.isSmoothing()) {
+        updateCabLowCutCoefficients();
+    }
+    _cabLowCut.process(context);
+}
+
+void ProfilerAudioProcessor::processEqStage(juce::dsp::ProcessContextReplacing<float>& context) {
+    _eqChain.process(context);
+}
+
+void ProfilerAudioProcessor::processPedalStage(juce::AudioBuffer<float>& buffer,
+                                               juce::dsp::ProcessContextReplacing<float>& context,
+                                               int numSamples) {
+    if (getParameterValue(_isPedalEnabledParam, 1.0f) <= 0.5f) {
+        return;
+    }
+
+    const auto drive = juce::jmap(getParameterValue(_pedalDriveParam, 4.0f), 0.0f, 10.0f, 1.0f, 16.0f);
+    const auto level = juce::Decibels::decibelsToGain(getParameterValue(_pedalLevelParam, 0.0f));
+    const auto makeup = 1.0f / std::tanh(drive * 0.35f);
+    auto* channel0Data = buffer.getWritePointer(0);
+    for (int i = 0; i < numSamples; ++i) {
+        channel0Data[i] = std::tanh(channel0Data[i] * drive) * makeup * level;
+    }
+
+    updatePedalToneCoefficients();
+    _pedalToneFilter.process(context);
+}
+
+void ProfilerAudioProcessor::updatePedalToneCoefficients() {
+    const auto sampleRate = getSampleRate();
+    if (sampleRate <= 0.0) {
+        return;
+    }
+
+    const auto tone = juce::jlimit(0.0f, 1.0f, getParameterValue(_pedalToneParam, 65.0f) / 100.0f);
+    const auto hz = 400.0f * std::pow(30.0f, tone);
+    *_pedalToneFilter.state = juce::dsp::IIR::ArrayCoefficients<float>::makeLowPass(
+        sampleRate, juce::jlimit(400.0f, static_cast<float>(sampleRate * 0.45), hz));
 }
 
 void ProfilerAudioProcessor::updateEqCoefficients() {
-    *_chain.get<Depth>().state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf(
-        getSampleRate(), DEPTH_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(getParameterValue(_depthParam, 0.0f)));
+    const auto sampleRate = getSampleRate();
+    if (sampleRate <= 0.0) {
+        return;
+    }
 
-    *_chain.get<Bass>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-        getSampleRate(), BASS_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(getParameterValue(_bassParam, 0.0f)));
+    const auto nyquist = static_cast<float>(sampleRate * 0.45);
 
-    *_chain.get<Mid>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-        getSampleRate(), MID_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(getParameterValue(_midParam, 0.0f)));
+    auto freqFor = [nyquist](float hz) {
+        return juce::jlimit(EqBands::minHz, nyquist, hz);
+    };
 
-    *_chain.get<Treble>().state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-        getSampleRate(), TREBLE_FREQ, PEAK_Q, juce::Decibels::decibelsToGain(getParameterValue(_trebleParam, 0.0f)));
+    auto gainFor = [](float db) {
+        return juce::Decibels::decibelsToGain(db);
+    };
 
-    *_chain.get<Presence>().state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(
-        getSampleRate(), PRESENCE_FREQ, SHELF_Q, juce::Decibels::decibelsToGain(getParameterValue(_presenceParam, 0.0f)));
+    *_eqChain.get<LowShelf>().state = juce::dsp::IIR::ArrayCoefficients<float>::makeLowShelf(
+        sampleRate, freqFor(_eqFreqSmoothed[0].getCurrentValue()), SHELF_Q, gainFor(_eqGainSmoothed[0].getCurrentValue()));
+    *_eqChain.get<Peak1>().state = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
+        sampleRate, freqFor(_eqFreqSmoothed[1].getCurrentValue()), PEAK_Q, gainFor(_eqGainSmoothed[1].getCurrentValue()));
+    *_eqChain.get<Peak2>().state = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
+        sampleRate, freqFor(_eqFreqSmoothed[2].getCurrentValue()), PEAK_Q, gainFor(_eqGainSmoothed[2].getCurrentValue()));
+    *_eqChain.get<Peak3>().state = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
+        sampleRate, freqFor(_eqFreqSmoothed[3].getCurrentValue()), PEAK_Q, gainFor(_eqGainSmoothed[3].getCurrentValue()));
+    *_eqChain.get<Peak4>().state = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
+        sampleRate, freqFor(_eqFreqSmoothed[4].getCurrentValue()), PEAK_Q, gainFor(_eqGainSmoothed[4].getCurrentValue()));
+    *_eqChain.get<HighShelf>().state = juce::dsp::IIR::ArrayCoefficients<float>::makeHighShelf(
+        sampleRate, freqFor(_eqFreqSmoothed[5].getCurrentValue()), SHELF_Q, gainFor(_eqGainSmoothed[5].getCurrentValue()));
+}
+
+void ProfilerAudioProcessor::updateCabLowCutCoefficients() {
+    *_cabLowCut.state = juce::dsp::IIR::ArrayCoefficients<float>::makeHighPass(
+        getSampleRate(),
+        juce::jlimit(20.0f, 250.0f, _cabLowCutSmoothed.getCurrentValue()),
+        SHELF_Q);
 }
 
 //==============================================================================
@@ -341,20 +530,21 @@ juce::AudioProcessorEditor* ProfilerAudioProcessor::createEditor() {
 
 //==============================================================================
 void ProfilerAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-
+    _apvts.state.setProperty("chainLayout", static_cast<int>(_chainLayoutPacked.load(std::memory_order_relaxed)), nullptr);
     if (auto xml = _apvts.copyState().createXml())
         copyXmlToBinary(*xml, destData);
 }
 
 void ProfilerAudioProcessor::setStateInformation(const void* data, int sizeInBytes) {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
-    if (auto xml = getXmlFromBinary(data, sizeInBytes))
-        if (xml->hasTagName(_apvts.state.getType()))
-            _apvts.replaceState(juce::ValueTree::fromXml(*xml));
+    if (auto xml = getXmlFromBinary(data, sizeInBytes)) {
+        if (xml->hasTagName(_apvts.state.getType())) {
+            auto tree = juce::ValueTree::fromXml(*xml);
+            const auto packed = static_cast<std::uint32_t>(static_cast<int>(
+                tree.getProperty("chainLayout", static_cast<int>(SignalChain::defaultPacked))));
+            _chainLayoutPacked.store(SignalChain::Layout::fromPacked(packed).packed(), std::memory_order_relaxed);
+            _apvts.replaceState(std::move(tree));
+        }
+    }
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::createParameterLayout() {
@@ -383,21 +573,43 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
     // EQ parameters
     // ==============================================================================
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"bass", 1}, "Bass", juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f), 0.0f));
+        juce::ParameterID{"depth", 1}, "Low Shelf", EqBands::gainRange(), EqBands::specs[0].defaultDb));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"mid", 1}, "Mid", juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f), 0.0f));
+        juce::ParameterID{"bass", 1}, "EQ Band 1", EqBands::gainRange(), EqBands::specs[1].defaultDb));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"treble", 1}, "Treble", juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f), 0.0f));
+        juce::ParameterID{"mid", 1}, "EQ Band 2", EqBands::gainRange(), EqBands::specs[2].defaultDb));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"presence", 1}, "Presence", juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f), 0.0f));
+        juce::ParameterID{"highMid", 1}, "EQ Band 3", EqBands::gainRange(), EqBands::specs[3].defaultDb));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{"depth", 1}, "Depth", juce::NormalisableRange<float>(-24.0f, 24.0f, 0.1f), 0.0f));
+        juce::ParameterID{"treble", 1}, "EQ Band 4", EqBands::gainRange(), EqBands::specs[4].defaultDb));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"presence", 1}, "High Shelf", EqBands::gainRange(), EqBands::specs[5].defaultDb));
+
+    for (const auto& band : EqBands::specs) {
+        layout.add(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID{band.freqId, 1},
+            juce::String(band.label) + " Freq",
+            EqBands::freqRange(),
+            band.defaultHz));
+    }
 
     // ==============================================================================
     // Other parameters
     // ==============================================================================
     layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isMute", 1}, "Mute", false));
     layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isEqEnabled", 1}, "EQ", true));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isGateEnabled", 1}, "Gate Enabled", true));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isAmpEnabled", 1}, "Amp Enabled", true));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isCabEnabled", 1}, "Cab Enabled", true));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"cabLowCut", 1}, "Cab Low Cut", juce::NormalisableRange<float>(20.0f, 250.0f, 1.0f), 80.0f));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"isPedalEnabled", 1}, "Pedal Enabled", true));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"pedalDrive", 1}, "Pedal Drive", juce::NormalisableRange<float>(0.0f, 10.0f, 0.1f), 4.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"pedalTone", 1}, "Pedal Tone", juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f), 65.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{"pedalLevel", 1}, "Pedal Level", juce::NormalisableRange<float>(-12.0f, 12.0f, 0.1f), 0.0f));
 
     return layout;
 }
@@ -414,8 +626,8 @@ bool ProfilerAudioProcessor::loadIRFile(const juce::File& file) {
     }
 
     _convolver.loadImpulseResponse(file,
-                                   juce::dsp::Convolution::Stereo::yes,
-                                   juce::dsp::Convolution::Trim::no,
+                                   juce::dsp::Convolution::Stereo::no,
+                                   juce::dsp::Convolution::Trim::yes,
                                    0);
     _irLoaded = true;
     _currentIRFile = file;

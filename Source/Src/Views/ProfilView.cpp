@@ -81,17 +81,7 @@ ProfilView::~ProfilView() {
 }
 
 void ProfilView::paint(juce::Graphics& g) {
-    auto area = getLocalBounds().toFloat();
-    juce::Path path;
-
-    path.addRoundedRectangle(area, 5.0f);
-
-    g.setGradientFill(ProfilerStyle::Gradients::vertical(
-        area,
-        ProfilerStyle::Colors::appBackground,
-        ProfilerStyle::Colors::appBackground.brighter(0.1f),
-        0.8f));
-    g.fillPath(path);
+    ProfilerStyle::Surfaces::fillPanel(g, getLocalBounds().toFloat());
 }
 
 void ProfilView::resized() {

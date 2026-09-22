@@ -99,13 +99,23 @@ void UtilityBarModule::resetParametersToDefaults() {
     resetParam("master");
     resetParam("gain");
     resetParam("noise");
-    resetParam("bass");
-    resetParam("depth");
-    resetParam("mid");
-    resetParam("presence");
-    resetParam("treble");
+    resetParam("input");
+    resetParam("output");
+    for (const auto& band : EqBands::specs) {
+        resetParam(band.gainId);
+        resetParam(band.freqId);
+    }
     resetParam("isMute");
     resetParam("isEqEnabled");
+    resetParam("isGateEnabled");
+    resetParam("isAmpEnabled");
+    resetParam("isCabEnabled");
+    resetParam("cabLowCut");
+    resetParam("isPedalEnabled");
+    resetParam("pedalDrive");
+    resetParam("pedalTone");
+    resetParam("pedalLevel");
+    _audioProcessor.resetChainLayout();
 }
 
 void UtilityBarModule::resetLoadedFiles() {

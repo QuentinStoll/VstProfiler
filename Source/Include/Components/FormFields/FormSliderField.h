@@ -2,7 +2,6 @@
 
 #include <JuceHeader.h>
 
-#include "Components/CustomLinearSlider.h"
 #include "Components/FormFields/FormField.h"
 
 class FormSliderField : public FormField {
@@ -14,7 +13,7 @@ class FormSliderField : public FormField {
                     double defaultValue,
                     const juce::String& suffix = {},
                     double step = 0.1);
-    ~FormSliderField() override;
+    ~FormSliderField() override = default;
 
     double getSliderValue() const;
     void setSliderValue(double value, juce::NotificationType notification = juce::dontSendNotification);
@@ -33,7 +32,6 @@ class FormSliderField : public FormField {
     void resizedControl(juce::Rectangle<int> controlArea) override;
 
    private:
-    CustomLinearSliderLF _customLF;
     juce::Slider _slider;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FormSliderField)

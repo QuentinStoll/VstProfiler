@@ -43,6 +43,11 @@ juce_add_binary_data(ProfilerAssets
         Assets/Svg/cross-icon.svg
         Assets/Svg/music-note.svg
         Assets/Svg/plus-icon.svg
+        Assets/Fonts/Orbitron-Regular.ttf
+        Assets/Fonts/Orbitron-Medium.ttf
+        Assets/Fonts/Orbitron-Bold.ttf
+        Assets/Fonts/Orbitron-ExtraBold.ttf
+        Assets/Fonts/Orbitron-Black.ttf
 )
 
 # Collect source files
@@ -50,12 +55,16 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Components/CustomComboBox.cpp
     Src/Components/CustomImageButton.cpp
     Src/Components/CustomKnob.cpp
+    Src/Components/CustomLookAndFeel.cpp
     Src/Components/CustomLinearSlider.cpp
     Src/Components/CustomTabBar.cpp
     Src/Components/CustomTabs.cpp
     Src/Components/CustomTextButton.cpp
     Src/Components/CustomTextEditor.cpp
     Src/Components/CustomToggleButton.cpp
+    Src/Components/FileDropZone.cpp
+    Src/Components/BlockPickerPage.cpp
+    Src/Components/SignalChainStrip.cpp
     Src/Components/FormFields/FormComboField.cpp
     Src/Components/FormComponent.cpp
     Src/Components/FormFields/FormField.cpp
@@ -76,6 +85,8 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Modules/ExportProfilModule.cpp
     Src/Modules/FileAssetsModule.cpp
     Src/Modules/MasterSlidersModule.cpp
+    Src/Modules/StudioEditPanels.cpp
+    Src/Modules/StudioTopBar.cpp
     Src/Modules/UtilityBarModule.cpp
     Src/Views/CloneView.cpp
     Src/Views/PlayView.cpp

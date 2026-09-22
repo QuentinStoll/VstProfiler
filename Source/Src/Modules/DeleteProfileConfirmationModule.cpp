@@ -19,8 +19,8 @@ DeleteProfileConfirmationModule::DeleteProfileConfirmationModule(const juce::Str
 void DeleteProfileConfirmationModule::paint(juce::Graphics& g) {
     auto textArea = getLocalBounds().withTrimmedTop(16).removeFromTop(42);
 
-    g.setColour(ProfilerStyle::Colors::white);
-    g.setFont(juce::Font(juce::FontOptions(16.0f)).boldened());
+    g.setColour(ProfilerStyle::Colors::text);
+    g.setFont(ProfilerStyle::Fonts::bold(16.0f));
 
     const auto message = juce::String("Are you sure you want to\ndelete ") + _profileName + " ?";
     g.drawFittedText(message,

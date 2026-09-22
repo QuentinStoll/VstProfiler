@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "PluginProcessor.h"
+#include "SignalChainLayout.h"
 #include "TestRunner.h"
 
 namespace profiler_tests {
@@ -30,6 +31,10 @@ class AudioProcessorUnitTests : public juce::UnitTest {
             testStateRoundTrip();
         });
 
+        runCase("audio processor chain layout round trip", [this] {
+            testChainLayoutRoundTrip();
+        });
+
         runCase("audio processor process block smoke", [this] {
             testProcessBlockSmoke();
         });
@@ -40,6 +45,10 @@ class AudioProcessorUnitTests : public juce::UnitTest {
 
         runCase("audio processor master zero silences buffer", [this] {
             testMasterZeroSilencesBuffer();
+        });
+
+        runCase("audio processor noise gate zero bypasses", [this] {
+            testNoiseGateZeroBypasses();
         });
 
         runCase("audio processor gain changes output level", [this] {
@@ -200,19 +209,34 @@ class AudioProcessorUnitTests : public juce::UnitTest {
     void testParameterDefaults() {
         ProfilerAudioProcessor processor;
 
-        expect(processor.getParameters().size() == 12, "Unexpected processor parameter count.");
+        expect(processor.getParameters().size() == 27, "Unexpected processor parameter count.");
         expectClose(getParameterValue(processor, "master"), 50.0f, "master default");
         expectClose(getParameterValue(processor, "gain"), 0.0f, "gain default");
         expectClose(getParameterValue(processor, "noise"), 10.0f, "noise default");
         expectClose(getParameterValue(processor, "input"), 0.0f, "input default");
         expectClose(getParameterValue(processor, "output"), 0.0f, "output default");
-        expectClose(getParameterValue(processor, "bass"), 0.0f, "bass default");
-        expectClose(getParameterValue(processor, "mid"), 0.0f, "mid default");
-        expectClose(getParameterValue(processor, "treble"), 0.0f, "treble default");
-        expectClose(getParameterValue(processor, "presence"), 0.0f, "presence default");
-        expectClose(getParameterValue(processor, "depth"), 0.0f, "depth default");
+        expectClose(getParameterValue(processor, "bass"), 1.0f, "bass default");
+        expectClose(getParameterValue(processor, "mid"), -3.5f, "mid default");
+        expectClose(getParameterValue(processor, "highMid"), 1.5f, "highMid default");
+        expectClose(getParameterValue(processor, "treble"), 3.0f, "treble default");
+        expectClose(getParameterValue(processor, "presence"), -1.5f, "presence default");
+        expectClose(getParameterValue(processor, "depth"), 2.5f, "depth default");
+        expectClose(getParameterValue(processor, "depthFreq"), 80.0f, "depthFreq default");
+        expectClose(getParameterValue(processor, "bassFreq"), 180.0f, "bassFreq default");
+        expectClose(getParameterValue(processor, "midFreq"), 450.0f, "midFreq default");
+        expectClose(getParameterValue(processor, "highMidFreq"), 1000.0f, "highMidFreq default");
+        expectClose(getParameterValue(processor, "trebleFreq"), 2800.0f, "trebleFreq default");
+        expectClose(getParameterValue(processor, "presenceFreq"), 6000.0f, "presenceFreq default");
         expectClose(getParameterValue(processor, "isMute"), 0.0f, "isMute default");
         expectClose(getParameterValue(processor, "isEqEnabled"), 1.0f, "isEqEnabled default");
+        expectClose(getParameterValue(processor, "isGateEnabled"), 1.0f, "isGateEnabled default");
+        expectClose(getParameterValue(processor, "isAmpEnabled"), 1.0f, "isAmpEnabled default");
+        expectClose(getParameterValue(processor, "isCabEnabled"), 1.0f, "isCabEnabled default");
+        expectClose(getParameterValue(processor, "cabLowCut"), 80.0f, "cabLowCut default");
+        expectClose(getParameterValue(processor, "isPedalEnabled"), 1.0f, "isPedalEnabled default");
+        expectClose(getParameterValue(processor, "pedalDrive"), 4.0f, "pedalDrive default");
+        expectClose(getParameterValue(processor, "pedalTone"), 65.0f, "pedalTone default");
+        expectClose(getParameterValue(processor, "pedalLevel"), 0.0f, "pedalLevel default");
     }
 
     void testStateRoundTrip() {
@@ -220,6 +244,8 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         setParameterValue(source, "master", 25.0f);
         setParameterValue(source, "gain", -4.0f);
         setParameterValue(source, "bass", 6.0f);
+        setParameterValue(source, "highMid", -3.0f);
+        setParameterValue(source, "midFreq", 750.0f);
         setParameterValue(source, "isMute", 1.0f);
         setParameterValue(source, "isEqEnabled", 0.0f);
 
@@ -233,8 +259,63 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         expectClose(getParameterValue(restored, "master"), 25.0f, "restored master");
         expectClose(getParameterValue(restored, "gain"), -4.0f, "restored gain");
         expectClose(getParameterValue(restored, "bass"), 6.0f, "restored bass");
+        expectClose(getParameterValue(restored, "highMid"), -3.0f, "restored highMid");
+        expectClose(getParameterValue(restored, "midFreq"), 750.0f, "restored midFreq");
         expectClose(getParameterValue(restored, "isMute"), 1.0f, "restored isMute");
         expectClose(getParameterValue(restored, "isEqEnabled"), 0.0f, "restored isEqEnabled");
+    }
+
+    void testChainLayoutRoundTrip() {
+        SignalChain::Layout layout;
+        expect(layout.slotFor(SignalChain::Stage::Amp) == 2, "Default Amp slot should be 2.");
+        expect(layout.slotFor(SignalChain::Stage::Cab) == 4, "Default Cab slot should be 4.");
+        expect(layout.slotFor(SignalChain::Stage::Eq) == 6, "Default EQ slot should be 6.");
+        expect(!layout.contains(SignalChain::Stage::Pedal), "Default layout should not include a pedal.");
+        expect(layout.isValid(), "Default layout should be valid.");
+        expect(SignalChain::Layout::fromPacked(0xFFFFFFFFu).isValid(),
+               "Invalid packed layout should fall back to the default.");
+
+        layout.place(SignalChain::Stage::Amp, 5);
+        layout.place(SignalChain::Stage::Cab, 1);
+        layout.place(SignalChain::Stage::Eq, 3);
+        expect(layout.slotFor(SignalChain::Stage::Cab) == 1, "Cab should move to slot 1.");
+        expect(layout.slotFor(SignalChain::Stage::Eq) == 3, "EQ should move to slot 3.");
+        expect(layout.slotFor(SignalChain::Stage::Amp) == 5, "Amp should move to slot 5.");
+
+        const auto order = layout.processingOrder();
+        expect(order[0] == SignalChain::Stage::Cab, "Left-most movable block should process first.");
+        expect(order[1] == SignalChain::Stage::Eq, "Middle movable block should process second.");
+        expect(order[2] == SignalChain::Stage::Amp, "Right-most movable block should process last.");
+
+        layout.place(SignalChain::Stage::Pedal, 2);
+        expect(layout.contains(SignalChain::Stage::Pedal), "Placing a pedal should add it to the chain.");
+        expect(layout.atSlot(2) == SignalChain::Stage::Pedal, "Pedal should occupy the chosen slot.");
+
+        ProfilerAudioProcessor source;
+        source.setChainLayout(layout);
+        expect(source.getChainLayout().slotFor(SignalChain::Stage::Amp) == 5, "Processor should store the Amp slot.");
+        expect(source.getChainLayout().slotFor(SignalChain::Stage::Cab) == 1, "Processor should store the Cab slot.");
+        expect(source.getChainLayout().slotFor(SignalChain::Stage::Eq) == 3, "Processor should store the EQ slot.");
+        expect(source.getChainLayout().slotFor(SignalChain::Stage::Pedal) == 2, "Processor should store the Pedal slot.");
+
+        juce::MemoryBlock state;
+        source.getStateInformation(state);
+        ProfilerAudioProcessor restored;
+        restored.setStateInformation(state.getData(), static_cast<int>(state.getSize()));
+        expect(restored.getChainLayout().packed() == layout.packed(),
+               "Chain layout should survive processor state round-trip.");
+
+        restored.resetChainLayout();
+        expect(restored.getChainLayout().packed() == SignalChain::defaultPacked,
+               "Reset should restore Amp/Cab/EQ to slots 2/4/6.");
+
+        ProfilerAudioProcessor reordered;
+        reordered.setChainLayout(layout);
+        prepareProcessor(reordered, 44100.0, 256);
+        setParameterValue(reordered, "gain", 6.0f);
+        const auto boostedRms = processSineAndMeasureRms(reordered);
+        reordered.releaseResources();
+        expect(boostedRms > 0.01f, "Amp gain should still apply after the chain is reordered.");
     }
 
     void testProcessBlockSmoke() {
@@ -250,6 +331,7 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         expect(allSamplesFinite(buffer), "Processed samples should stay finite.");
         expect(buffer.getMagnitude(0, buffer.getNumSamples()) > 0.0f,
                "Processor should leave an audible signal for a non-muted input.");
+        expect(processor.getRmsLevelInput() > -40.0f, "Input meter should react to incoming audio.");
         processor.releaseResources();
     }
 
@@ -265,6 +347,8 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         processor.processBlock(buffer, midi);
 
         expectClose(buffer.getMagnitude(0, buffer.getNumSamples()), 0.0f, "muted buffer magnitude");
+        expect(processor.getRmsLevelInput() > -20.0f, "Input meter should still see audio while muted.");
+        expectClose(processor.getRmsLevelOutput(), -60.0f, "Output meter should go silent while muted");
         processor.releaseResources();
     }
 
@@ -276,6 +360,17 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         const auto rms = processSineAndMeasureRms(processor);
 
         expect(rms <= 0.001f, "Master volume at zero should silence the processed output.");
+        processor.releaseResources();
+    }
+
+    void testNoiseGateZeroBypasses() {
+        ProfilerAudioProcessor processor;
+        setParameterValue(processor, "noise", 0.0f);
+        prepareProcessor(processor, 44100.0, 256);
+
+        const auto rms = processSineAndMeasureRms(processor);
+
+        expect(rms > 0.01f, "Noise gate at zero should bypass and pass signal.");
         processor.releaseResources();
     }
 

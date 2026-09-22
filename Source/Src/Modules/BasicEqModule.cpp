@@ -1,41 +1,29 @@
 #include "Modules/BasicEqModule.h"
 
 BasicEqModule::BasicEqModule(juce::AudioProcessorValueTreeState& apvts) {
-    addAndMakeVisible(_bassKnob);
-    addAndMakeVisible(_midKnob);
-    addAndMakeVisible(_trebleKnob);
-    addAndMakeVisible(_presenceKnob);
-    addAndMakeVisible(_depthKnob);
-
-    _bassAttachment = std::make_unique<SliderAttachment>(apvts, "bass", _bassKnob.getSlider());
-    _midAttachment = std::make_unique<SliderAttachment>(apvts, "mid", _midKnob.getSlider());
-    _trebleAttachment = std::make_unique<SliderAttachment>(apvts, "treble", _trebleKnob.getSlider());
-    _presenceAttachment = std::make_unique<SliderAttachment>(apvts, "presence", _presenceKnob.getSlider());
-    _depthAttachment = std::make_unique<SliderAttachment>(apvts, "depth", _depthKnob.getSlider());
+    for (int band = 0; band < EqBands::count; ++band) {
+        const auto index = static_cast<size_t>(band);
+        const auto& spec = EqBands::specs[band];
+        _knobs[index] = std::make_unique<CustomKnob>(spec.label, EqBands::minDb, EqBands::maxDb, spec.defaultDb, "dB");
+        addAndMakeVisible(*_knobs[index]);
+        _attachments[index] = std::make_unique<SliderAttachment>(apvts, spec.gainId, _knobs[index]->getSlider());
+    }
 }
-
-BasicEqModule::~BasicEqModule() {}
 
 void BasicEqModule::paint(juce::Graphics& /*g*/) {}
 
 void BasicEqModule::resized() {
     auto area = getLocalBounds();
-    auto areaWidth = area.getWidth();
+    const auto count = EqBands::count;
+    const auto gap = 8;
+    const auto knobWidth = juce::jmin(84, juce::jmax(52, (area.getWidth() - gap * (count - 1)) / count));
+    const auto totalWidth = count * knobWidth + (count - 1) * gap;
+    auto row = juce::Rectangle<int>(totalWidth, juce::jmin(108, area.getHeight())).withCentre(area.getCentre());
 
-    auto topArea = area.removeFromTop(static_cast<int>(getHeight() * 0.5f));
-
-    auto bassArea = topArea.removeFromLeft(areaWidth / 3);
-    auto midArea = topArea.removeFromLeft(areaWidth / 3);
-    auto trebleArea = topArea;
-
-    area = area.withSizeKeepingCentre(bassArea.getWidth() * 2, area.getHeight());
-
-    auto presenceArea = area.removeFromLeft(bassArea.getWidth());
-    auto depthArea = area.removeFromLeft(bassArea.getWidth());
-
-    _bassKnob.setBounds(bassArea);
-    _midKnob.setBounds(midArea);
-    _trebleKnob.setBounds(trebleArea);
-    _presenceKnob.setBounds(presenceArea);
-    _depthKnob.setBounds(depthArea);
+    for (int band = 0; band < count; ++band) {
+        _knobs[static_cast<size_t>(band)]->setBounds(row.removeFromLeft(knobWidth));
+        if (band + 1 < count) {
+            row.removeFromLeft(gap);
+        }
+    }
 }
