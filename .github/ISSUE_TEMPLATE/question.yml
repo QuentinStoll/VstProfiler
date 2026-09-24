@@ -1,0 +1,29 @@
+name: Question
+description: A question about install, usage, or contributing
+title: "question: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form is for a question, not a bug or a feature. It gets the question label only.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What you are trying to do. For setup or audio, include OS, version, plugin format, and host.
+    validations:
+      required: true
+  - type: textarea
+    id: checked
+    attributes:
+      label: What you already checked
+      description: README sections, issues, commands, and what they printed.
+    validations:
+      required: true

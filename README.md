@@ -42,7 +42,7 @@ Reproducing the tone and dynamic behavior of real amplifiers is the project's lo
 - Adjust gain, noise gate, master volume, mute, and a five-band EQ through the **Play** view.
 - Create, edit, import, export, and delete `.profilerprofile` profiles containing parameter values and external asset paths.
 - Use a JUCE interface with **Clone**, **Play**, **Profil**, and settings views.
-- Build VST3 and standalone targets; AU is intended for macOS.
+- Build a standalone application and a VST3 plugin on Windows, macOS, and Linux. macOS builds also produce an Audio Unit.
 
 ### Current limitations
 
@@ -51,8 +51,8 @@ Reproducing the tone and dynamic behavior of real amplifiers is the project's lo
 - Amp files must contain a model that the RTNeural JSON parser accepts, with one input and at least one output. The file chooser lists `.nam`, `.json`, and `.txt`, but an extension alone does not guarantee compatibility.
 - Profiles reference external amp and IR files rather than embedding them. Keep those files available when reopening or sharing a profile.
 - The processor currently requires mono input and stereo output. Configure the host's channel layout accordingly.
-- Windows and Linux have CI test jobs. macOS/AU remains a target requiring build validation: the current non-Windows dependency block also requires GTK3 and WebKit2GTK.
-- Preset format selections are not fully wired into the plugin target, which currently declares its formats directly in `Source/CMakeLists.txt`.
+- CI builds and tests Windows x64, Linux x64, and macOS Apple Silicon. A local macOS run in a DAW still needs to be checked on a Mac.
+- AAX is requested by some presets but is not built unless the Avid AAX SDK is present. That SDK requires an Avid developer agreement and is not part of the default build.
 
 ## Getting started
 
@@ -61,8 +61,9 @@ Reproducing the tone and dynamic behavior of real amplifiers is the project's lo
 - Git, CMake **3.22 or later**, and a **C++20** compiler.
 - Internet access for the first configure step: CMake fetches JUCE **8.0.12**, spdlog, simdjson, RTNeural, and Tracy. See [dependency configuration](cmake/dependencies.cmake) for the selected versions.
 - On Windows: Visual Studio 2022 or Build Tools with the **Desktop development with C++** workload and a Windows SDK. Run commands from a developer terminal.
+- On macOS: Xcode, or the Xcode Command Line Tools, which include Clang and the macOS SDK. No extra package such as GTK is required. Building VST3, Audio Unit, and the standalone app does not require a paid license. Notarizing a build so other people can open it without a Gatekeeper warning requires the Apple Developer Program.
 - On Linux: a C++20-capable GCC or Clang toolchain and the JUCE system dependencies below.
-- For live guitar input: an audio interface and a configured audio input/output device. The VST3 build also needs a compatible plugin host.
+- For live guitar input: an audio interface and a configured audio input/output device. The VST3 build also needs a compatible plugin host. On macOS, the Audio Unit can be loaded by hosts that scan `~/Library/Audio/Plug-Ins/Components`.
 
 For Debian/Ubuntu, the system libraries used by the repository's CI can be installed with:
 
@@ -90,13 +91,15 @@ Configure and build on Windows using `install.bat`:
 .\install.bat all default
 ```
 
-Configure and build on Linux using `install.sh`:
+Configure and build on Linux or macOS using `install.sh`:
 
 ```sh
 bash ./install.sh all default
 ```
 
-The scripts compile from source; they do not install the plugin into your DAW's plugin directory. This project overrides JUCE's default output directories: the standalone application is under `build/bin/Standalone/`, and the VST3 bundle is under `build/bin/lib/VST3/`. Generated JUCE support files remain under `build/Source/Profiler_artefacts/`.
+The scripts compile from source; they do not install the plugin into your DAW's plugin directory. This project overrides JUCE's default output directories: the standalone application is under `build/bin/Standalone/`, and the VST3 bundle is under `build/bin/lib/VST3/`. On macOS, the Audio Unit is under `build/bin/lib/AU/`. Generated JUCE support files remain under `build/Source/Profiler_artefacts/`.
+
+The `default` preset asks for VST3, Audio Unit, and standalone. Audio Unit is skipped automatically on Windows and Linux. Copy `Profiler.component` into `~/Library/Audio/Plug-Ins/Components` and rescan Audio Units in the host.
 
 ### Configuration
 
@@ -106,7 +109,7 @@ Build settings live in [cmake/presets_config.json](cmake/presets_config.json). B
 
 The Windows build action does not pass a CMake `--config` option. With Visual Studio, it therefore uses the generator's default build configuration, which is normally Debug, even when the preset sets a Release build type. To explicitly build Release after configuring with the script, run `cmake --build build --config Release --parallel 8`.
 
-The application stores settings and profiles in the JUCE user application-data directory under `Profiler`, with profiles in its `Profiles` subdirectory. On Windows, this is normally `%APPDATA%\Profiler`. External amp and IR files remain at their selected paths.
+The application stores settings and profiles in the JUCE user application-data directory under `Profiler`, with profiles in its `Profiles` subdirectory. On Windows, this is normally `%APPDATA%\Profiler`. On macOS, it is `~/Library/Application Support/Profiler`. External amp and IR files remain at their selected paths.
 
 ### Launch
 
@@ -116,7 +119,7 @@ On Windows:
 & ".\build\bin\Standalone\Profiler.exe"
 ```
 
-On Linux:
+On Linux or macOS:
 
 ```sh
 ./build/bin/Standalone/Profiler
@@ -159,13 +162,13 @@ On Windows:
 .\install.bat test
 ```
 
-On Linux:
+On Linux or macOS:
 
 ```sh
 bash ./install.sh test
 ```
 
-These commands build `ProfilerTests` and run the CTest suite. Tests are enabled by default through `PROFILER_BUILD_TESTS`. The [CI workflow](.github/workflows/CI.yml) defines Windows and Linux test jobs and a Windows coverage job.
+These commands build `ProfilerTests` and run the CTest suite. Tests are enabled by default through `PROFILER_BUILD_TESTS`. The [CI workflow](.github/workflows/CI.yml) defines Windows, Linux, and macOS test jobs, plus a Windows coverage job.
 
 ## Contributing
 
@@ -194,6 +197,6 @@ The project's [license notice](LICENCE.md) specifies **GNU GPL version 3 or late
 - **Maintenance:** an Epitech Paris student project developed by the VSTProfiler team.
 - **Support:** use the issue tracker for questions and reproducible reports; no response-time guarantee is documented.
 - **Planning and history:** see the proposed [roadmap](ROADMAP.md) and [changelog](CHANGELOG.md).
-- **Open setup tasks:** confirm or replace the placeholder reporting email in the security and conduct policies, and validate macOS setup instructions.
+- **Open setup tasks:** confirm or replace the placeholder reporting email in the security and conduct policies, and check the macOS standalone app and Audio Unit in a host on a Mac.
 
 [Back to top](#readme-top)

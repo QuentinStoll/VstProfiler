@@ -6,17 +6,21 @@ Notable changes for every published release are recorded below, newest first. Re
 
 ### Added
 
+- macOS build and test jobs for Apple Silicon, producing the standalone app, VST3, and Audio Unit.
 - Security policy and code of conduct, with an explicit placeholder for Quentin's private reporting email.
 - Full GPLv3 license text alongside the existing GPLv3-or-later project notice.
-- Bug, feature, and question issue templates and a pull request template.
+- Bug, feature, task, and question issue forms. Bug, Feature, and Task set the issue type badge.
 - Proposed Now / Next / Later roadmap.
 
 ### Changed
 
-- Documented `install.bat` on Windows and `install.sh` on Linux as the installation entry points, including preset selection and the Windows build-configuration behavior.
+- Limited GTK, WebKitGTK, and libcurl to Linux so macOS can configure with the Xcode SDK alone.
+- Plugin formats now follow the selected preset. Audio Unit is requested by the default preset and skipped outside macOS.
+- Documented `install.bat` on Windows and `install.sh` on Linux and macOS as the installation entry points, including preset selection and the Windows build-configuration behavior.
 - README setup, usage, architecture, testing, limitations, project status, and documentation links.
 - Corrected standalone/VST3 output paths to match the project's CMake overrides.
 - Clarified contribution conventions and acknowledged existing version tags in the roadmap and security policy.
+- Switched contribution to a single `main` branch. Feature branches open pull requests directly against `main`, and a release is published only by running the CI workflow manually.
 - Reformatted the project license notice using the provided GPL template structure.
 - Replaced the generic email token with `quentin.stoll@epitech.eu`, explicitly marked as an unconfirmed placeholder in both reporting policies.
 - Reconstructed the changelog for all seven published releases, from `0.1.0` through `v2026.07.15-112`.

@@ -12,16 +12,17 @@ jobs:
         run: |
           BRANCH_NAME="${{ github.head_ref }}"
           BASE_BRANCH="${{ github.base_ref }}"
-          REGEX="^(feat|fix|docs|poc|chore)\/[a-z0-9._-]+$"
+          REGEX="^(feature|fix|docs|chore|feat|poc)/[a-z0-9._-]+$"
 
-          if [[ "$BRANCH_NAME" == "Dev" && "$BASE_BRANCH" == "Main" ]]; then
-            echo "Dev to Main promotion branch is valid."
-            exit 0
+          if [[ "$BASE_BRANCH" != "main" && "$BASE_BRANCH" != "Main" ]]; then
+            echo "❌ Error: Pull requests must target main. Base was '$BASE_BRANCH'."
+            exit 1
           fi
-          
+
           if [[ ! $BRANCH_NAME =~ $REGEX ]]; then
             echo "❌ Error: Invalid branch name '$BRANCH_NAME'."
-            echo "Branches must start with: feat/, fix/, docs/, poc/, or chore/"
+            echo "Use feature/, fix/, docs/, or chore/, then a short lowercase description."
+            echo "Examples: feature/profile-export, fix/amp-loading"
             exit 1
           fi
           echo "✅ Branch name is valid."

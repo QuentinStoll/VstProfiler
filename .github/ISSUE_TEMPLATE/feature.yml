@@ -1,0 +1,33 @@
+name: Feature
+description: A new capability or a change in how the plugin behaves
+title: "feat: "
+type: Feature
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Who needs this, and what they cannot do today.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Desired behavior
+      description: What the plugin does when this is finished. Include one concrete session.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: The checks that show it works, including host, sample rate, or UI state when those matter.
+    validations:
+      required: true
+  - type: textarea
+    id: out
+    attributes:
+      label: Out of scope
+      description: Nearby work this issue does not cover.
+    validations:
+      required: false
