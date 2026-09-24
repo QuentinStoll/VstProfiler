@@ -5,7 +5,7 @@
             "buildType": "Release",
             "formats": {
                 "vst3": true,
-                "au": false,
+                "au": true,
                 "aax": false,
                 "standalone": true
             },

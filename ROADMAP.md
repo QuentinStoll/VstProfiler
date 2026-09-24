@@ -11,8 +11,8 @@ This is a proposed roadmap based on the repository's current limitations, not a 
 
 ## Next
 
-- Connect preset format selections to the plugin target consistently.
-- Separate platform-specific dependencies and validate macOS/AU builds.
+- Load the macOS standalone app and Audio Unit in a host and record the result.
+- Confirm the Windows and Linux builds still match the preset formats after the CMake format list is shared.
 - Document a tested model compatibility matrix and asset-sharing workflow.
 - Validate the next release's binaries and document its compatibility and release notes. The repository already has version tags; this roadmap does not reset that history.
 

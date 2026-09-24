@@ -46,7 +46,7 @@ From the repository root, configure and build with the script for your platform:
 .\install.bat all default
 ```
 
-**Linux**
+**Linux and macOS**
 
 ```sh
 bash ./install.sh all default
@@ -100,7 +100,7 @@ Add or update tests for meaningful behavior changes. Update documentation whenev
 .\install.bat test
 ```
 
-**Linux**
+**Linux and macOS**
 
 ```sh
 bash ./install.sh test

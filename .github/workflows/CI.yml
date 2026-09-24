@@ -48,6 +48,8 @@ jobs:
             runner: windows-latest
           - name: linux-x64
             runner: ubuntu-latest
+          - name: macos-arm64
+            runner: macos-latest
 
     runs-on: ${{ matrix.runner }}
 
@@ -83,8 +85,8 @@ jobs:
         shell: cmd
         run: install.bat test
 
-      - name: Run tests (Linux)
-        if: runner.os == 'Linux'
+      - name: Run tests (Linux and macOS)
+        if: runner.os != 'Windows'
         run: |
           chmod +x ./install.sh
           ./install.sh test
@@ -135,6 +137,8 @@ jobs:
             runner: windows-11-arm
           - name: linux-x64
             runner: ubuntu-latest
+          - name: macos-arm64
+            runner: macos-latest
 
     runs-on: ${{ matrix.runner }}
 
@@ -170,8 +174,8 @@ jobs:
         shell: cmd
         run: install.bat build
 
-      - name: Build project (Linux)
-        if: runner.os == 'Linux'
+      - name: Build project (Linux and macOS)
+        if: runner.os != 'Windows'
         run: |
           chmod +x ./install.sh
           ./install.sh build
@@ -184,6 +188,7 @@ jobs:
           if-no-files-found: error
           path: |
             build/bin/lib/VST3/**
+            build/bin/lib/AU/**
             build/bin/Standalone/**
 
   release:

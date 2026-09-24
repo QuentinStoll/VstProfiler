@@ -22,7 +22,7 @@ juce_add_plugin(${PLUGIN_NAME}
     PRODUCT_NAME "Profiler"
     PLUGIN_NAME "Profiler"
 
-    FORMATS AU VST3 Standalone   # pick what you need
+    FORMATS ${PROFILER_PLUGIN_FORMATS}
     ICON_BIG   "${CMAKE_CURRENT_SOURCE_DIR}/Assets/png/ProfilerPP.png"
     ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/Assets/png/ProfilerPP.png"
     IS_SYNTH FALSE
@@ -104,13 +104,19 @@ target_sources(${PLUGIN_NAME} PRIVATE
 add_compile_definitions(JUCE_VST3_CAN_REPLACE_VST2=0)
 
 # Link JUCE modules from juce_setup.cmake
-if(NOT WIN32)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets CURL::libcurl simdjson TracyClient)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} CURL::libcurl simdjson RTNeural TracyClient)
-else()
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} ProfilerAssets simdjson TracyClient)
-    target_link_libraries(${PLUGIN_NAME} PRIVATE ${JUCE_MODULES_AVAILABLE} simdjson RTNeural TracyClient)
+set(PROFILER_PLATFORM_LIBS)
+if(UNIX AND NOT APPLE)
+    list(APPEND PROFILER_PLATFORM_LIBS CURL::libcurl)
 endif()
+
+target_link_libraries(${PLUGIN_NAME} PRIVATE
+    ${JUCE_MODULES_AVAILABLE}
+    ProfilerAssets
+    simdjson
+    RTNeural
+    TracyClient
+    ${PROFILER_PLATFORM_LIBS}
+)
 
 # Generate the aggregate header consumed by the existing source files.  Unlike
 # Projucer, the CMake workflow writes it to the target's build artefacts.

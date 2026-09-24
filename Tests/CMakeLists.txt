@@ -52,7 +52,7 @@ target_link_libraries(ProfilerTests PRIVATE
     TracyClient
 )
 
-if(NOT WIN32)
+if(UNIX AND NOT APPLE)
     target_link_libraries(ProfilerTests PRIVATE CURL::libcurl)
 endif()
 

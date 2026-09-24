@@ -194,9 +194,9 @@ else()
 endif()
 
 
-# gtk workaround (linux) ----
+# JUCE on Linux needs GTK, WebKitGTK, and libcurl. macOS uses system frameworks.
 
-if(NOT WIN32)
+if(UNIX AND NOT APPLE)
     find_package(CURL REQUIRED)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0>=3.0)

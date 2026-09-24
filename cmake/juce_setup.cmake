@@ -25,7 +25,7 @@ if(NOT JUCE_SUPPORTS_AAX AND PLUGIN_AAX)
 endif()
 
 if(NOT APPLE AND PLUGIN_AU)
-    message(WARNING "AU format only available on macOS")
+    message(STATUS "AU format skipped: it is only available on macOS")
     set(PLUGIN_AU false)
 endif()
 
