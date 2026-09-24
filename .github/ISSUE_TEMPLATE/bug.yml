@@ -1,0 +1,52 @@
+name: Bug
+description: A wrong behavior that you can reproduce
+title: "fix: "
+type: Bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a suspected vulnerability, use the security policy instead of this form.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What goes wrong
+      description: One or two sentences on the effect in a real session.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Commit or version, OS, plugin format (VST3 / AU / standalone), host, sample rate, and buffer size.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start from this preset or file.
+        2. Do this.
+        3. This happens.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs or files
+      description: Remove personal data. Share models or audio only if you have the rights.
+    validations:
+      required: false

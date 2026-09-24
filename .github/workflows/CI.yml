@@ -3,9 +3,9 @@ name: CI/CD Pipeline
 on:
   workflow_dispatch:
   push:
-    branches: [Main, Dev, CICD]
+    branches: [main, Main]
   pull_request:
-    branches: [Main, Dev, CICD]
+    branches: [main, Main]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -189,8 +189,8 @@ jobs:
   release:
     name: Publish Release
     needs: [tests, coverage, build]
-    # Only publish on direct pushes to Main (not PRs)
-    if: github.ref == 'refs/heads/Main' && github.event_name == 'push'
+    # Manual only. Merging to main runs the checks above and does not publish.
+    if: github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Main')
     runs-on: ubuntu-latest
     permissions:
       contents: write

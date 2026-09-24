@@ -5,18 +5,34 @@ Contributions to code, tests, documentation, and compatibility testing are welco
 ## Contents
 
 - [Plan your contribution](#plan-your-contribution)
+- [Open an issue](#open-an-issue)
 - [Set up the project](#set-up-the-project)
 - [Create a branch](#create-a-branch)
 - [Make and validate changes](#make-and-validate-changes)
 - [Write commit messages](#write-commit-messages)
 - [Submit a pull request](#submit-a-pull-request)
 - [Review and merge](#review-and-merge)
+- [Publish a release](#publish-a-release)
 
 ## Plan your contribution
 
 Check existing issues and pull requests to avoid duplicate work. The [project board](https://github.com/users/QuentinStoll/projects/5) tracks ongoing priorities; new proposals are welcome too.
 
 Discuss significant features, breaking changes, and architectural decisions in an issue or an early draft pull request. Keep each contribution focused so it is practical to review and test.
+
+## Open an issue
+
+Use the forms under [Issues](https://github.com/QuentinStoll/VstProfiler/issues/new/choose). Each issue gets one type badge:
+
+| Type | Use it for |
+| --- | --- |
+| Bug | A behavior that is wrong and can be reproduced |
+| Feature | A new capability or a change to how the plugin behaves |
+| Task | Implementation, documentation, or maintenance with a clear end |
+
+Add one extra label only when the type does not already say it: `documentation` or `interface`. Do not also add `bug` or `enhancement` on top of the type badge.
+
+A bug report needs the environment, the steps, and both the expected and actual result. A feature or task needs the outcome and how to tell that it is done.
 
 ## Set up the project
 
@@ -49,25 +65,26 @@ bash ./install.sh all default
 
 ## Create a branch
 
-Use the format `type/short-description`.
+`main` is the only long-lived branch. Start from an up-to-date `main`, do the work on a short-lived branch, and open the pull request against `main`. There is no integration branch.
+
+```sh
+git switch main
+git pull
+git switch -c feature/profile-export
+```
 
 | Prefix | Purpose |
 | --- | --- |
-| `feat/` | New features or significant improvements |
+| `feature/` | New features or significant improvements |
 | `fix/` | Bug fixes |
 | `docs/` | Documentation, research notes, or architecture decisions |
-| `poc/` | Proofs of concept and technical experiments |
 | `chore/` | Maintenance, configuration, or dependency updates |
 
 After the prefix, use only lowercase letters, digits, hyphens, underscores, or dots. Do not use spaces, uppercase letters, accented characters, or other special characters.
 
-```sh
-git checkout -b docs/improve-setup
-```
+The pull request title still uses [Conventional Commits](#write-commit-messages) (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`). The branch prefix `feature/` and the title prefix `feat:` are the same kind of change.
 
-Other examples include `feat/profile-export` and `fix/amp-loading`.
-
-The [branch-name workflow](.github/workflows/check-branch.yml) enforces these rules and also allows promotion from `Dev` to `Main`. When updating an existing PR, keep its target branch; discuss the appropriate target with maintainers when uncertain.
+The [branch-name workflow](.github/workflows/check-branch.yml) rejects a pull request whose base is not `main`. Existing branches named `feat/…` or `poc/…` are still accepted so older work can be merged. New feature work uses `feature/`.
 
 ## Make and validate changes
 
@@ -123,7 +140,7 @@ docs: clarify Windows installation
 ## Submit a pull request
 
 1. Push your branch to your fork or the repository you have access to.
-2. Open a pull request against the project and select the appropriate source and target branches.
+2. Open a pull request against `main`.
 3. Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) to describe the change and its validation.
 4. For work in progress, select **Create draft pull request** from the creation dropdown.
 5. Address feedback, then mark the PR **Ready for review** when complete.
@@ -145,3 +162,9 @@ AI-assisted contributions are welcome only when a qualified human reviewer verif
 At least one founder-team member must approve the change before it can be merged. Maintainers may request revisions or decline changes that do not fit the project's direction or quality expectations.
 
 Missing information may result in a PR being closed. The final decision to merge rests with the maintainers.
+
+## Publish a release
+
+Merging to `main` does not publish a build. The pull request runs formatting, tests, coverage, and the plugin builds. That is the test of the branch.
+
+To publish, run **CI/CD Pipeline** manually from the Actions tab, with the branch set to `main`. The workflow then creates a GitHub Release from the build artifacts. Running the same workflow on a feature branch repeats the checks and does not publish.

@@ -1,0 +1,39 @@
+name: Task
+description: Implementation, documentation, or maintenance with a clear end
+title: "chore: "
+type: Task
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What is true when this is finished.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: The files, docs, or workflow this touches, and what it leaves alone.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: The command, page, or behavior a reviewer can check.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Maintainers add the documentation or interface label only when this area is not already obvious from the type.
+      options:
+        - Audio
+        - Interface
+        - Documentation
+        - Build and CI
+        - Other
+    validations:
+      required: true

@@ -1,4 +1,5 @@
 <!-- Write the description yourself, as required by contributing.md. -->
+<!-- Target branch: main. Branch name: feature/, fix/, docs/, or chore/. -->
 <!-- Use a PR title accepted by CI: feat:, fix:, docs:, chore:, or refactor:. -->
 
 ## Summary
