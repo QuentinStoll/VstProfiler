@@ -88,7 +88,9 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Modules/StudioEditPanels.cpp
     Src/Modules/StudioTopBar.cpp
     Src/Modules/UtilityBarModule.cpp
+    Src/MarketplaceClient.cpp
     Src/Views/CloneView.cpp
+    Src/Views/MarketplaceAccountPanel.cpp
     Src/Views/PlayView.cpp
     Src/Views/ProfilView.cpp
     Src/Views/SettingsView.cpp

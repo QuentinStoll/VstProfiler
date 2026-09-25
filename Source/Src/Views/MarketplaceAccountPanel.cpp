@@ -1,0 +1,486 @@
+#include "Views/MarketplaceAccountPanel.h"
+
+#include "SettingsPath.h"
+#include "Stylesheet.h"
+
+namespace {
+juce::String safeFileStem(const juce::String& value) {
+    auto stem = value.retainCharacters("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_");
+    return stem.isNotEmpty() ? stem : "pack";
+}
+
+juce::String extensionFromUrl(const juce::String& fileUrl, const juce::String& fallback) {
+    const auto path = juce::URL(fileUrl).getSubPath();
+    const auto leaf = path.fromLastOccurrenceOf("/", false, false);
+    const auto extension = leaf.fromLastOccurrenceOf(".", true, false);
+    if (extension.length() > 1 && extension.length() <= 12 && extension.containsOnly(".abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")) {
+        return extension;
+    }
+
+    return fallback;
+}
+}  // namespace
+
+struct MarketplaceAccountPanel::PackRow : public juce::Component {
+    PackRow(const Marketplace::LibraryItem& item, std::function<void()> download)
+        : _item(item),
+          _downloadButton("Download", ProfilerStyle::Theme::Orange) {
+        _title.setText(item.title.isNotEmpty() ? item.title : "Pack", juce::dontSendNotification);
+        _title.setFont(ProfilerStyle::Fonts::medium(15.0f));
+        _title.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
+        addAndMakeVisible(_title);
+
+        const auto sourceLabel = item.source.equalsIgnoreCase("free") ? "Free" : "Purchase";
+        auto meta = item.authorName;
+        if (meta.isNotEmpty()) {
+            meta << "  ·  ";
+        }
+        meta << sourceLabel;
+        if (item.hasIntegratedIr) {
+            meta << "  ·  Cabinet included";
+        }
+        _meta.setText(meta, juce::dontSendNotification);
+        _meta.setFont(ProfilerStyle::Fonts::regular(12.0f));
+        _meta.setColour(juce::Label::textColourId, ProfilerStyle::Colors::textMuted);
+        addAndMakeVisible(_meta);
+
+        _downloadButton.onClick = std::move(download);
+        addAndMakeVisible(_downloadButton);
+    }
+
+    void resized() override {
+        auto area = getLocalBounds().reduced(12, 8);
+        _downloadButton.setBounds(area.removeFromRight(120).withSizeKeepingCentre(120, 32));
+        area.removeFromRight(12);
+        _title.setBounds(area.removeFromTop(22));
+        _meta.setBounds(area.removeFromTop(18));
+    }
+
+    void paint(juce::Graphics& g) override {
+        ProfilerStyle::Surfaces::fillPanel(g, getLocalBounds().toFloat());
+    }
+
+    void setBusy(bool busy) {
+        _downloadButton.setEnabled(!busy);
+    }
+
+    Marketplace::LibraryItem _item;
+
+   private:
+    juce::Label _title;
+    juce::Label _meta;
+    CustomTextButton _downloadButton;
+};
+
+MarketplaceAccountPanel::MarketplaceAccountPanel() {
+    _titleLabel.setText("Marketplace", juce::dontSendNotification);
+    _titleLabel.setFont(ProfilerStyle::Fonts::bold(22.0f));
+    _titleLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
+    addAndMakeVisible(_titleLabel);
+
+    _emailLabel.setText("Email", juce::dontSendNotification);
+    _passwordLabel.setText("Password", juce::dontSendNotification);
+    _codeLabel.setText("6-digit code", juce::dontSendNotification);
+    _accountLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::text);
+    _accountLabel.setFont(ProfilerStyle::Fonts::regular(14.0f));
+    for (auto* label : {&_emailLabel, &_passwordLabel, &_codeLabel}) {
+        label->setFont(ProfilerStyle::Fonts::regular(13.0f));
+        label->setColour(juce::Label::textColourId, ProfilerStyle::Colors::textMuted);
+        addAndMakeVisible(label);
+    }
+    addAndMakeVisible(_accountLabel);
+
+    _statusLabel.setFont(ProfilerStyle::Fonts::regular(13.0f));
+    _statusLabel.setColour(juce::Label::textColourId, ProfilerStyle::Colors::accent);
+    addAndMakeVisible(_statusLabel);
+
+    _passwordEditor.setPasswordCharacter(static_cast<juce::juce_wchar>(0x2022));
+    _codeEditor.setInputRestrictions(6, "0123456789");
+    _codeEditor.setJustification(juce::Justification::centred);
+    addAndMakeVisible(_emailEditor);
+    addAndMakeVisible(_passwordEditor);
+    addAndMakeVisible(_codeEditor);
+
+    _submitButton.onClick = [this]() {
+        if (_busy) {
+            return;
+        }
+
+        if (_mode == Mode::Code) {
+            const auto code = _codeEditor.getText().trim();
+            if (!Marketplace::Client::isSixDigitCode(code)) {
+                _statusLabel.setText("Enter the 6-digit code.", juce::dontSendNotification);
+                return;
+            }
+
+            setBusy(true);
+            const auto factorId = _challenge.factorId;
+            const auto challengeId = _challenge.challengeId;
+            juce::Component::SafePointer<MarketplaceAccountPanel> safeThis(this);
+            _jobs.addJob([safeThis, factorId, challengeId, code]() {
+                Marketplace::LoginResult result;
+                if (safeThis != nullptr) {
+                    result = safeThis->_client.submitCode(factorId, challengeId, code);
+                }
+                juce::MessageManager::callAsync([safeThis, result]() {
+                    if (safeThis != nullptr) {
+                        safeThis->applyLoginResult(result, true);
+                    }
+                });
+            });
+            return;
+        }
+
+        const auto email = _emailEditor.getText().trim();
+        const auto password = _passwordEditor.getText();
+        if (email.isEmpty() || password.isEmpty()) {
+            _statusLabel.setText("Enter your marketplace email and password.", juce::dontSendNotification);
+            return;
+        }
+
+        setBusy(true);
+        juce::Component::SafePointer<MarketplaceAccountPanel> safeThis(this);
+        _jobs.addJob([safeThis, email, password]() {
+            Marketplace::LoginResult result;
+            if (safeThis != nullptr) {
+                result = safeThis->_client.login(email, password);
+            }
+            juce::MessageManager::callAsync([safeThis, result]() {
+                if (safeThis != nullptr) {
+                    safeThis->applyLoginResult(result, false);
+                }
+            });
+        });
+    };
+    addAndMakeVisible(_submitButton);
+
+    _backButton.onClick = [this]() {
+        _challenge = {};
+        _codeEditor.clear();
+        showLogin({});
+    };
+    addAndMakeVisible(_backButton);
+
+    _signOutButton.onClick = [this]() {
+        Marketplace::clearSession(Marketplace::defaultSessionFile());
+        _session = {};
+        _challenge = {};
+        _items.clear();
+        showLogin({});
+    };
+    addAndMakeVisible(_signOutButton);
+
+    _signupLink.setFont(ProfilerStyle::Fonts::regular(13.0f), false, juce::Justification::centredLeft);
+    _signupLink.setColour(juce::HyperlinkButton::textColourId, ProfilerStyle::Colors::accent);
+    addAndMakeVisible(_signupLink);
+
+    showLogin({});
+}
+
+MarketplaceAccountPanel::~MarketplaceAccountPanel() {
+    _jobs.removeAllJobs(true, 4000);
+}
+
+void MarketplaceAccountPanel::start() {
+    Marketplace::Session stored;
+    if (!Marketplace::loadSession(Marketplace::defaultSessionFile(), stored)) {
+        showLogin({});
+        return;
+    }
+
+    _session = std::move(stored);
+    _accountLabel.setText(_session.email, juce::dontSendNotification);
+    showLibrary();
+    loadLibrary();
+}
+
+int MarketplaceAccountPanel::getPreferredHeight(int width) const {
+    juce::ignoreUnused(width);
+    if (_mode == Mode::Login) {
+        return 392;
+    }
+    if (_mode == Mode::Code) {
+        return 348;
+    }
+
+    return 118 + static_cast<int>(_rows.size()) * 72;
+}
+
+void MarketplaceAccountPanel::resized() {
+    auto area = getLocalBounds();
+    _titleLabel.setBounds(area.removeFromTop(32));
+    area.removeFromTop(8);
+
+    const auto loginFields = _mode != Mode::Library;
+    _emailLabel.setVisible(_mode == Mode::Login);
+    _passwordLabel.setVisible(_mode == Mode::Login);
+    _emailEditor.setVisible(_mode == Mode::Login);
+    _passwordEditor.setVisible(_mode == Mode::Login);
+    _signupLink.setVisible(_mode == Mode::Login);
+    _codeLabel.setVisible(_mode == Mode::Code);
+    _codeEditor.setVisible(_mode == Mode::Code);
+    _submitButton.setVisible(loginFields);
+    _backButton.setVisible(_mode == Mode::Code);
+    _accountLabel.setVisible(_mode == Mode::Library);
+    _signOutButton.setVisible(_mode == Mode::Library);
+
+    if (_mode == Mode::Login) {
+        _emailLabel.setBounds(area.removeFromTop(18));
+        _emailEditor.setBounds(area.removeFromTop(36));
+        area.removeFromTop(12);
+        _passwordLabel.setBounds(area.removeFromTop(18));
+        _passwordEditor.setBounds(area.removeFromTop(36));
+        area.removeFromTop(16);
+        _submitButton.setBounds(area.removeFromTop(36).removeFromLeft(160));
+        area.removeFromTop(16);
+        _signupLink.setBounds(area.removeFromTop(24));
+        area.removeFromTop(12);
+        _statusLabel.setBounds(area.removeFromTop(48));
+        return;
+    }
+
+    if (_mode == Mode::Code) {
+        _codeLabel.setBounds(area.removeFromTop(18));
+        _codeEditor.setBounds(area.removeFromTop(36).removeFromLeft(180));
+        area.removeFromTop(16);
+        _submitButton.setBounds(area.removeFromTop(36).removeFromLeft(160));
+        area.removeFromTop(12);
+        _backButton.setBounds(area.removeFromTop(36).removeFromLeft(160));
+        area.removeFromTop(12);
+        _statusLabel.setBounds(area.removeFromTop(48));
+        return;
+    }
+
+    auto header = area.removeFromTop(36);
+    _signOutButton.setBounds(header.removeFromRight(120));
+    header.removeFromRight(12);
+    _accountLabel.setBounds(header);
+    area.removeFromTop(8);
+    _statusLabel.setBounds(area.removeFromTop(22));
+    area.removeFromTop(8);
+
+    for (auto& row : _rows) {
+        row->setBounds(area.removeFromTop(64));
+        area.removeFromTop(8);
+        row->setBusy(_busy);
+    }
+}
+
+void MarketplaceAccountPanel::setBusy(bool busy) {
+    _busy = busy;
+    _submitButton.setEnabled(!busy);
+    _backButton.setEnabled(!busy);
+    _emailEditor.setEnabled(!busy);
+    _passwordEditor.setEnabled(!busy);
+    _codeEditor.setEnabled(!busy);
+    _signOutButton.setEnabled(!busy);
+    for (auto& row : _rows) {
+        row->setBusy(busy);
+    }
+}
+
+void MarketplaceAccountPanel::showLogin(const juce::String& message) {
+    _mode = Mode::Login;
+    _submitButton.setButtonText("Sign in");
+    _statusLabel.setText(message, juce::dontSendNotification);
+    setBusy(false);
+    notifyLayout();
+}
+
+void MarketplaceAccountPanel::showCodeEntry() {
+    _mode = Mode::Code;
+    _codeEditor.clear();
+    _submitButton.setButtonText("Confirm");
+    _statusLabel.setText("Enter the 6-digit code from your authenticator. It expires in 5 minutes.",
+                         juce::dontSendNotification);
+    setBusy(false);
+    notifyLayout();
+}
+
+void MarketplaceAccountPanel::showLibrary() {
+    _mode = Mode::Library;
+    _accountLabel.setText(_session.email.isNotEmpty() ? _session.email : "Signed in",
+                          juce::dontSendNotification);
+    setBusy(false);
+    rebuildRows();
+    notifyLayout();
+}
+
+void MarketplaceAccountPanel::applyLoginResult(const Marketplace::LoginResult& result, bool fromCode) {
+    if (result.status == Marketplace::Status::MfaRequired && !fromCode) {
+        _challenge = result.challenge;
+        _session = {};
+        showCodeEntry();
+        return;
+    }
+
+    if (result.status == Marketplace::Status::Success) {
+        _session = result.session;
+        _challenge = {};
+        _passwordEditor.clear();
+        _codeEditor.clear();
+        Marketplace::saveSession(Marketplace::defaultSessionFile(), _session);
+        showLibrary();
+        loadLibrary();
+        return;
+    }
+
+    if (fromCode && result.status == Marketplace::Status::Unauthorized) {
+        _challenge = {};
+        showLogin(result.message);
+        return;
+    }
+
+    _statusLabel.setText(result.message, juce::dontSendNotification);
+    setBusy(false);
+}
+
+void MarketplaceAccountPanel::loadLibrary() {
+    if (_session.accessToken.isEmpty()) {
+        showLogin({});
+        return;
+    }
+
+    setBusy(true);
+    const auto token = _session.accessToken;
+    juce::Component::SafePointer<MarketplaceAccountPanel> safeThis(this);
+    _jobs.addJob([safeThis, token]() {
+        Marketplace::LibraryResult result;
+        if (safeThis != nullptr) {
+            result = safeThis->_client.fetchLibrary(token);
+        }
+        juce::MessageManager::callAsync([safeThis, result]() {
+            if (safeThis == nullptr) {
+                return;
+            }
+
+            if (result.status == Marketplace::Status::Unauthorized) {
+                Marketplace::clearSession(Marketplace::defaultSessionFile());
+                safeThis->_session = {};
+                safeThis->_challenge = {};
+                safeThis->showLogin(result.message);
+                return;
+            }
+
+            if (result.status != Marketplace::Status::Success) {
+                safeThis->_statusLabel.setText(result.message, juce::dontSendNotification);
+                safeThis->setBusy(false);
+                return;
+            }
+
+            safeThis->_items = result.items;
+            if (result.email.isNotEmpty()) {
+                safeThis->_session.email = result.email;
+            }
+            safeThis->_statusLabel.setText(safeThis->_items.empty() ? "No packs on this account yet." : juce::String{},
+                                           juce::dontSendNotification);
+            safeThis->showLibrary();
+        });
+    });
+}
+
+void MarketplaceAccountPanel::downloadPack(int index) {
+    if (_busy || index < 0 || index >= static_cast<int>(_items.size())) {
+        return;
+    }
+
+    const auto item = _items[static_cast<size_t>(index)];
+    const auto token = _session.accessToken;
+    setBusy(true);
+    _statusLabel.setText("Downloading " + item.title + "...", juce::dontSendNotification);
+
+    juce::Component::SafePointer<MarketplaceAccountPanel> safeThis(this);
+    _jobs.addJob([safeThis, item, token]() {
+        Marketplace::DownloadResult profile;
+        Marketplace::DownloadResult impulse;
+        if (safeThis != nullptr) {
+            profile = safeThis->_client.download(item.fileUrl, token);
+            if (profile.status == Marketplace::Status::Success && item.irFileUrl.isNotEmpty()) {
+                impulse = safeThis->_client.download(item.irFileUrl, token);
+            }
+        }
+
+        juce::MessageManager::callAsync([safeThis, item, profile, impulse]() {
+            if (safeThis == nullptr) {
+                return;
+            }
+
+            if (profile.status == Marketplace::Status::Unauthorized || impulse.status == Marketplace::Status::Unauthorized) {
+                Marketplace::clearSession(Marketplace::defaultSessionFile());
+                safeThis->_session = {};
+                safeThis->showLogin("Your session has expired. Sign in again.");
+                return;
+            }
+
+            if (profile.status != Marketplace::Status::Success) {
+                safeThis->_statusLabel.setText(profile.message, juce::dontSendNotification);
+                safeThis->setBusy(false);
+                return;
+            }
+
+            if (item.irFileUrl.isNotEmpty() && impulse.status != Marketplace::Status::Success) {
+                safeThis->_statusLabel.setText(impulse.message, juce::dontSendNotification);
+                safeThis->setBusy(false);
+                return;
+            }
+
+            const auto directory = safeThis->marketplaceDirectory();
+            if (!directory.isDirectory() && !directory.createDirectory().wasOk()) {
+                safeThis->_statusLabel.setText("Could not create the marketplace download folder.", juce::dontSendNotification);
+                safeThis->setBusy(false);
+                return;
+            }
+
+            const auto stem = safeFileStem(item.id.isNotEmpty() ? item.id : item.entitlementId);
+            const auto profileFile = directory.getChildFile(stem + extensionFromUrl(item.fileUrl, ".profilerprofile"));
+            if (!profileFile.replaceWithData(profile.body.getData(), profile.body.getSize())) {
+                safeThis->_statusLabel.setText("Could not save the profile file.", juce::dontSendNotification);
+                safeThis->setBusy(false);
+                return;
+            }
+
+            juce::File irFile;
+            if (item.irFileUrl.isNotEmpty()) {
+                irFile = directory.getChildFile(stem + extensionFromUrl(item.irFileUrl, ".wav"));
+                if (!irFile.replaceWithData(impulse.body.getData(), impulse.body.getSize())) {
+                    safeThis->_statusLabel.setText("Could not save the impulse response.", juce::dontSendNotification);
+                    safeThis->setBusy(false);
+                    return;
+                }
+            }
+
+            juce::String errorMessage;
+            const auto installed = safeThis->onInstallPack != nullptr &&
+                                   safeThis->onInstallPack(profileFile, irFile, item.hasIntegratedIr, &errorMessage);
+            safeThis->_statusLabel.setText(installed ? "Pack added to your library." : errorMessage,
+                                           juce::dontSendNotification);
+            safeThis->setBusy(false);
+        });
+    });
+}
+
+void MarketplaceAccountPanel::rebuildRows() {
+    for (auto& row : _rows) {
+        removeChildComponent(row.get());
+    }
+    _rows.clear();
+
+    for (int index = 0; index < static_cast<int>(_items.size()); ++index) {
+        auto row = std::make_unique<PackRow>(_items[static_cast<size_t>(index)], [this, index]() {
+            downloadPack(index);
+        });
+        addAndMakeVisible(*row);
+        _rows.push_back(std::move(row));
+    }
+}
+
+void MarketplaceAccountPanel::notifyLayout() {
+    resized();
+    if (onLayoutChanged != nullptr) {
+        onLayoutChanged();
+    }
+}
+
+juce::File MarketplaceAccountPanel::marketplaceDirectory() const {
+    return getSettingsFolder().getChildFile("Marketplace");
+}

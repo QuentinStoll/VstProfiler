@@ -6,6 +6,7 @@ set(PROFILER_TEST_SOURCES
     LoggingTests.cpp
     NotificationBannerTests.cpp
     UiSettingsTests.cpp
+    MarketplaceClientTests.cpp
 )
 
 add_executable(ProfilerTests EXCLUDE_FROM_ALL
@@ -15,6 +16,7 @@ add_executable(ProfilerTests EXCLUDE_FROM_ALL
     ../Source/Src/PluginProcessor.cpp
     ../Source/Src/ProfileManager.cpp
     ../Source/Src/UiSettings.cpp
+    ../Source/Src/MarketplaceClient.cpp
 )
 
 target_include_directories(ProfilerTests PRIVATE
@@ -204,3 +206,13 @@ endfunction()
 
 add_profiler_notification_banner_test(Lifecycle "notification banner lifecycle")
 add_profiler_notification_banner_test(Painting "notification banner painting")
+
+function(add_profiler_marketplace_test test_name case_name)
+    add_test(NAME ProfilerTests.Marketplace.${test_name}
+        COMMAND ProfilerTests --case "${case_name}")
+endfunction()
+
+add_profiler_marketplace_test(Login "marketplace login")
+add_profiler_marketplace_test(Mfa "marketplace mfa")
+add_profiler_marketplace_test(Library "marketplace library")
+add_profiler_marketplace_test(Session "marketplace session file")

@@ -7,10 +7,23 @@
 ProfilView::ProfilView(ProfilerAudioProcessor& p)
     : _audioProcessor(p) {
     addAndMakeVisible(_viewport);
+    _libraryPage.addAndMakeVisible(_accountPanel);
+    _libraryPage.addAndMakeVisible(_grid);
     _viewport.getVerticalScrollBar().setColour(juce::ScrollBar::thumbColourId, ProfilerStyle::Colors::orange);
-    _viewport.setViewedComponent(&_grid, false);
+    _viewport.setViewedComponent(&_libraryPage, false);
     _viewport.setScrollBarsShown(true, false);
     refreshProfileGrid();
+
+    _accountPanel.onLayoutChanged = [this]() {
+        resized();
+    };
+    _accountPanel.onInstallPack = [this](const juce::File& profileFile,
+                                         const juce::File& irFile,
+                                         bool hasIntegratedIr,
+                                         juce::String* errorMessage) {
+        return installMarketplacePack(profileFile, irFile, hasIntegratedIr, errorMessage);
+    };
+    _accountPanel.start();
 
     _createProfilModule.onCreateClicked = [this](const juce::NamedValueSet& values) {
         juce::String errorMessage;
@@ -96,8 +109,12 @@ void ProfilView::resized() {
         const auto contentWidth = area.getWidth();
 
         if (_contentMode == ContentMode::ProfileGrid) {
-            const auto gridHeight = juce::jmax(area.getHeight(), _grid.getRequiredHeight(contentWidth));
-            _grid.setBounds(0, 0, contentWidth, gridHeight);
+            const auto accountHeight = _accountPanel.getPreferredHeight(contentWidth);
+            const auto gridHeight = _grid.getRequiredHeight(contentWidth);
+            const auto pageHeight = juce::jmax(area.getHeight(), accountHeight + 16 + gridHeight);
+            _libraryPage.setBounds(0, 0, contentWidth, pageHeight);
+            _accountPanel.setBounds(0, 0, contentWidth, accountHeight);
+            _grid.setBounds(0, accountHeight + 16, contentWidth, gridHeight);
         } else if (_contentMode == ContentMode::CreateProfil) {
             const auto createHeight = juce::jmax(area.getHeight(), _createProfilModule.getRequiredHeight(contentWidth));
             _createProfilModule.setBounds(0, 0, contentWidth, createHeight);
@@ -186,7 +203,7 @@ void ProfilView::deleteProfile(int profileNumber) {
 void ProfilView::showProfileGrid() {
     refreshProfileGrid();
     _contentMode = ContentMode::ProfileGrid;
-    _viewport.setViewedComponent(&_grid, false);
+    _viewport.setViewedComponent(&_libraryPage, false);
     _viewport.setVisible(true);
     _createProfilModule.setVisible(false);
     _editProfilModule.setVisible(false);
@@ -261,6 +278,41 @@ void ProfilView::importProfil() {
 
                                          safeThis->_profileFileChooser.reset();
                                      });
+}
+
+bool ProfilView::installMarketplacePack(const juce::File& profileFile, const juce::File& irFile, bool hasIntegratedIr, juce::String* errorMessage) {
+    auto& profileManager = _audioProcessor.getProfileManager();
+    juce::StringArray existingIds;
+    for (const auto& profile : profileManager.getProfiles()) {
+        existingIds.add(profile.id);
+    }
+
+    if (!profileManager.importProfile(profileFile, errorMessage)) {
+        return false;
+    }
+
+    if (!hasIntegratedIr && irFile.existsAsFile()) {
+        const auto& profiles = profileManager.getProfiles();
+        for (int index = 0; index < profileManager.getProfileCount(); ++index) {
+            if (existingIds.contains(profiles[static_cast<size_t>(index)].id)) {
+                continue;
+            }
+
+            auto values = profiles[static_cast<size_t>(index)].values;
+            values.set("irPath", irFile.getFullPathName());
+            if (!profileManager.updateProfile(index, values, errorMessage)) {
+                return false;
+            }
+            break;
+        }
+    }
+
+    refreshProfileGrid();
+    _notificationBanner.clearAction();
+    _notificationBanner.showMessage("Pack added to your library",
+                                    NotificationBanner::Type::Success,
+                                    5000);
+    return true;
 }
 
 void ProfilView::refreshProfileGrid() {
