@@ -45,8 +45,5 @@ class ProfilView : public juce::Component {
     void showEditProfilModule(int profileNumber);
     void importProfil();
     void refreshProfileGrid();
-    bool installMarketplacePack(const juce::File& profileFile,
-                                const juce::File& irFile,
-                                bool hasIntegratedIr,
-                                juce::String* errorMessage);
+    bool installMarketplacePack(const juce::File& profileFile, const juce::File& irFile, bool hasIntegratedIr, juce::String* errorMessage);
 };

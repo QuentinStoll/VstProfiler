@@ -280,10 +280,7 @@ void ProfilView::importProfil() {
                                      });
 }
 
-bool ProfilView::installMarketplacePack(const juce::File& profileFile,
-                                         const juce::File& irFile,
-                                         bool hasIntegratedIr,
-                                         juce::String* errorMessage) {
+bool ProfilView::installMarketplacePack(const juce::File& profileFile, const juce::File& irFile, bool hasIntegratedIr, juce::String* errorMessage) {
     auto& profileManager = _audioProcessor.getProfileManager();
     juce::StringArray existingIds;
     for (const auto& profile : profileManager.getProfiles()) {
