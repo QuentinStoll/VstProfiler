@@ -8,6 +8,7 @@
 #include "Modules/CreateProfilModule.h"
 #include "Modules/EditProfilModule.h"
 #include "PluginProcessor.h"
+#include "Views/MarketplaceAccountPanel.h"
 
 class ProfilView : public juce::Component {
    public:
@@ -25,6 +26,8 @@ class ProfilView : public juce::Component {
     };
 
     juce::Viewport _viewport;
+    juce::Component _libraryPage;
+    MarketplaceAccountPanel _accountPanel;
     CardGridModule _grid;
     CreateProfilModule _createProfilModule;
     EditProfilModule _editProfilModule;
@@ -42,4 +45,8 @@ class ProfilView : public juce::Component {
     void showEditProfilModule(int profileNumber);
     void importProfil();
     void refreshProfileGrid();
+    bool installMarketplacePack(const juce::File& profileFile,
+                                const juce::File& irFile,
+                                bool hasIntegratedIr,
+                                juce::String* errorMessage);
 };
