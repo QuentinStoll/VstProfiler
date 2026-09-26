@@ -20,6 +20,7 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+include(spectra_dsp)
 include(presets)
 include(dependencies)
 include(juce_setup)
