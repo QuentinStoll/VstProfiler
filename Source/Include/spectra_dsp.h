@@ -44,18 +44,13 @@ typedef struct SpectraBuffer {
 
 SPECTRA_API int spectra_abi_version(void);
 
-/* Keeps the session inside this library. Empty tokens are rejected.
-   This build does not write them to disk. */
 SPECTRA_API int spectra_session_unlock(const char* access_token);
 SPECTRA_API void spectra_session_lock(void);
 
-/* Copies the input into a heap buffer. Real decryption replaces the copy.
-   Call spectra_buffer_free when the plugin has consumed the bytes. */
 SPECTRA_API int spectra_decrypt_model(const uint8_t* cipher, size_t cipher_size, SpectraBuffer* plain);
 SPECTRA_API int spectra_decrypt_ir(const uint8_t* cipher, size_t cipher_size, SpectraBuffer* plain);
 SPECTRA_API void spectra_buffer_free(SpectraBuffer* buffer);
 
-/* Capture is not implemented yet. These return SPECTRA_ERR_UNSUPPORTED. */
 SPECTRA_API int spectra_capture_begin(int kind);
 SPECTRA_API int spectra_capture_push(const float* samples, size_t count);
 SPECTRA_API int spectra_capture_finish(void);

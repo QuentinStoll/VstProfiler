@@ -68,10 +68,8 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     bool loadIRFile(const juce::File& file);
     void unloadIRFile();
     bool loadAmpFile(const juce::File& file);
-    // Parses a model or IR that is already in memory. Message thread only.
     bool loadAmpFromMemory(const void* data, size_t size);
     bool loadIrFromMemory(const void* data, size_t size);
-    // Decrypts through SpectraDsp, then loads in memory. Message thread only.
     bool loadProtectedAmp(const void* data, size_t size);
     bool loadProtectedIr(const void* data, size_t size);
     bool isSpectraLoaded() const noexcept;

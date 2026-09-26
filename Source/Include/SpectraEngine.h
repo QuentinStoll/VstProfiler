@@ -4,7 +4,6 @@
 
 #include <memory>
 
-// Runtime loader for SpectraDsp. Message thread only: the audio callback must not call it.
 class SpectraEngine {
    public:
     SpectraEngine();

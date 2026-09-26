@@ -1,5 +1,5 @@
 set(SPECTRA_DSP_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../SpectraDspDLL" CACHE PATH
-    "Path to the SpectraDspDLL source tree. Leave empty to build the plugin without the private engine.")
+    "Optional SpectraDsp source tree. Empty builds the plugin without it.")
 
 if(SPECTRA_DSP_SOURCE_DIR AND EXISTS "${SPECTRA_DSP_SOURCE_DIR}/CMakeLists.txt")
     add_subdirectory("${SPECTRA_DSP_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/_spectra_dsp" EXCLUDE_FROM_ALL)
