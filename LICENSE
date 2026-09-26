@@ -1,3 +1,15 @@
+ADDITIONAL PERMISSION / PLUGIN EXCEPTION UNDER GPLv3 SECTION 7
+
+As a special exception to the GNU General Public License version 3 ("GPLv3"), the
+Copyright Holders of this software grant you permission to link this program with
+independent modules, dynamic link libraries (DLLs), shared objects (.so), or dylibs
+to produce an executable, regardless of the license terms of these independent modules,
+and to copy and distribute the resulting combined executable under terms of your choice,
+provided that the source code of this main program itself remains available under GPLv3.
+
+This exception allows loading proprietary binary plugins and closed-source neural
+engine libraries without subjecting those external modules to the terms of the GPLv3.
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
