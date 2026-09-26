@@ -31,12 +31,10 @@ class UrlHttpTransport : public HttpTransport {
                                  .withStatusCode(&statusCode);
 
         HttpResponse response;
-        response.statusCode = statusCode;
         if (auto stream = requestUrl.createInputStream(options)) {
             stream->readIntoMemoryBlock(response.body);
-            response.statusCode = statusCode;
         }
-
+        response.statusCode = statusCode;
         return response;
     }
 };
@@ -130,10 +128,16 @@ bool readSession(const juce::var& parsed, Session& session) {
     return session.accessToken.isNotEmpty();
 }
 
+juce::String serverErrorMessage(const juce::MemoryBlock& body) {
+    const auto parsed = juce::JSON::parse(bodyAsString(body));
+    return jsonString(parsed, "error");
+}
+
 LoginResult parseLoginBody(int statusCode, const juce::MemoryBlock& body, bool mfaCall) {
     LoginResult result;
     result.status = statusFromCode(statusCode, !mfaCall);
-    result.message = messageFor(result.status, mfaCall);
+    const auto serverMessage = serverErrorMessage(body);
+    result.message = serverMessage.isNotEmpty() ? serverMessage : messageFor(result.status, mfaCall);
 
     if (result.status == Status::TransportError || result.status == Status::Unavailable ||
         result.status == Status::BadRequest) {
@@ -227,6 +231,30 @@ LoginResult Client::submitCode(const juce::String& factorId,
     return result;
 }
 
+LoginResult Client::refresh(const juce::String& refreshToken) const {
+    LoginResult rejected;
+    if (refreshToken.isEmpty()) {
+        rejected.status = Status::Unauthorized;
+        rejected.message = "Your session has expired. Sign in again.";
+        return rejected;
+    }
+
+    auto payload = std::make_unique<juce::DynamicObject>();
+    payload->setProperty("refreshToken", refreshToken);
+    const auto json = juce::JSON::toString(juce::var(payload.release()), false);
+    const auto response = _transport->send("POST", _apiBaseUrl + "/api/v1/plugin/refresh", json, {});
+    auto result = parseLoginBody(response.statusCode, response.body, false);
+    if (result.status != Status::Success) {
+        result.session = {};
+        result.challenge = {};
+        if (result.status == Status::Unauthorized || result.status == Status::MfaRequired) {
+            result.status = Status::Unauthorized;
+            result.message = "Your session has expired. Sign in again.";
+        }
+    }
+    return result;
+}
+
 LibraryResult Client::fetchLibrary(const juce::String& accessToken) const {
     LibraryResult result;
     if (accessToken.isEmpty()) {
@@ -272,6 +300,31 @@ LibraryResult Client::fetchLibrary(const juce::String& accessToken) const {
     return result;
 }
 
+LibraryResult Client::loadLibrary(Session& session) const {
+    LibraryResult result;
+    if (session.accessToken.isNotEmpty()) {
+        result = fetchLibrary(session.accessToken);
+        if (result.status != Status::Unauthorized) {
+            return result;
+        }
+    }
+
+    const auto refreshed = refresh(session.refreshToken);
+    if (refreshed.status != Status::Success) {
+        result.status = Status::Unauthorized;
+        result.items.clear();
+        result.message = "Your session has expired. Sign in again.";
+        return result;
+    }
+
+    session = refreshed.session;
+    result = fetchLibrary(session.accessToken);
+    if (result.status == Status::Unauthorized) {
+        result.message = "Your session has expired. Sign in again.";
+    }
+    return result;
+}
+
 DownloadResult Client::download(const juce::String& fileUrl, const juce::String& accessToken) const {
     DownloadResult result;
     const auto absoluteUrl = resolveUrl(fileUrl);
@@ -314,11 +367,7 @@ juce::String Client::resolveUrl(const juce::String& fileUrl) const {
         return trimmed;
     }
 
-    if (trimmed.startsWithChar('/')) {
-        return _apiBaseUrl + trimmed;
-    }
-
-    return _apiBaseUrl + "/" + trimmed;
+    return {};
 }
 
 bool Client::sendBearerToken(const juce::String& absoluteUrl) {
