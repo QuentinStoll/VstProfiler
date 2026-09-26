@@ -8,17 +8,6 @@ juce::String safeFileStem(const juce::String& value) {
     auto stem = value.retainCharacters("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_");
     return stem.isNotEmpty() ? stem : "pack";
 }
-
-juce::String extensionFromUrl(const juce::String& fileUrl, const juce::String& fallback) {
-    const auto path = juce::URL(fileUrl).getSubPath();
-    const auto leaf = path.fromLastOccurrenceOf("/", false, false);
-    const auto extension = leaf.fromLastOccurrenceOf(".", true, false);
-    if (extension.length() > 1 && extension.length() <= 12 && extension.containsOnly(".abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")) {
-        return extension;
-    }
-
-    return fallback;
-}
 }  // namespace
 
 struct MarketplaceAccountPanel::PackRow : public juce::Component {
@@ -170,6 +159,8 @@ MarketplaceAccountPanel::MarketplaceAccountPanel() {
     };
     addAndMakeVisible(_signOutButton);
 
+    _signupLink.setButtonText(juce::String(u8"Pas de compte ? Créer un compte sur le marketplace"));
+    _signupLink.setURL(juce::URL(Marketplace::signupUrl));
     _signupLink.setFont(ProfilerStyle::Fonts::regular(13.0f), false, juce::Justification::centredLeft);
     _signupLink.setColour(juce::HyperlinkButton::textColourId, ProfilerStyle::Colors::accent);
     addAndMakeVisible(_signupLink);
@@ -336,20 +327,21 @@ void MarketplaceAccountPanel::applyLoginResult(const Marketplace::LoginResult& r
 }
 
 void MarketplaceAccountPanel::loadLibrary() {
-    if (_session.accessToken.isEmpty()) {
+    if (_session.accessToken.isEmpty() && _session.refreshToken.isEmpty()) {
         showLogin({});
         return;
     }
 
     setBusy(true);
-    const auto token = _session.accessToken;
+    const auto session = _session;
     juce::Component::SafePointer<MarketplaceAccountPanel> safeThis(this);
-    _jobs.addJob([safeThis, token]() {
+    _jobs.addJob([safeThis, session]() {
+        auto working = session;
         Marketplace::LibraryResult result;
         if (safeThis != nullptr) {
-            result = safeThis->_client.fetchLibrary(token);
+            result = safeThis->_client.loadLibrary(working);
         }
-        juce::MessageManager::callAsync([safeThis, result]() {
+        juce::MessageManager::callAsync([safeThis, working, result]() {
             if (safeThis == nullptr) {
                 return;
             }
@@ -362,6 +354,19 @@ void MarketplaceAccountPanel::loadLibrary() {
                 return;
             }
 
+            if (working.accessToken != safeThis->_session.accessToken || working.refreshToken != safeThis->_session.refreshToken) {
+                safeThis->_session.accessToken = working.accessToken;
+                safeThis->_session.refreshToken = working.refreshToken;
+                safeThis->_session.expiresIn = working.expiresIn;
+                if (working.userId.isNotEmpty()) {
+                    safeThis->_session.userId = working.userId;
+                }
+                if (working.email.isNotEmpty()) {
+                    safeThis->_session.email = working.email;
+                }
+                Marketplace::saveSession(Marketplace::defaultSessionFile(), safeThis->_session);
+            }
+
             if (result.status != Marketplace::Status::Success) {
                 safeThis->_statusLabel.setText(result.message, juce::dontSendNotification);
                 safeThis->setBusy(false);
@@ -369,6 +374,10 @@ void MarketplaceAccountPanel::loadLibrary() {
             }
 
             safeThis->_items = result.items;
+            for (auto& item : safeThis->_items) {
+                item.fileUrl.clear();
+                item.irFileUrl.clear();
+            }
             if (result.email.isNotEmpty()) {
                 safeThis->_session.email = result.email;
             }
@@ -384,31 +393,73 @@ void MarketplaceAccountPanel::downloadPack(int index) {
         return;
     }
 
-    const auto item = _items[static_cast<size_t>(index)];
-    const auto token = _session.accessToken;
+    const auto packId = _items[static_cast<size_t>(index)].id;
+    const auto entitlementId = _items[static_cast<size_t>(index)].entitlementId;
+    const auto title = _items[static_cast<size_t>(index)].title;
+    const auto session = _session;
     setBusy(true);
-    _statusLabel.setText("Downloading " + item.title + "...", juce::dontSendNotification);
+    _statusLabel.setText("Downloading " + title + "...", juce::dontSendNotification);
 
     juce::Component::SafePointer<MarketplaceAccountPanel> safeThis(this);
-    _jobs.addJob([safeThis, item, token]() {
+    _jobs.addJob([safeThis, packId, entitlementId, session]() {
+        auto working = session;
+        Marketplace::LibraryResult library;
         Marketplace::DownloadResult profile;
         Marketplace::DownloadResult impulse;
+        bool hasIntegratedIr = false;
+        juce::String profileUrl;
+        juce::String irUrl;
         if (safeThis != nullptr) {
-            profile = safeThis->_client.download(item.fileUrl, token);
-            if (profile.status == Marketplace::Status::Success && item.irFileUrl.isNotEmpty()) {
-                impulse = safeThis->_client.download(item.irFileUrl, token);
+            library = safeThis->_client.loadLibrary(working);
+            if (library.status == Marketplace::Status::Success) {
+                const Marketplace::LibraryItem* fresh = nullptr;
+                for (const auto& item : library.items) {
+                    if ((packId.isNotEmpty() && item.id == packId) || (entitlementId.isNotEmpty() && item.entitlementId == entitlementId)) {
+                        fresh = &item;
+                        break;
+                    }
+                }
+                if (fresh != nullptr) {
+                    hasIntegratedIr = fresh->hasIntegratedIr;
+                    profileUrl = fresh->fileUrl;
+                    irUrl = fresh->irFileUrl;
+                    profile = safeThis->_client.download(profileUrl, working.accessToken);
+                    if (profile.status == Marketplace::Status::Success && irUrl.isNotEmpty()) {
+                        impulse = safeThis->_client.download(irUrl, working.accessToken);
+                    }
+                }
             }
         }
 
-        juce::MessageManager::callAsync([safeThis, item, profile, impulse]() {
+        juce::MessageManager::callAsync([safeThis, packId, working, library, profile, impulse, hasIntegratedIr, profileUrl, irUrl]() {
             if (safeThis == nullptr) {
                 return;
             }
 
-            if (profile.status == Marketplace::Status::Unauthorized || impulse.status == Marketplace::Status::Unauthorized) {
+            if (working.accessToken != safeThis->_session.accessToken || working.refreshToken != safeThis->_session.refreshToken) {
+                safeThis->_session.accessToken = working.accessToken;
+                safeThis->_session.refreshToken = working.refreshToken;
+                safeThis->_session.expiresIn = working.expiresIn;
+                Marketplace::saveSession(Marketplace::defaultSessionFile(), safeThis->_session);
+            }
+
+            if (library.status == Marketplace::Status::Unauthorized) {
                 Marketplace::clearSession(Marketplace::defaultSessionFile());
                 safeThis->_session = {};
-                safeThis->showLogin("Your session has expired. Sign in again.");
+                safeThis->_challenge = {};
+                safeThis->showLogin(library.message);
+                return;
+            }
+
+            if (library.status != Marketplace::Status::Success) {
+                safeThis->_statusLabel.setText(library.message, juce::dontSendNotification);
+                safeThis->setBusy(false);
+                return;
+            }
+
+            if (profileUrl.isEmpty()) {
+                safeThis->_statusLabel.setText("This pack has no file to download.", juce::dontSendNotification);
+                safeThis->setBusy(false);
                 return;
             }
 
@@ -418,7 +469,7 @@ void MarketplaceAccountPanel::downloadPack(int index) {
                 return;
             }
 
-            if (item.irFileUrl.isNotEmpty() && impulse.status != Marketplace::Status::Success) {
+            if (irUrl.isNotEmpty() && impulse.status != Marketplace::Status::Success) {
                 safeThis->_statusLabel.setText(impulse.message, juce::dontSendNotification);
                 safeThis->setBusy(false);
                 return;
@@ -431,8 +482,8 @@ void MarketplaceAccountPanel::downloadPack(int index) {
                 return;
             }
 
-            const auto stem = safeFileStem(item.id.isNotEmpty() ? item.id : item.entitlementId);
-            const auto profileFile = directory.getChildFile(stem + extensionFromUrl(item.fileUrl, ".profilerprofile"));
+            const auto stem = safeFileStem(packId);
+            const auto profileFile = directory.getChildFile(stem + ".model");
             if (!profileFile.replaceWithData(profile.body.getData(), profile.body.getSize())) {
                 safeThis->_statusLabel.setText("Could not save the profile file.", juce::dontSendNotification);
                 safeThis->setBusy(false);
@@ -440,8 +491,8 @@ void MarketplaceAccountPanel::downloadPack(int index) {
             }
 
             juce::File irFile;
-            if (item.irFileUrl.isNotEmpty()) {
-                irFile = directory.getChildFile(stem + extensionFromUrl(item.irFileUrl, ".wav"));
+            if (irUrl.isNotEmpty()) {
+                irFile = directory.getChildFile(stem + ".wav");
                 if (!irFile.replaceWithData(impulse.body.getData(), impulse.body.getSize())) {
                     safeThis->_statusLabel.setText("Could not save the impulse response.", juce::dontSendNotification);
                     safeThis->setBusy(false);
@@ -451,7 +502,7 @@ void MarketplaceAccountPanel::downloadPack(int index) {
 
             juce::String errorMessage;
             const auto installed = safeThis->onInstallPack != nullptr &&
-                                   safeThis->onInstallPack(profileFile, irFile, item.hasIntegratedIr, &errorMessage);
+                                   safeThis->onInstallPack(profileFile, irFile, hasIntegratedIr, &errorMessage);
             safeThis->_statusLabel.setText(installed ? "Pack added to your library." : errorMessage,
                                            juce::dontSendNotification);
             safeThis->setBusy(false);

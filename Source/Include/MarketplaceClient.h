@@ -88,7 +88,9 @@ class Client {
     LoginResult submitCode(const juce::String& factorId,
                            const juce::String& challengeId,
                            const juce::String& code) const;
+    LoginResult refresh(const juce::String& refreshToken) const;
     LibraryResult fetchLibrary(const juce::String& accessToken) const;
+    LibraryResult loadLibrary(Session& session) const;
     DownloadResult download(const juce::String& fileUrl, const juce::String& accessToken) const;
 
     static bool isSixDigitCode(const juce::String& code);

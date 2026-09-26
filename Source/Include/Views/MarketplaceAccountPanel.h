@@ -52,8 +52,7 @@ class MarketplaceAccountPanel : public juce::Component {
     CustomTextButton _submitButton{"Sign in", ProfilerStyle::Theme::Orange};
     CustomTextButton _backButton{"Back", ProfilerStyle::Theme::Dark};
     CustomTextButton _signOutButton{"Sign out", ProfilerStyle::Theme::Dark};
-    juce::HyperlinkButton _signupLink{"Pas de compte ? Créer un compte sur le marketplace",
-                                      juce::URL(Marketplace::signupUrl)};
+    juce::HyperlinkButton _signupLink;
 
     struct PackRow;
     std::vector<std::unique_ptr<PackRow>> _rows;

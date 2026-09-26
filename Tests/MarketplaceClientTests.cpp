@@ -13,6 +13,19 @@ class FakeTransport : public Marketplace::HttpTransport {
     int statusCode = 200;
     juce::String responseBody;
 
+    struct ScriptedResponse {
+        int statusCode = 200;
+        juce::String body;
+    };
+    struct Call {
+        juce::String method;
+        juce::String url;
+        juce::String jsonBody;
+        juce::String bearerToken;
+    };
+    std::vector<ScriptedResponse> responses;
+    std::vector<Call> calls;
+
     Marketplace::HttpResponse send(const juce::String& requestMethod,
                                    const juce::String& requestUrl,
                                    const juce::String& requestJson,
@@ -21,8 +34,16 @@ class FakeTransport : public Marketplace::HttpTransport {
         url = requestUrl;
         jsonBody = requestJson;
         bearerToken = requestToken;
+        calls.push_back({requestMethod, requestUrl, requestJson, requestToken});
 
         Marketplace::HttpResponse response;
+        if (!responses.empty()) {
+            response.statusCode = responses.front().statusCode;
+            response.body.append(responses.front().body.toRawUTF8(), responses.front().body.getNumBytesAsUTF8());
+            responses.erase(responses.begin());
+            return response;
+        }
+
         response.statusCode = statusCode;
         response.body.append(responseBody.toRawUTF8(), responseBody.getNumBytesAsUTF8());
         return response;
@@ -60,6 +81,7 @@ class MarketplaceClientTests : public juce::UnitTest {
         transport->responseBody = R"({"message":"nope"})";
         auto refused = client.login("a@profiler.audio", "secret");
         expect(refused.status == Marketplace::Status::Unauthorized);
+        expect(refused.message.contains("password"));
         expect(transport->method == "POST");
         expect(transport->url == "https://profiler.audio/api/v1/plugin/login");
         expect(transport->bearerToken.isEmpty());
@@ -88,8 +110,10 @@ class MarketplaceClientTests : public juce::UnitTest {
         expect(invalid.status == Marketplace::Status::BadRequest);
 
         transport->statusCode = 503;
+        transport->responseBody = R"({"error":"Auth service is down."})";
         auto unavailable = client.login("a@profiler.audio", "secret");
         expect(unavailable.status == Marketplace::Status::Unavailable);
+        expectEquals(unavailable.message, juce::String("Auth service is down."));
 
         transport->statusCode = 0;
         auto offline = client.login("a@profiler.audio", "secret");
@@ -150,6 +174,7 @@ class MarketplaceClientTests : public juce::UnitTest {
         transport->statusCode = 401;
         auto expired = client.fetchLibrary("access-secret");
         expect(expired.status == Marketplace::Status::Unauthorized);
+        expect(!expired.message.contains("password"));
 
         transport->statusCode = 403;
         auto forbidden = client.fetchLibrary("access-secret");
@@ -158,15 +183,39 @@ class MarketplaceClientTests : public juce::UnitTest {
         transport->bearerToken.clear();
         transport->statusCode = 200;
         transport->responseBody = "profile-bytes";
-        auto externalFile = client.download("https://cdn.example/ir.wav", "access-secret");
+        const juce::String signedUrl("https://cdn.example/storage/v1/object/sign/amp-packs/user/pack.model?token=abc");
+        auto externalFile = client.download(signedUrl, "access-secret");
         expect(externalFile.status == Marketplace::Status::Success);
+        expect(transport->url == signedUrl);
         expect(transport->bearerToken.isEmpty());
         expectEquals(externalFile.body.toString(), juce::String("profile-bytes"));
 
-        auto hostedFile = client.download("/files/clean.profilerprofile", "access-secret");
-        expect(hostedFile.status == Marketplace::Status::Success);
-        expect(transport->url == "https://profiler.audio/files/clean.profilerprofile");
-        expectEquals(transport->bearerToken, juce::String("access-secret"));
+        auto missingUrl = client.download({}, "access-secret");
+        expect(missingUrl.status == Marketplace::Status::BadRequest);
+        expect(transport->url == signedUrl);
+
+        Marketplace::Session session;
+        session.accessToken = "expired-access";
+        session.refreshToken = "refresh-secret";
+        transport->responses = {
+            {401, juce::String{}},
+            {200, R"({"mfaRequired":false,"accessToken":"new-access","refreshToken":"new-refresh","expiresIn":3600,"user":{"id":"user-1","email":"a@profiler.audio"}})"},
+            {200, R"({"user":{"id":"user-1","email":"a@profiler.audio"},"library":[{"entitlementId":"ent-1","acquiredAt":"2026-09-01T00:00:00Z","source":"purchase","id":"pack-1","title":"Clean","authorName":"Ada","fileUrl":"https://cdn.example/pack.model?token=now","irFileUrl":null,"hasIntegratedIr":true}]})"},
+        };
+        transport->calls.clear();
+        auto renewed = client.loadLibrary(session);
+        expect(renewed.status == Marketplace::Status::Success);
+        expectEquals(session.accessToken, juce::String("new-access"));
+        expectEquals(session.refreshToken, juce::String("new-refresh"));
+        expectEquals(renewed.items[0].fileUrl, juce::String("https://cdn.example/pack.model?token=now"));
+        expect(transport->calls.size() == 3);
+        expect(transport->calls[0].method == "GET");
+        expect(transport->calls[1].method == "POST");
+        expect(transport->calls[1].url.endsWith("/api/v1/plugin/refresh"));
+        expect(transport->calls[1].jsonBody.contains("refresh-secret"));
+        expect(!transport->calls[1].url.contains("mfa"));
+        expect(transport->calls[2].bearerToken == "new-access");
+        expect(!renewed.message.contains("password"));
     }
 
     void testSessionFile() {
