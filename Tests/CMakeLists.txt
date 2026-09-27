@@ -7,6 +7,7 @@ set(PROFILER_TEST_SOURCES
     NotificationBannerTests.cpp
     UiSettingsTests.cpp
     MarketplaceClientTests.cpp
+    SpectraEngineTests.cpp
 )
 
 add_executable(ProfilerTests EXCLUDE_FROM_ALL
@@ -17,6 +18,7 @@ add_executable(ProfilerTests EXCLUDE_FROM_ALL
     ../Source/Src/ProfileManager.cpp
     ../Source/Src/UiSettings.cpp
     ../Source/Src/MarketplaceClient.cpp
+    ../Source/Src/SpectraEngine.cpp
 )
 
 target_include_directories(ProfilerTests PRIVATE
@@ -59,6 +61,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 apply_compiler_options(ProfilerTests)
+profiler_attach_spectra_dsp(ProfilerTests)
 
 if(PROFILER_ENABLE_COVERAGE)
     set(PROFILER_COVERAGE_DIR "${CMAKE_BINARY_DIR}/coverage")

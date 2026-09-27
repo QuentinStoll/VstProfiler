@@ -57,6 +57,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch SpectraDsp
+        id: spectra
+        shell: bash
+        env:
+          SPECTRA_DSP_TOKEN: ${{ secrets.SPECTRA_DSP_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "push" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            python scripts/fetch_spectra_dsp.py --dest "$RUNNER_TEMP/spectra" --require >> "$GITHUB_OUTPUT"
+          else
+            python scripts/fetch_spectra_dsp.py --dest "$RUNNER_TEMP/spectra" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install JUCE dependencies
         if: runner.os == 'Linux'
         run: |
@@ -83,10 +101,14 @@ jobs:
       - name: Run tests (Windows)
         if: runner.os == 'Windows'
         shell: cmd
+        env:
+          SPECTRA_DSP_PATH: ${{ steps.spectra.outputs.library }}
         run: install.bat test
 
       - name: Run tests (Linux and macOS)
         if: runner.os != 'Windows'
+        env:
+          SPECTRA_DSP_PATH: ${{ steps.spectra.outputs.library }}
         run: |
           chmod +x ./install.sh
           ./install.sh test
@@ -133,18 +155,40 @@ jobs:
         include:
           - name: windows-x64
             runner: windows-latest
+            require_spectra: "true"
           - name: windows-arm64
             runner: windows-11-arm
+            require_spectra: "false"
           - name: linux-x64
             runner: ubuntu-latest
+            require_spectra: "true"
           - name: macos-arm64
             runner: macos-latest
+            require_spectra: "true"
 
     runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch SpectraDsp
+        id: spectra
+        shell: bash
+        env:
+          SPECTRA_DSP_TOKEN: ${{ secrets.SPECTRA_DSP_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ matrix.require_spectra }}" == "true" && ( "${{ github.event_name }}" == "push" || "${{ github.event_name }}" == "workflow_dispatch" ) ]]; then
+            python scripts/fetch_spectra_dsp.py --dest "$RUNNER_TEMP/spectra" --require >> "$GITHUB_OUTPUT"
+          else
+            python scripts/fetch_spectra_dsp.py --dest "$RUNNER_TEMP/spectra" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Install JUCE dependencies
         if: runner.os == 'Linux'
@@ -179,6 +223,11 @@ jobs:
         run: |
           chmod +x ./install.sh
           ./install.sh build
+
+      - name: Stage SpectraDsp into plugin bundles
+        if: steps.spectra.outputs.library != ''
+        shell: bash
+        run: python scripts/stage_spectra_dsp.py --library "${{ steps.spectra.outputs.library }}" --plugin-root build/bin
 
       - name: Upload plugin artifacts
         uses: actions/upload-artifact@v4
@@ -228,6 +277,18 @@ jobs:
             fi
           done
 
+      - name: Read bundled SpectraDsp version
+        id: engine
+        run: |
+          set -euo pipefail
+          version_file=$(find artifacts -name SPECTRA_DSP_VERSION.txt -print -quit)
+          if [[ -z "$version_file" ]]; then
+            echo "SpectraDsp was not bundled into the build artifacts."
+            exit 1
+          fi
+          version=$(tr -d '[:space:]' < "$version_file")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Generate version tag
         id: version
         run: |
@@ -238,6 +299,8 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Release ${{ steps.version.outputs.tag }}
+          body: |
+            Bundled SpectraDsp `${{ steps.engine.outputs.version }}`.
           generate_release_notes: true
           files: |
             *.zip

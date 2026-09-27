@@ -1,9 +1,12 @@
 #include "PluginProcessor.h"
 
+#include <algorithm>
 #include <cmath>
 #include <common/TracyColor.hpp>
-#include <fstream>
+#include <cstring>
+#include <string>
 #include <utility>
+#include <vector>
 
 #define RTNEURAL_DEFAULT_STATIC 1
 #define RTNEURAL_ENABLE_LSTM 1
@@ -90,6 +93,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
     _pedalToneParam = _apvts.getRawParameterValue("pedalTone");
     _pedalLevelParam = _apvts.getRawParameterValue("pedalLevel");
     _apvts.state.setProperty("chainLayout", static_cast<int>(_chainLayoutPacked.load()), nullptr);
+    _spectra.open();
 }
 
 ProfilerAudioProcessor::~ProfilerAudioProcessor() = default;
@@ -620,18 +624,50 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() {
     return new ProfilerAudioProcessor();
 }
 
+bool ProfilerAudioProcessor::loadIrFromMemory(const void* data, size_t size) {
+    if (data == nullptr || size == 0) {
+        return false;
+    }
+
+    _convolver.loadImpulseResponse(data,
+                                   size,
+                                   juce::dsp::Convolution::Stereo::no,
+                                   juce::dsp::Convolution::Trim::yes,
+                                   0);
+    _irLoaded = true;
+    _currentIRFile = juce::File{};
+    return true;
+}
+
 bool ProfilerAudioProcessor::loadIRFile(const juce::File& file) {
     if (!file.existsAsFile()) {
         return false;
     }
 
-    _convolver.loadImpulseResponse(file,
-                                   juce::dsp::Convolution::Stereo::no,
-                                   juce::dsp::Convolution::Trim::yes,
-                                   0);
-    _irLoaded = true;
+    juce::MemoryBlock bytes;
+    if (!file.loadFileAsData(bytes)) {
+        return false;
+    }
+
+    const auto loaded = loadIrFromMemory(bytes.getData(), bytes.getSize());
+    bytes.fillWith(0);
+    if (!loaded) {
+        return false;
+    }
+
     _currentIRFile = file;
     return true;
+}
+
+bool ProfilerAudioProcessor::loadProtectedIr(const void* data, size_t size) {
+    juce::MemoryBlock plain;
+    if (!_spectra.decryptIr(data, size, plain)) {
+        return false;
+    }
+
+    const auto loaded = loadIrFromMemory(plain.getData(), plain.getSize());
+    plain.fillWith(0);
+    return loaded;
 }
 
 void ProfilerAudioProcessor::unloadIRFile() {
@@ -640,44 +676,90 @@ void ProfilerAudioProcessor::unloadIRFile() {
     _convolver.reset();
 }
 
+std::unique_ptr<RTNeural::Model<float>> ProfilerAudioProcessor::parseAmpModel(const void* data, size_t size) const {
+    if (data == nullptr || size == 0) {
+        return nullptr;
+    }
+
+    std::vector<char> bytes(size);
+    std::memcpy(bytes.data(), data, size);
+    std::unique_ptr<RTNeural::Model<float>> loadedAmp;
+    try {
+        const auto parsed = nlohmann::json::parse(std::string(bytes.data(), bytes.size()));
+        loadedAmp = RTNeural::json_parser::parseJson<float>(parsed);
+    } catch (const std::exception& e) {
+        juce::Logger::writeToLog("RTNeural Load Error: " + juce::String(e.what()));
+        loadedAmp.reset();
+    }
+    std::fill(bytes.begin(), bytes.end(), '\0');
+
+    if (loadedAmp == nullptr) {
+        return nullptr;
+    }
+
+    if (!isCompatibleAmpModel(*loadedAmp)) {
+        juce::Logger::writeToLog("RTNeural Load Error: expected a mono-input model with at least one output.");
+        return nullptr;
+    }
+
+    loadedAmp->reset();
+    return loadedAmp;
+}
+
+bool ProfilerAudioProcessor::publishAmpModel(std::unique_ptr<RTNeural::Model<float>> model,
+                                             const juce::File& sourceFile) {
+    if (model == nullptr) {
+        return false;
+    }
+
+    const juce::ScopedLock ampLock(_ampModelLock);
+    _neuralAmp = std::move(model);
+    _ampLoaded = true;
+    _currentAmpFile = sourceFile;
+    _ampFileLoaded = sourceFile.existsAsFile();
+    return true;
+}
+
+bool ProfilerAudioProcessor::loadAmpFromMemory(const void* data, size_t size) {
+    return publishAmpModel(parseAmpModel(data, size), {});
+}
+
 bool ProfilerAudioProcessor::loadAmpFile(const juce::File& file) {
     if (!file.existsAsFile()) {
         return false;
     }
 
-    std::unique_ptr<RTNeural::Model<float>> loadedAmp;
-    std::ifstream jsonStream(file.getFullPathName().toStdString());
-    if (!jsonStream.is_open()) {
+    juce::MemoryBlock bytes;
+    if (!file.loadFileAsData(bytes)) {
         return false;
     }
 
-    try {
-        loadedAmp = RTNeural::json_parser::parseJson<float>(jsonStream);
-    } catch (const std::exception& e) {
-        juce::Logger::writeToLog("RTNeural Load Error: " + juce::String(e.what()));
+    auto loadedAmp = parseAmpModel(bytes.getData(), bytes.getSize());
+    bytes.fillWith(0);
+    return publishAmpModel(std::move(loadedAmp), file);
+}
+
+bool ProfilerAudioProcessor::loadProtectedAmp(const void* data, size_t size) {
+    juce::MemoryBlock plain;
+    if (!_spectra.decryptModel(data, size, plain)) {
         return false;
     }
 
-    if (loadedAmp == nullptr) {
-        return false;
-    }
+    auto loadedAmp = parseAmpModel(plain.getData(), plain.getSize());
+    plain.fillWith(0);
+    return publishAmpModel(std::move(loadedAmp), {});
+}
 
-    if (!isCompatibleAmpModel(*loadedAmp)) {
-        juce::Logger::writeToLog("RTNeural Load Error: expected a mono-input model with at least one output.");
-        return false;
-    }
+bool ProfilerAudioProcessor::isSpectraLoaded() const noexcept {
+    return _spectra.isLoaded();
+}
 
-    loadedAmp->reset();
+bool ProfilerAudioProcessor::unlockSpectraSession(const juce::String& accessToken) {
+    return _spectra.unlock(accessToken);
+}
 
-    {
-        const juce::ScopedLock ampLock(_ampModelLock);
-        _neuralAmp = std::move(loadedAmp);
-        _ampLoaded = true;
-        _currentAmpFile = file;
-        _ampFileLoaded = true;
-    }
-
-    return true;
+void ProfilerAudioProcessor::lockSpectraSession() {
+    _spectra.lock();
 }
 
 void ProfilerAudioProcessor::unloadAmpFile() {

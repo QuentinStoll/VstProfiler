@@ -8,6 +8,7 @@
 #include "EqBandLayout.h"
 #include "ProfileManager.h"
 #include "SignalChainLayout.h"
+#include "SpectraEngine.h"
 
 namespace RTNeural {
 template <typename T>
@@ -67,6 +68,13 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     bool loadIRFile(const juce::File& file);
     void unloadIRFile();
     bool loadAmpFile(const juce::File& file);
+    bool loadAmpFromMemory(const void* data, size_t size);
+    bool loadIrFromMemory(const void* data, size_t size);
+    bool loadProtectedAmp(const void* data, size_t size);
+    bool loadProtectedIr(const void* data, size_t size);
+    bool isSpectraLoaded() const noexcept;
+    bool unlockSpectraSession(const juce::String& accessToken);
+    void lockSpectraSession();
     void unloadAmpFile();
     bool isIRLoaded() const noexcept;
     bool isAmpFileLoaded() const noexcept;
@@ -158,6 +166,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     Filter _pedalToneFilter;
 
     ProfileManager _profileManager;
+    SpectraEngine _spectra;
     juce::String _appliedProfileId;
 
     void updateEqCoefficients();
@@ -176,6 +185,8 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     static float getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept;
     static bool isCompatibleAmpModel(const RTNeural::Model<float>& model);
     static float getMasterGainLinear(float masterPercent) noexcept;
+    std::unique_ptr<RTNeural::Model<float>> parseAmpModel(const void* data, size_t size) const;
+    bool publishAmpModel(std::unique_ptr<RTNeural::Model<float>> model, const juce::File& sourceFile);
 
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

@@ -89,6 +89,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Modules/StudioTopBar.cpp
     Src/Modules/UtilityBarModule.cpp
     Src/MarketplaceClient.cpp
+    Src/SpectraEngine.cpp
     Src/Views/CloneView.cpp
     Src/Views/MarketplaceAccountPanel.cpp
     Src/Views/PlayView.cpp
@@ -132,4 +133,8 @@ target_include_directories(${PLUGIN_NAME} PRIVATE
 
 # Apply compiler options and preset-based defines
 apply_compiler_options(${PLUGIN_NAME})
+
+profiler_attach_spectra_dsp(${PLUGIN_NAME}_VST3)
+profiler_attach_spectra_dsp(${PLUGIN_NAME}_Standalone)
+profiler_attach_spectra_dsp(${PLUGIN_NAME}_AU)
 

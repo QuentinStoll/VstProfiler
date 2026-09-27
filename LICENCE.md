@@ -22,3 +22,7 @@ this program. If not, see the [GNU license website](https://www.gnu.org/licenses
 
 The complete, unmodified GPL version 3 text is included in [LICENSE](LICENSE).
 The project notice above permits version 3 or, at your option, any later version.
+[LICENSE](LICENSE) also grants an additional permission under GPLv3 section 7: this
+program may be linked with independent modules, including proprietary DLLs, shared
+objects, and dylibs, without those modules being covered by the GPLv3. The source
+of this program itself stays available under the GPLv3.
