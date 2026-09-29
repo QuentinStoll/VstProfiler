@@ -127,7 +127,7 @@ void SettingsView::paint(juce::Graphics& g) {
 }
 
 void SettingsView::resized() {
-    auto area = getLocalBounds().reduced(40);
+    auto area = getLocalBounds().reduced(24, 16);
     auto tabs = area.removeFromTop(32);
     _generalTab.setBounds(tabs.removeFromLeft(120));
     tabs.removeFromLeft(8);
@@ -144,6 +144,9 @@ void SettingsView::resized() {
     _hardwareInfoMenu.setVisible(showGeneral);
     _capturePanel.setVisible(_showCapture);
     _capturePanel.setBounds(area);
+    if (_showCapture) {
+        _capturePanel.toFront(false);
+    }
 
     _titleLabel.setBounds(area.removeFromTop(50));
 

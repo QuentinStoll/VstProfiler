@@ -50,20 +50,18 @@ void IrCapturePanel::paint(juce::Graphics& g) {
 }
 
 void IrCapturePanel::resized() {
-    auto area = getLocalBounds();
-    area.removeFromTop(16);
-    _title.setBounds(area.removeFromTop(28));
+    auto area = getLocalBounds().reduced(0, 8);
+    _title.setBounds(area.removeFromTop(24));
+    area.removeFromTop(4);
+    _body.setBounds(area.removeFromTop(36));
+    area.removeFromTop(10);
+    auto nameRow = area.removeFromTop(32);
+    _nameLabel.setBounds(nameRow.removeFromLeft(64));
+    _nameEditor.setBounds(nameRow.removeFromLeft(juce::jmin(280, nameRow.getWidth())));
+    area.removeFromTop(10);
+    _cloneButton.setBounds(area.removeFromTop(34).removeFromLeft(160));
     area.removeFromTop(8);
-    _body.setBounds(area.removeFromTop(52));
-    area.removeFromTop(12);
-    auto line = area.removeFromTop(36);
-    _nameLabel.setBounds(line.removeFromLeft(180));
-    line.removeFromLeft(20);
-    _nameEditor.setBounds(line.removeFromLeft(220));
-    area.removeFromTop(16);
-    _cloneButton.setBounds(area.removeFromTop(36).removeFromLeft(160));
-    area.removeFromTop(12);
-    _status.setBounds(area.removeFromTop(48));
+    _status.setBounds(area.removeFromTop(juce::jmax(20, area.getHeight())));
 }
 
 void IrCapturePanel::refreshAccountState() {
