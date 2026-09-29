@@ -4,6 +4,7 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 #include "EqBandLayout.h"
 #include "ProfileManager.h"
@@ -75,6 +76,9 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     bool isSpectraLoaded() const noexcept;
     bool unlockSpectraSession(const juce::String& accessToken);
     void lockSpectraSession();
+    bool beginIrCapture(juce::String* errorMessage);
+    bool irCaptureFinished() const noexcept;
+    bool sealIrCapture(juce::MemoryBlock& sealed, std::array<std::uint8_t, 32>& key, juce::String* errorMessage);
     void unloadAmpFile();
     bool isIRLoaded() const noexcept;
     bool isAmpFileLoaded() const noexcept;
@@ -165,8 +169,26 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     Filter _cabLowCut;
     Filter _pedalToneFilter;
 
+    enum class IrCaptureState {
+        Idle = 0,
+        Recording = 1,
+        Complete = 2
+    };
+
+    struct IrCapture {
+        std::atomic<int> state{static_cast<int>(IrCaptureState::Idle)};
+        std::atomic<std::uint32_t> index{0};
+        std::vector<float> sweep;
+        std::vector<float> recorded;
+        std::size_t sweepFrames = 0;
+        double sampleRate = 0.0;
+    };
+
     ProfileManager _profileManager;
     SpectraEngine _spectra;
+    IrCapture _irCapture;
+
+    bool renderIrCapture(juce::AudioBuffer<float>& buffer);
     juce::String _appliedProfileId;
 
     void updateEqCoefficients();

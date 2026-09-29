@@ -86,6 +86,9 @@ struct SpectraEngine::Functions {
     int (*captureBegin)(int) = nullptr;
     int (*capturePush)(const float*, size_t) = nullptr;
     int (*captureFinish)() = nullptr;
+    int (*irPrepare)(double, float*, size_t, size_t*, size_t*) = nullptr;
+    int (*irSeal)(const float*, size_t, double, uint8_t*, size_t, SpectraBuffer*) = nullptr;
+    int (*irOpen)(const uint8_t*, size_t, const uint8_t*, size_t, SpectraBuffer*) = nullptr;
 };
 
 SpectraEngine::SpectraEngine() = default;
@@ -120,12 +123,19 @@ bool SpectraEngine::open(const juce::File& libraryFile) {
     functions->captureBegin = reinterpret_cast<int (*)(int)>(_library.getFunction("spectra_capture_begin"));
     functions->capturePush = reinterpret_cast<int (*)(const float*, size_t)>(_library.getFunction("spectra_capture_push"));
     functions->captureFinish = reinterpret_cast<int (*)()>(_library.getFunction("spectra_capture_finish"));
+    functions->irPrepare = reinterpret_cast<int (*)(double, float*, size_t, size_t*, size_t*)>(
+        _library.getFunction("spectra_ir_prepare"));
+    functions->irSeal = reinterpret_cast<int (*)(const float*, size_t, double, uint8_t*, size_t, SpectraBuffer*)>(
+        _library.getFunction("spectra_ir_seal"));
+    functions->irOpen = reinterpret_cast<int (*)(const uint8_t*, size_t, const uint8_t*, size_t, SpectraBuffer*)>(
+        _library.getFunction("spectra_ir_open"));
 
     const bool complete = functions->abiVersion != nullptr && functions->sessionUnlock != nullptr &&
                           functions->sessionLock != nullptr && functions->decryptModel != nullptr &&
                           functions->decryptIr != nullptr && functions->bufferFree != nullptr &&
                           functions->captureBegin != nullptr && functions->capturePush != nullptr &&
-                          functions->captureFinish != nullptr;
+                          functions->captureFinish != nullptr && functions->irPrepare != nullptr &&
+                          functions->irSeal != nullptr && functions->irOpen != nullptr;
     if (!complete || functions->abiVersion() != SPECTRA_ABI_VERSION) {
         close();
         return false;
@@ -203,4 +213,50 @@ bool SpectraEngine::decryptIr(const void* cipher, size_t size, juce::MemoryBlock
         return false;
     }
     return decryptWith(_functions->decryptIr, _functions->bufferFree, cipher, size, plain);
+}
+
+bool SpectraEngine::prepareIrSweep(double sampleRate, std::vector<float>& sweep, std::size_t& recordFrames) {
+    std::size_t sweepFrames = 0;
+    std::size_t frames = 0;
+    if (!isLoaded()) {
+        return false;
+    }
+
+    sweep.assign(65536, 0.0f);
+    if (_functions->irPrepare(sampleRate, sweep.data(), sweep.size(), &sweepFrames, &frames) != SPECTRA_OK ||
+        sweepFrames == 0 || sweepFrames > sweep.size() || frames < sweepFrames) {
+        sweep.clear();
+        recordFrames = 0;
+        return false;
+    }
+
+    sweep.resize(sweepFrames);
+    recordFrames = frames;
+    return true;
+}
+
+bool SpectraEngine::sealIr(const float* recorded,
+                           std::size_t frames,
+                           double sampleRate,
+                           std::array<std::uint8_t, 32>& key,
+                           juce::MemoryBlock& sealed) {
+    SpectraBuffer buffer{};
+    sealed.reset();
+    key.fill(0);
+    if (!isLoaded() || recorded == nullptr || frames == 0) {
+        return false;
+    }
+
+    if (_functions->irSeal(recorded, frames, sampleRate, key.data(), key.size(), &buffer) != SPECTRA_OK ||
+        buffer.data == nullptr || buffer.size == 0) {
+        if (_functions->bufferFree != nullptr) {
+            _functions->bufferFree(&buffer);
+        }
+        key.fill(0);
+        return false;
+    }
+
+    sealed.replaceWith(buffer.data, buffer.size);
+    _functions->bufferFree(&buffer);
+    return sealed.getSize() > 0;
 }

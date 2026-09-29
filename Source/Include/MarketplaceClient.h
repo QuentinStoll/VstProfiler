@@ -2,6 +2,8 @@
 
 #include <JuceHeader.h>
 
+#include <array>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -64,6 +66,12 @@ struct DownloadResult {
     juce::String message;
 };
 
+struct CaptureResult {
+    Status status = Status::Unexpected;
+    juce::String id;
+    juce::String message;
+};
+
 struct HttpResponse {
     int statusCode = 0;
     juce::MemoryBlock body;
@@ -92,6 +100,10 @@ class Client {
     LibraryResult fetchLibrary(const juce::String& accessToken) const;
     LibraryResult loadLibrary(Session& session) const;
     DownloadResult download(const juce::String& fileUrl, const juce::String& accessToken) const;
+    CaptureResult submitIrCapture(const juce::String& accessToken,
+                                  const juce::String& title,
+                                  const std::array<std::uint8_t, 32>& key,
+                                  const juce::MemoryBlock& sealed) const;
 
     static bool isSixDigitCode(const juce::String& code);
 
