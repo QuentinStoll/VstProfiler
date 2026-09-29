@@ -271,6 +271,10 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         return;
     }
 
+    if (renderIrCapture(buffer)) {
+        return;
+    }
+
     _rmsLevelInput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
                          std::memory_order_relaxed);
 
@@ -760,6 +764,119 @@ bool ProfilerAudioProcessor::unlockSpectraSession(const juce::String& accessToke
 
 void ProfilerAudioProcessor::lockSpectraSession() {
     _spectra.lock();
+}
+
+bool ProfilerAudioProcessor::beginIrCapture(juce::String* errorMessage) {
+    const auto sampleRate = getSampleRate();
+    std::size_t recordFrames = 0;
+    std::vector<float> sweep;
+    if (_irCapture.state.load(std::memory_order_acquire) == static_cast<int>(IrCaptureState::Recording)) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "A capture is already running.";
+        }
+        return false;
+    }
+    if (wrapperType != juce::AudioProcessor::wrapperType_Standalone) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "IR capture runs in the standalone.";
+        }
+        return false;
+    }
+    if (!_spectra.isLoaded()) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "SpectraDsp is not loaded.";
+        }
+        return false;
+    }
+    if (sampleRate < 8000.0) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "The audio device is not running.";
+        }
+        return false;
+    }
+    if (!_spectra.prepareIrSweep(sampleRate, sweep, recordFrames) || sweep.empty() || recordFrames < sweep.size()) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "Could not prepare the sweep.";
+        }
+        return false;
+    }
+
+    _irCapture.state.store(static_cast<int>(IrCaptureState::Idle), std::memory_order_release);
+    _irCapture.sweep = std::move(sweep);
+    _irCapture.recorded.assign(recordFrames, 0.0f);
+    _irCapture.sweepFrames = _irCapture.sweep.size();
+    _irCapture.sampleRate = sampleRate;
+    _irCapture.index.store(0, std::memory_order_relaxed);
+    _irCapture.state.store(static_cast<int>(IrCaptureState::Recording), std::memory_order_release);
+    return true;
+}
+
+bool ProfilerAudioProcessor::irCaptureFinished() const noexcept {
+    return _irCapture.state.load(std::memory_order_acquire) == static_cast<int>(IrCaptureState::Complete);
+}
+
+bool ProfilerAudioProcessor::sealIrCapture(juce::MemoryBlock& sealed, std::array<std::uint8_t, 32>& key, juce::String* errorMessage) {
+    sealed.reset();
+    key.fill(0);
+    if (_irCapture.state.load(std::memory_order_acquire) != static_cast<int>(IrCaptureState::Complete)) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "The sweep has not finished.";
+        }
+        return false;
+    }
+
+    const auto sealedOk = _spectra.sealIr(_irCapture.recorded.data(), _irCapture.recorded.size(), _irCapture.sampleRate, key, sealed);
+    std::fill(_irCapture.sweep.begin(), _irCapture.sweep.end(), 0.0f);
+    std::fill(_irCapture.recorded.begin(), _irCapture.recorded.end(), 0.0f);
+    _irCapture.sweep.clear();
+    _irCapture.recorded.clear();
+    _irCapture.sweepFrames = 0;
+    _irCapture.state.store(static_cast<int>(IrCaptureState::Idle), std::memory_order_release);
+    if (!sealedOk) {
+        key.fill(0);
+        sealed.reset();
+        if (errorMessage != nullptr) {
+            *errorMessage = "Could not seal the impulse response.";
+        }
+        return false;
+    }
+    return true;
+}
+
+bool ProfilerAudioProcessor::renderIrCapture(juce::AudioBuffer<float>& buffer) {
+    if (_irCapture.state.load(std::memory_order_acquire) != static_cast<int>(IrCaptureState::Recording)) {
+        return false;
+    }
+
+    const auto numChannels = buffer.getNumChannels();
+    const auto numSamples = buffer.getNumSamples();
+    const auto* input = buffer.getReadPointer(0);
+    auto index = _irCapture.index.load(std::memory_order_relaxed);
+    const auto recordFrames = static_cast<std::uint32_t>(_irCapture.recorded.size());
+    const auto sweepFrames = static_cast<std::uint32_t>(_irCapture.sweepFrames);
+    for (int sample = 0; sample < numSamples; ++sample) {
+        float output = 0.0f;
+        if (index < recordFrames) {
+            _irCapture.recorded[index] = input[sample];
+            if (index < sweepFrames) {
+                output = _irCapture.sweep[index];
+            }
+            ++index;
+        }
+        for (int channel = 0; channel < numChannels; ++channel) {
+            buffer.getWritePointer(channel)[sample] = output;
+        }
+    }
+
+    _irCapture.index.store(index, std::memory_order_release);
+    if (index >= recordFrames) {
+        _irCapture.state.store(static_cast<int>(IrCaptureState::Complete), std::memory_order_release);
+    }
+    _rmsLevelInput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
+                         std::memory_order_relaxed);
+    _rmsLevelOutput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
+                          std::memory_order_relaxed);
+    return true;
 }
 
 void ProfilerAudioProcessor::unloadAmpFile() {

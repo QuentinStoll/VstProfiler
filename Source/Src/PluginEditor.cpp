@@ -103,7 +103,8 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
       _eqPanel(p._apvts),
       _pedalPanel(p._apvts),
       _masterPanel(p),
-      _libraryView(p) {
+      _libraryView(p),
+      _settingsView(p) {
     SettingsView::applySavedBackgroundColour();
     setLookAndFeel(&_customLookAndFeel);
     setOpaque(true);
