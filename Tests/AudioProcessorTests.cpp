@@ -275,9 +275,9 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         expect(SignalChain::Layout::fromPacked(0xFFFFFFFFu).isValid(),
                "Invalid packed layout should fall back to the default.");
 
-        layout.place(SignalChain::Stage::Amp, 5);
-        layout.place(SignalChain::Stage::Cab, 1);
-        layout.place(SignalChain::Stage::Eq, 3);
+        layout.moveSlot(2, 5);
+        layout.moveSlot(4, 1);
+        layout.moveSlot(6, 3);
         expect(layout.slotFor(SignalChain::Stage::Cab) == 1, "Cab should move to slot 1.");
         expect(layout.slotFor(SignalChain::Stage::Eq) == 3, "EQ should move to slot 3.");
         expect(layout.slotFor(SignalChain::Stage::Amp) == 5, "Amp should move to slot 5.");
@@ -308,6 +308,60 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         restored.resetChainLayout();
         expect(restored.getChainLayout().packed() == SignalChain::defaultPacked,
                "Reset should restore Amp/Cab/EQ to slots 2/4/6.");
+
+        expect(SignalChain::visualColumn(SignalChain::downSlot) == 7,
+               "The wrap node should stay at the right end of the upper row.");
+        expect(SignalChain::visualRow(SignalChain::returnSlot) == 1, "The chain should continue on a second row.");
+        expect(SignalChain::visualColumn(SignalChain::returnSlot) == 0,
+               "The second row should start at the left, like a line wrap.");
+        expect(SignalChain::visualColumn(SignalChain::outputSlot) == 7,
+               "The output should sit at the right end of the second row.");
+
+        SignalChain::Layout wrapped;
+        wrapped.moveSlot(6, SignalChain::chainSlotAt(1, 6));
+        wrapped.place(SignalChain::Stage::Pedal, SignalChain::chainSlotAt(1, 1));
+        const auto wrappedOrder = wrapped.processingOrder();
+        expect(wrappedOrder[0] == SignalChain::Stage::Amp, "Upper-row Amp should still process first.");
+        expect(wrappedOrder[1] == SignalChain::Stage::Cab, "Upper-row Cab should process before the lower row.");
+        expect(wrappedOrder[2] == SignalChain::Stage::Pedal,
+               "The leftmost lower-row block should process first on that row.");
+        expect(wrappedOrder[3] == SignalChain::Stage::Eq,
+               "The rightmost lower-row block should process last.");
+
+        ProfilerAudioProcessor wrappedSource;
+        wrappedSource.setChainLayout(wrapped);
+        juce::MemoryBlock wrappedState;
+        wrappedSource.getStateInformation(wrappedState);
+        ProfilerAudioProcessor wrappedRestored;
+        wrappedRestored.setStateInformation(wrappedState.getData(), static_cast<int>(wrappedState.getSize()));
+        expect(wrappedRestored.getChainLayout().packed() == wrapped.packed(),
+               "A block on the lower row should survive processor state round-trip.");
+        expect(wrappedRestored.getChainLayout().slotFor(SignalChain::Stage::Eq) == SignalChain::chainSlotAt(1, 6),
+               "The lower-row EQ slot should survive processor state round-trip.");
+
+        SignalChain::Layout duplicates;
+        duplicates.place(SignalChain::Stage::Amp, 3);
+        expect(duplicates.count(SignalChain::Stage::Amp) == 2, "Placing an amp should keep the existing one.");
+        expect(duplicates.atSlot(2) == SignalChain::Stage::Amp, "The original amp should stay in place.");
+        expect(duplicates.atSlot(3) == SignalChain::Stage::Amp, "The new amp should occupy the chosen slot.");
+        const auto duplicateOrder = duplicates.processingOrder();
+        expect(duplicateOrder[0] == SignalChain::Stage::Amp, "The first amp should process first.");
+        expect(duplicateOrder[1] == SignalChain::Stage::Amp, "The second amp should process immediately after the first.");
+        duplicates.clear(3);
+        expect(duplicates.count(SignalChain::Stage::Amp) == 1, "Clearing a slot should remove only that amp.");
+
+        ProfilerAudioProcessor singleAmp;
+        prepareProcessor(singleAmp, 44100.0, 256);
+        setParameterValue(singleAmp, "gain", 6.0f);
+        const auto oneAmpRms = processSineAndMeasureRms(singleAmp);
+        ProfilerAudioProcessor doubledAmp;
+        auto doubledLayout = doubledAmp.getChainLayout();
+        doubledLayout.place(SignalChain::Stage::Amp, 3);
+        doubledAmp.setChainLayout(doubledLayout);
+        prepareProcessor(doubledAmp, 44100.0, 256);
+        setParameterValue(doubledAmp, "gain", 6.0f);
+        const auto twoAmpRms = processSineAndMeasureRms(doubledAmp);
+        expect(twoAmpRms > oneAmpRms * 1.5f, "Two amp blocks in series should apply the amp stage twice.");
 
         ProfilerAudioProcessor reordered;
         reordered.setChainLayout(layout);

@@ -8,7 +8,8 @@
 extern "C" {
 #endif
 
-#define SPECTRA_ABI_VERSION 1
+#define SPECTRA_ABI_VERSION 2
+#define SPECTRA_IR_KEY_SIZE 32
 
 typedef enum SpectraStatus {
     SPECTRA_OK = 0,
@@ -54,6 +55,23 @@ SPECTRA_API void spectra_buffer_free(SpectraBuffer* buffer);
 SPECTRA_API int spectra_capture_begin(int kind);
 SPECTRA_API int spectra_capture_push(const float* samples, size_t count);
 SPECTRA_API int spectra_capture_finish(void);
+
+SPECTRA_API int spectra_ir_prepare(double sample_rate,
+                                   float* sweep,
+                                   size_t sweep_capacity,
+                                   size_t* sweep_frames,
+                                   size_t* record_frames);
+SPECTRA_API int spectra_ir_seal(const float* recorded,
+                                size_t frames,
+                                double sample_rate,
+                                uint8_t* key_out,
+                                size_t key_out_size,
+                                SpectraBuffer* sealed);
+SPECTRA_API int spectra_ir_open(const uint8_t* key,
+                                size_t key_size,
+                                const uint8_t* sealed,
+                                size_t sealed_size,
+                                SpectraBuffer* plain);
 
 #ifdef __cplusplus
 }

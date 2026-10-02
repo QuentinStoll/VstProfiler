@@ -23,6 +23,27 @@
 #endif
 #include "UiSettings.h"
 
+namespace {
+const juce::Identifier kChainLayoutId{"chainLayout"};
+const juce::Identifier kChainLayoutHighId{"chainLayoutHigh"};
+
+void writeChainLayout(juce::ValueTree state, std::uint64_t packed) {
+    if (!state.isValid()) {
+        return;
+    }
+
+    state.setProperty(kChainLayoutHighId, static_cast<int>((packed >> 32) & 0xFFFFFFFFu), nullptr);
+    state.setProperty(kChainLayoutId, static_cast<int>(packed & 0xFFFFFFFFu), nullptr);
+}
+
+std::uint64_t readChainLayout(const juce::ValueTree& tree) {
+    const auto lowDefault = static_cast<int>(SignalChain::defaultPacked & 0xFFFFFFFFu);
+    const auto low = static_cast<std::uint32_t>(static_cast<int>(tree.getProperty(kChainLayoutId, lowDefault)));
+    const auto high = static_cast<std::uint32_t>(static_cast<int>(tree.getProperty(kChainLayoutHighId, 0)));
+    return (static_cast<std::uint64_t>(high) << 32) | static_cast<std::uint64_t>(low);
+}
+}  // namespace
+
 float ProfilerAudioProcessor::getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept {
     return parameter != nullptr ? parameter->load() : fallback;
 }
@@ -92,7 +113,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
     _pedalDriveParam = _apvts.getRawParameterValue("pedalDrive");
     _pedalToneParam = _apvts.getRawParameterValue("pedalTone");
     _pedalLevelParam = _apvts.getRawParameterValue("pedalLevel");
-    _apvts.state.setProperty("chainLayout", static_cast<int>(_chainLayoutPacked.load()), nullptr);
+    writeChainLayout(_apvts.state, _chainLayoutPacked.load());
     _spectra.open();
 }
 
@@ -141,7 +162,12 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     spec.maximumBlockSize = (juce::uint32)samplesPerBlock;
     spec.numChannels = 1;
 
-    _convolver.prepare(spec);
+    for (auto& convolver : _cabConvolvers) {
+        convolver.prepare(spec);
+    }
+    if (_irBytes.getSize() > 0) {
+        loadIrIntoConvolvers(_irBytes.getData(), _irBytes.getSize());
+    }
 
     _inputTrim.prepare(spec);
     _inputTrim.setRampDurationSeconds(PARAMETER_RAMP_SECONDS);
@@ -169,14 +195,11 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
 
-    _eqChain.reset();
-    _eqChain.prepare(spec);
-    _eqChain.setBypassed<LowShelf>(!eqEnabled);
-    _eqChain.setBypassed<Peak1>(!eqEnabled);
-    _eqChain.setBypassed<Peak2>(!eqEnabled);
-    _eqChain.setBypassed<Peak3>(!eqEnabled);
-    _eqChain.setBypassed<Peak4>(!eqEnabled);
-    _eqChain.setBypassed<HighShelf>(!eqEnabled);
+    for (auto& eqChain : _eqChains) {
+        eqChain.reset();
+        eqChain.prepare(spec);
+    }
+    setEqBypassed(!eqEnabled);
 
     for (int band = 0; band < EqBands::count; ++band) {
         const auto index = static_cast<size_t>(band);
@@ -189,23 +212,35 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     }
     updateEqCoefficients();
     _eqCoeffsDirty = false;
-    _eqChain.reset();
+    for (auto& eqChain : _eqChains) {
+        eqChain.reset();
+    }
 
     _cabLowCutSmoothed.reset(sampleRate, PARAMETER_RAMP_SECONDS);
     _cabLowCutSmoothed.setCurrentAndTargetValue(getParameterValue(_cabLowCutParam, 80.0f));
-    _cabLowCut.reset();
-    _cabLowCut.prepare(spec);
+    for (auto& lowCut : _cabLowCuts) {
+        lowCut.reset();
+        lowCut.prepare(spec);
+    }
     updateCabLowCutCoefficients();
-    _cabLowCut.reset();
+    for (auto& lowCut : _cabLowCuts) {
+        lowCut.reset();
+    }
 
-    _pedalToneFilter.reset();
-    _pedalToneFilter.prepare(spec);
+    for (auto& tone : _pedalToneFilters) {
+        tone.reset();
+        tone.prepare(spec);
+    }
     updatePedalToneCoefficients();
-    _pedalToneFilter.reset();
+    for (auto& tone : _pedalToneFilters) {
+        tone.reset();
+    }
 
-    *_dcBlocker.state = juce::dsp::IIR::ArrayCoefficients<float>::makeHighPass(sampleRate, 35.0f);
-    _dcBlocker.prepare(spec);
-    _dcBlocker.reset();
+    for (auto& blocker : _dcBlockers) {
+        *blocker.state = juce::dsp::IIR::ArrayCoefficients<float>::makeHighPass(sampleRate, 35.0f);
+        blocker.prepare(spec);
+        blocker.reset();
+    }
 
     {
         const juce::ScopedLock ampLock(_ampModelLock);
@@ -218,9 +253,15 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
 void ProfilerAudioProcessor::releaseResources() {
     _chain.reset();
-    _eqChain.reset();
-    _cabLowCut.reset();
-    _pedalToneFilter.reset();
+    for (auto& eqChain : _eqChains) {
+        eqChain.reset();
+    }
+    for (auto& lowCut : _cabLowCuts) {
+        lowCut.reset();
+    }
+    for (auto& tone : _pedalToneFilters) {
+        tone.reset();
+    }
     _inputTrim.reset();
     _masterVolume.reset();
     _outputTrim.reset();
@@ -271,6 +312,10 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         return;
     }
 
+    if (renderIrCapture(buffer)) {
+        return;
+    }
+
     _rmsLevelInput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
                          std::memory_order_relaxed);
 
@@ -303,12 +348,7 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
 
     const bool eqEnabled = getParameterValue(_isEqEnabledParam, 1.0f) > 0.5f;
-    _eqChain.setBypassed<LowShelf>(!eqEnabled);
-    _eqChain.setBypassed<Peak1>(!eqEnabled);
-    _eqChain.setBypassed<Peak2>(!eqEnabled);
-    _eqChain.setBypassed<Peak3>(!eqEnabled);
-    _eqChain.setBypassed<Peak4>(!eqEnabled);
-    _eqChain.setBypassed<HighShelf>(!eqEnabled);
+    setEqBypassed(!eqEnabled);
 
     if (eqEnabled && (_eqCoeffsDirty || eqSmoothing)) {
         updateEqCoefficients();
@@ -323,19 +363,23 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     _cabLowCutSmoothed.setTargetValue(getParameterValue(_cabLowCutParam, 80.0f));
     const auto layout = SignalChain::Layout::fromPacked(_chainLayoutPacked.load(std::memory_order_relaxed));
-    for (int slot = SignalChain::firstMovableSlot; slot <= SignalChain::lastMovableSlot; ++slot) {
-        switch (layout.atSlot(slot)) {
+    int ampInstance = 0;
+    int cabInstance = 0;
+    int eqInstance = 0;
+    int pedalInstance = 0;
+    for (int index = 0; index < SignalChain::movableSlotCount; ++index) {
+        switch (layout.atSlot(SignalChain::chainSlotForMovableIndex(index))) {
             case SignalChain::Stage::Cab:
-                processCabStage(context);
+                processCabStage(context, cabInstance++);
                 break;
             case SignalChain::Stage::Eq:
-                processEqStage(context);
+                processEqStage(context, eqInstance++);
                 break;
             case SignalChain::Stage::Pedal:
-                processPedalStage(buffer, context, numSamples);
+                processPedalStage(buffer, context, numSamples, pedalInstance++);
                 break;
             case SignalChain::Stage::Amp:
-                processAmpStage(buffer, context, numSamples);
+                processAmpStage(buffer, context, numSamples, ampInstance++);
                 break;
             case SignalChain::Stage::Empty:
             default:
@@ -380,8 +424,58 @@ void ProfilerAudioProcessor::setChainLayout(const SignalChain::Layout& layout) {
     const auto valid = layout.isValid() ? layout : SignalChain::Layout{};
     const auto packed = valid.packed();
     _chainLayoutPacked.store(packed, std::memory_order_relaxed);
-    if (_apvts.state.isValid()) {
-        _apvts.state.setProperty("chainLayout", static_cast<int>(packed), nullptr);
+    writeChainLayout(_apvts.state, packed);
+    syncAmpCopies();
+}
+
+void ProfilerAudioProcessor::clearChainSlot(int slot) {
+    auto layout = getChainLayout();
+    layout.clear(slot);
+    setChainLayout(layout);
+}
+
+void ProfilerAudioProcessor::setEqBypassed(bool bypassed) {
+    for (auto& eqChain : _eqChains) {
+        eqChain.setBypassed<LowShelf>(bypassed);
+        eqChain.setBypassed<Peak1>(bypassed);
+        eqChain.setBypassed<Peak2>(bypassed);
+        eqChain.setBypassed<Peak3>(bypassed);
+        eqChain.setBypassed<Peak4>(bypassed);
+        eqChain.setBypassed<HighShelf>(bypassed);
+    }
+}
+
+void ProfilerAudioProcessor::loadIrIntoConvolvers(const void* data, size_t size) {
+    if (data == nullptr || size == 0) {
+        return;
+    }
+
+    for (auto& convolver : _cabConvolvers) {
+        convolver.loadImpulseResponse(data,
+                                      size,
+                                      juce::dsp::Convolution::Stereo::no,
+                                      juce::dsp::Convolution::Trim::yes,
+                                      0);
+    }
+}
+
+void ProfilerAudioProcessor::syncAmpCopies(bool force) {
+    const juce::ScopedLock ampLock(_ampModelLock);
+    const auto extraAmps = juce::jmax(0, getChainLayout().count(SignalChain::Stage::Amp) - 1);
+    if (!force && static_cast<int>(_ampCopies.size()) == extraAmps) {
+        return;
+    }
+
+    _ampCopies.clear();
+    if (extraAmps == 0 || _neuralAmp == nullptr || _ampModelBytes.getSize() == 0) {
+        return;
+    }
+
+    for (int index = 0; index < extraAmps; ++index) {
+        auto copy = parseAmpModel(_ampModelBytes.getData(), _ampModelBytes.getSize());
+        if (copy != nullptr) {
+            _ampCopies.push_back(std::move(copy));
+        }
     }
 }
 
@@ -403,22 +497,31 @@ void ProfilerAudioProcessor::processGateStage(juce::dsp::ProcessContextReplacing
 
 void ProfilerAudioProcessor::processAmpStage(juce::AudioBuffer<float>& buffer,
                                              juce::dsp::ProcessContextReplacing<float>& context,
-                                             int numSamples) {
+                                             int numSamples,
+                                             int instance) {
     _chain.get<Gain>().process(context);
 
     {
         const juce::ScopedLock ampLock(_ampModelLock);
-        if (_ampLoaded && _neuralAmp != nullptr && getParameterValue(_isAmpEnabledParam, 1.0f) > 0.5f) {
+        auto* model = _neuralAmp.get();
+        if (instance > 0) {
+            const auto copyIndex = static_cast<size_t>(instance - 1);
+            if (copyIndex < _ampCopies.size() && _ampCopies[copyIndex] != nullptr) {
+                model = _ampCopies[copyIndex].get();
+            }
+        }
+
+        if (_ampLoaded && model != nullptr && getParameterValue(_isAmpEnabledParam, 1.0f) > 0.5f) {
             auto* channel0Data = buffer.getWritePointer(0);
 
             for (int i = 0; i < numSamples; ++i) {
                 float input = juce::jlimit(-1.0f, 1.0f, channel0Data[i]);
                 float inputSample[] = {input};
-                _neuralAmp->forward(inputSample);
-                float output = _neuralAmp->getOutputs()[0];
+                model->forward(inputSample);
+                float output = model->getOutputs()[0];
 
                 if (std::isnan(output) || std::isinf(output)) {
-                    _neuralAmp->reset();
+                    model->reset();
                     output = 0.0f;
                 }
 
@@ -427,29 +530,31 @@ void ProfilerAudioProcessor::processAmpStage(juce::AudioBuffer<float>& buffer,
         }
     }
 
-    _dcBlocker.process(context);
+    _dcBlockers[static_cast<size_t>(juce::jlimit(0, kChainCopies - 1, instance))].process(context);
 }
 
-void ProfilerAudioProcessor::processCabStage(juce::dsp::ProcessContextReplacing<float>& context) {
+void ProfilerAudioProcessor::processCabStage(juce::dsp::ProcessContextReplacing<float>& context, int instance) {
     const bool cabEnabled = getParameterValue(_isCabEnabledParam, 1.0f) > 0.5f;
     if (!_irLoaded || !cabEnabled) {
         return;
     }
 
-    _convolver.process(context);
+    const auto index = static_cast<size_t>(juce::jlimit(0, kChainCopies - 1, instance));
+    _cabConvolvers[index].process(context);
     if (_cabLowCutSmoothed.isSmoothing()) {
         updateCabLowCutCoefficients();
     }
-    _cabLowCut.process(context);
+    _cabLowCuts[index].process(context);
 }
 
-void ProfilerAudioProcessor::processEqStage(juce::dsp::ProcessContextReplacing<float>& context) {
-    _eqChain.process(context);
+void ProfilerAudioProcessor::processEqStage(juce::dsp::ProcessContextReplacing<float>& context, int instance) {
+    _eqChains[static_cast<size_t>(juce::jlimit(0, kChainCopies - 1, instance))].process(context);
 }
 
 void ProfilerAudioProcessor::processPedalStage(juce::AudioBuffer<float>& buffer,
                                                juce::dsp::ProcessContextReplacing<float>& context,
-                                               int numSamples) {
+                                               int numSamples,
+                                               int instance) {
     if (getParameterValue(_isPedalEnabledParam, 1.0f) <= 0.5f) {
         return;
     }
@@ -463,7 +568,7 @@ void ProfilerAudioProcessor::processPedalStage(juce::AudioBuffer<float>& buffer,
     }
 
     updatePedalToneCoefficients();
-    _pedalToneFilter.process(context);
+    _pedalToneFilters[static_cast<size_t>(juce::jlimit(0, kChainCopies - 1, instance))].process(context);
 }
 
 void ProfilerAudioProcessor::updatePedalToneCoefficients() {
@@ -474,8 +579,11 @@ void ProfilerAudioProcessor::updatePedalToneCoefficients() {
 
     const auto tone = juce::jlimit(0.0f, 1.0f, getParameterValue(_pedalToneParam, 65.0f) / 100.0f);
     const auto hz = 400.0f * std::pow(30.0f, tone);
-    *_pedalToneFilter.state = juce::dsp::IIR::ArrayCoefficients<float>::makeLowPass(
+    const auto coefficients = juce::dsp::IIR::ArrayCoefficients<float>::makeLowPass(
         sampleRate, juce::jlimit(400.0f, static_cast<float>(sampleRate * 0.45), hz));
+    for (auto& filter : _pedalToneFilters) {
+        *filter.state = coefficients;
+    }
 }
 
 void ProfilerAudioProcessor::updateEqCoefficients() {
@@ -494,25 +602,36 @@ void ProfilerAudioProcessor::updateEqCoefficients() {
         return juce::Decibels::decibelsToGain(db);
     };
 
-    *_eqChain.get<LowShelf>().state = juce::dsp::IIR::ArrayCoefficients<float>::makeLowShelf(
+    const auto lowShelf = juce::dsp::IIR::ArrayCoefficients<float>::makeLowShelf(
         sampleRate, freqFor(_eqFreqSmoothed[0].getCurrentValue()), SHELF_Q, gainFor(_eqGainSmoothed[0].getCurrentValue()));
-    *_eqChain.get<Peak1>().state = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
+    const auto peak1 = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
         sampleRate, freqFor(_eqFreqSmoothed[1].getCurrentValue()), PEAK_Q, gainFor(_eqGainSmoothed[1].getCurrentValue()));
-    *_eqChain.get<Peak2>().state = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
+    const auto peak2 = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
         sampleRate, freqFor(_eqFreqSmoothed[2].getCurrentValue()), PEAK_Q, gainFor(_eqGainSmoothed[2].getCurrentValue()));
-    *_eqChain.get<Peak3>().state = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
+    const auto peak3 = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
         sampleRate, freqFor(_eqFreqSmoothed[3].getCurrentValue()), PEAK_Q, gainFor(_eqGainSmoothed[3].getCurrentValue()));
-    *_eqChain.get<Peak4>().state = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
+    const auto peak4 = juce::dsp::IIR::ArrayCoefficients<float>::makePeakFilter(
         sampleRate, freqFor(_eqFreqSmoothed[4].getCurrentValue()), PEAK_Q, gainFor(_eqGainSmoothed[4].getCurrentValue()));
-    *_eqChain.get<HighShelf>().state = juce::dsp::IIR::ArrayCoefficients<float>::makeHighShelf(
+    const auto highShelf = juce::dsp::IIR::ArrayCoefficients<float>::makeHighShelf(
         sampleRate, freqFor(_eqFreqSmoothed[5].getCurrentValue()), SHELF_Q, gainFor(_eqGainSmoothed[5].getCurrentValue()));
+    for (auto& eqChain : _eqChains) {
+        *eqChain.get<LowShelf>().state = lowShelf;
+        *eqChain.get<Peak1>().state = peak1;
+        *eqChain.get<Peak2>().state = peak2;
+        *eqChain.get<Peak3>().state = peak3;
+        *eqChain.get<Peak4>().state = peak4;
+        *eqChain.get<HighShelf>().state = highShelf;
+    }
 }
 
 void ProfilerAudioProcessor::updateCabLowCutCoefficients() {
-    *_cabLowCut.state = juce::dsp::IIR::ArrayCoefficients<float>::makeHighPass(
+    const auto coefficients = juce::dsp::IIR::ArrayCoefficients<float>::makeHighPass(
         getSampleRate(),
         juce::jlimit(20.0f, 250.0f, _cabLowCutSmoothed.getCurrentValue()),
         SHELF_Q);
+    for (auto& lowCut : _cabLowCuts) {
+        *lowCut.state = coefficients;
+    }
 }
 
 //==============================================================================
@@ -534,7 +653,7 @@ juce::AudioProcessorEditor* ProfilerAudioProcessor::createEditor() {
 
 //==============================================================================
 void ProfilerAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
-    _apvts.state.setProperty("chainLayout", static_cast<int>(_chainLayoutPacked.load(std::memory_order_relaxed)), nullptr);
+    writeChainLayout(_apvts.state, _chainLayoutPacked.load(std::memory_order_relaxed));
     if (auto xml = _apvts.copyState().createXml())
         copyXmlToBinary(*xml, destData);
 }
@@ -543,9 +662,9 @@ void ProfilerAudioProcessor::setStateInformation(const void* data, int sizeInByt
     if (auto xml = getXmlFromBinary(data, sizeInBytes)) {
         if (xml->hasTagName(_apvts.state.getType())) {
             auto tree = juce::ValueTree::fromXml(*xml);
-            const auto packed = static_cast<std::uint32_t>(static_cast<int>(
-                tree.getProperty("chainLayout", static_cast<int>(SignalChain::defaultPacked))));
+            const auto packed = readChainLayout(tree);
             _chainLayoutPacked.store(SignalChain::Layout::fromPacked(packed).packed(), std::memory_order_relaxed);
+            syncAmpCopies();
             _apvts.replaceState(std::move(tree));
         }
     }
@@ -629,11 +748,8 @@ bool ProfilerAudioProcessor::loadIrFromMemory(const void* data, size_t size) {
         return false;
     }
 
-    _convolver.loadImpulseResponse(data,
-                                   size,
-                                   juce::dsp::Convolution::Stereo::no,
-                                   juce::dsp::Convolution::Trim::yes,
-                                   0);
+    _irBytes.replaceAll(data, static_cast<size_t>(size));
+    loadIrIntoConvolvers(data, size);
     _irLoaded = true;
     _currentIRFile = juce::File{};
     return true;
@@ -673,7 +789,10 @@ bool ProfilerAudioProcessor::loadProtectedIr(const void* data, size_t size) {
 void ProfilerAudioProcessor::unloadIRFile() {
     _irLoaded = false;
     _currentIRFile = juce::File{};
-    _convolver.reset();
+    _irBytes.reset();
+    for (auto& convolver : _cabConvolvers) {
+        convolver.reset();
+    }
 }
 
 std::unique_ptr<RTNeural::Model<float>> ProfilerAudioProcessor::parseAmpModel(const void* data, size_t size) const {
@@ -721,7 +840,18 @@ bool ProfilerAudioProcessor::publishAmpModel(std::unique_ptr<RTNeural::Model<flo
 }
 
 bool ProfilerAudioProcessor::loadAmpFromMemory(const void* data, size_t size) {
-    return publishAmpModel(parseAmpModel(data, size), {});
+    if (data == nullptr || size == 0) {
+        return false;
+    }
+
+    _ampModelBytes.replaceAll(data, static_cast<size_t>(size));
+    const auto loaded = publishAmpModel(parseAmpModel(data, size), {});
+    if (loaded) {
+        syncAmpCopies(true);
+    } else {
+        _ampModelBytes.reset();
+    }
+    return loaded;
 }
 
 bool ProfilerAudioProcessor::loadAmpFile(const juce::File& file) {
@@ -734,9 +864,16 @@ bool ProfilerAudioProcessor::loadAmpFile(const juce::File& file) {
         return false;
     }
 
+    _ampModelBytes = bytes;
     auto loadedAmp = parseAmpModel(bytes.getData(), bytes.getSize());
     bytes.fillWith(0);
-    return publishAmpModel(std::move(loadedAmp), file);
+    const auto loaded = publishAmpModel(std::move(loadedAmp), file);
+    if (loaded) {
+        syncAmpCopies(true);
+    } else {
+        _ampModelBytes.reset();
+    }
+    return loaded;
 }
 
 bool ProfilerAudioProcessor::loadProtectedAmp(const void* data, size_t size) {
@@ -745,9 +882,16 @@ bool ProfilerAudioProcessor::loadProtectedAmp(const void* data, size_t size) {
         return false;
     }
 
+    _ampModelBytes = plain;
     auto loadedAmp = parseAmpModel(plain.getData(), plain.getSize());
     plain.fillWith(0);
-    return publishAmpModel(std::move(loadedAmp), {});
+    const auto loaded = publishAmpModel(std::move(loadedAmp), {});
+    if (loaded) {
+        syncAmpCopies(true);
+    } else {
+        _ampModelBytes.reset();
+    }
+    return loaded;
 }
 
 bool ProfilerAudioProcessor::isSpectraLoaded() const noexcept {
@@ -762,10 +906,125 @@ void ProfilerAudioProcessor::lockSpectraSession() {
     _spectra.lock();
 }
 
+bool ProfilerAudioProcessor::beginIrCapture(juce::String* errorMessage) {
+    const auto sampleRate = getSampleRate();
+    std::size_t recordFrames = 0;
+    std::vector<float> sweep;
+    if (_irCapture.state.load(std::memory_order_acquire) == static_cast<int>(IrCaptureState::Recording)) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "A capture is already running.";
+        }
+        return false;
+    }
+    if (wrapperType != juce::AudioProcessor::wrapperType_Standalone) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "IR capture runs in the standalone.";
+        }
+        return false;
+    }
+    if (!_spectra.isLoaded()) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "SpectraDsp is not loaded.";
+        }
+        return false;
+    }
+    if (sampleRate < 8000.0) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "The audio device is not running.";
+        }
+        return false;
+    }
+    if (!_spectra.prepareIrSweep(sampleRate, sweep, recordFrames) || sweep.empty() || recordFrames < sweep.size()) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "Could not prepare the sweep.";
+        }
+        return false;
+    }
+
+    _irCapture.state.store(static_cast<int>(IrCaptureState::Idle), std::memory_order_release);
+    _irCapture.sweep = std::move(sweep);
+    _irCapture.recorded.assign(recordFrames, 0.0f);
+    _irCapture.sweepFrames = _irCapture.sweep.size();
+    _irCapture.sampleRate = sampleRate;
+    _irCapture.index.store(0, std::memory_order_relaxed);
+    _irCapture.state.store(static_cast<int>(IrCaptureState::Recording), std::memory_order_release);
+    return true;
+}
+
+bool ProfilerAudioProcessor::irCaptureFinished() const noexcept {
+    return _irCapture.state.load(std::memory_order_acquire) == static_cast<int>(IrCaptureState::Complete);
+}
+
+bool ProfilerAudioProcessor::sealIrCapture(juce::MemoryBlock& sealed, std::array<std::uint8_t, 32>& key, juce::String* errorMessage) {
+    sealed.reset();
+    key.fill(0);
+    if (_irCapture.state.load(std::memory_order_acquire) != static_cast<int>(IrCaptureState::Complete)) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "The sweep has not finished.";
+        }
+        return false;
+    }
+
+    const auto sealedOk = _spectra.sealIr(_irCapture.recorded.data(), _irCapture.recorded.size(), _irCapture.sampleRate, key, sealed);
+    std::fill(_irCapture.sweep.begin(), _irCapture.sweep.end(), 0.0f);
+    std::fill(_irCapture.recorded.begin(), _irCapture.recorded.end(), 0.0f);
+    _irCapture.sweep.clear();
+    _irCapture.recorded.clear();
+    _irCapture.sweepFrames = 0;
+    _irCapture.state.store(static_cast<int>(IrCaptureState::Idle), std::memory_order_release);
+    if (!sealedOk) {
+        key.fill(0);
+        sealed.reset();
+        if (errorMessage != nullptr) {
+            *errorMessage = "Could not seal the impulse response.";
+        }
+        return false;
+    }
+    return true;
+}
+
+bool ProfilerAudioProcessor::renderIrCapture(juce::AudioBuffer<float>& buffer) {
+    if (_irCapture.state.load(std::memory_order_acquire) != static_cast<int>(IrCaptureState::Recording)) {
+        return false;
+    }
+
+    const auto numChannels = buffer.getNumChannels();
+    const auto numSamples = buffer.getNumSamples();
+    const auto* input = buffer.getReadPointer(0);
+    auto index = _irCapture.index.load(std::memory_order_relaxed);
+    const auto recordFrames = static_cast<std::uint32_t>(_irCapture.recorded.size());
+    const auto sweepFrames = static_cast<std::uint32_t>(_irCapture.sweepFrames);
+    for (int sample = 0; sample < numSamples; ++sample) {
+        float output = 0.0f;
+        if (index < recordFrames) {
+            _irCapture.recorded[index] = input[sample];
+            if (index < sweepFrames) {
+                output = _irCapture.sweep[index];
+            }
+            ++index;
+        }
+        for (int channel = 0; channel < numChannels; ++channel) {
+            buffer.getWritePointer(channel)[sample] = output;
+        }
+    }
+
+    _irCapture.index.store(index, std::memory_order_release);
+    if (index >= recordFrames) {
+        _irCapture.state.store(static_cast<int>(IrCaptureState::Complete), std::memory_order_release);
+    }
+    _rmsLevelInput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
+                         std::memory_order_relaxed);
+    _rmsLevelOutput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
+                          std::memory_order_relaxed);
+    return true;
+}
+
 void ProfilerAudioProcessor::unloadAmpFile() {
     const juce::ScopedLock ampLock(_ampModelLock);
     _ampLoaded = false;
     _neuralAmp = nullptr;
+    _ampCopies.clear();
+    _ampModelBytes.reset();
     _ampFileLoaded = false;
     _currentAmpFile = juce::File{};
 }

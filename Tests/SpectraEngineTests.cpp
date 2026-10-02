@@ -43,7 +43,7 @@ class SpectraEngineTests : public juce::UnitTest {
             expect(!engine.decryptModel(cipher, sizeof(cipher), plain), "Decrypt fails without the library.");
             expect(plain.isEmpty(), "No plaintext is produced without the library.");
         } else {
-            expectEquals(engine.abiVersion(), 1);
+            expectEquals(engine.abiVersion(), 2);
             expect(!engine.unlock({}), "Empty token is rejected.");
             expect(!engine.decryptModel(cipher, sizeof(cipher), plain), "Decrypt waits for a session.");
             expect(engine.unlock("session"), "Session unlocks.");

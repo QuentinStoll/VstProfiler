@@ -1,3 +1,5 @@
+#include <array>
+
 #include "MarketplaceClient.h"
 #include "TestRunner.h"
 
@@ -60,6 +62,7 @@ class MarketplaceClientTests : public juce::UnitTest {
         runCase("marketplace mfa", [this] { testMfa(); });
         runCase("marketplace library", [this] { testLibrary(); });
         runCase("marketplace session file", [this] { testSessionFile(); });
+        runCase("marketplace ir capture", [this] { testIrCapture(); });
     }
 
    private:
@@ -242,6 +245,30 @@ class MarketplaceClientTests : public juce::UnitTest {
         expect(!file.existsAsFile());
         expect(!Marketplace::loadSession(file, loaded));
         expect(loaded.accessToken.isEmpty());
+    }
+
+    void testIrCapture() {
+        auto transport = std::make_shared<FakeTransport>();
+        Marketplace::Client client(transport, "https://profiler.audio");
+        std::array<std::uint8_t, 32> key{};
+        key[0] = 7;
+        juce::MemoryBlock sealed(36, true);
+        sealed.copyFrom("SPIR", 0, 4);
+
+        auto missing = client.submitIrCapture({}, "Cab", key, sealed);
+        expect(missing.status == Marketplace::Status::Unauthorized);
+        expect(transport->url.isEmpty());
+
+        transport->statusCode = 200;
+        transport->responseBody = R"({"id":"cap-1","title":"Cab"})";
+        auto saved = client.submitIrCapture("access-secret", "Cab", key, sealed);
+        expect(saved.status == Marketplace::Status::Success);
+        expect(saved.id == "cap-1");
+        expect(transport->method == "POST");
+        expect(transport->url == "https://profiler.audio/api/v1/plugin/captures/ir");
+        expectEquals(transport->bearerToken, juce::String("access-secret"));
+        expect(transport->jsonBody.contains("Cab"));
+        expect(!transport->jsonBody.contains("access-secret"));
     }
 };
 

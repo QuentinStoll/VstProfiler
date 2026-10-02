@@ -353,6 +353,52 @@ DownloadResult Client::download(const juce::String& fileUrl, const juce::String&
     return result;
 }
 
+CaptureResult Client::submitIrCapture(const juce::String& accessToken,
+                                      const juce::String& title,
+                                      const std::array<std::uint8_t, 32>& key,
+                                      const juce::MemoryBlock& sealed) const {
+    CaptureResult result;
+    const auto trimmedTitle = title.trim().substring(0, 80);
+    if (accessToken.isEmpty()) {
+        result.status = Status::Unauthorized;
+        result.message = "Sign in to clone an IR.";
+        return result;
+    }
+    if (trimmedTitle.isEmpty() || sealed.getSize() < 36) {
+        result.status = Status::BadRequest;
+        result.message = "Name the IR before cloning it.";
+        return result;
+    }
+
+    auto payload = std::make_unique<juce::DynamicObject>();
+    payload->setProperty("title", trimmedTitle);
+    payload->setProperty("key", juce::Base64::toBase64(key.data(), (int)key.size()));
+    payload->setProperty("cipher", juce::Base64::toBase64(sealed.getData(), (int)sealed.getSize()));
+    const auto json = juce::JSON::toString(juce::var(payload.release()), false);
+    const auto response = _transport->send("POST", _apiBaseUrl + "/api/v1/plugin/captures/ir", json, accessToken);
+    result.status = statusFromCode(response.statusCode, false);
+    if (result.status == Status::Unauthorized) {
+        result.message = "Your session has expired. Sign in again.";
+        return result;
+    }
+    if (result.status != Status::Success) {
+        const auto parsed = juce::JSON::parse(bodyAsString(response.body));
+        const auto error = jsonString(parsed, "error");
+        result.message = error.isNotEmpty() ? error : "Could not store the sealed IR.";
+        return result;
+    }
+
+    const auto parsed = juce::JSON::parse(bodyAsString(response.body));
+    result.id = jsonString(parsed, "id");
+    if (result.id.isEmpty()) {
+        result.status = Status::Unexpected;
+        result.message = "The capture response was invalid.";
+        return result;
+    }
+    result.message = "Saved to your private marketplace creations.";
+    return result;
+}
+
 bool Client::isSixDigitCode(const juce::String& code) {
     return code.length() == 6 && code.containsOnly("0123456789");
 }

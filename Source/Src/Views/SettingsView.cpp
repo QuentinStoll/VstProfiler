@@ -1,5 +1,6 @@
 #include "Views/SettingsView.h"
 
+#include "PluginProcessor.h"
 #include "Stylesheet.h"
 #include "UiSettings.h"
 
@@ -48,7 +49,20 @@ void applyBackgroundColourPreset(int presetId) {
 }
 }  // namespace
 
-SettingsView::SettingsView() {
+SettingsView::SettingsView(ProfilerAudioProcessor& processor)
+    : _capturePanel(processor) {
+    _generalTab.onClick = [this]() {
+        _showCapture = false;
+        resized();
+    };
+    _captureTab.onClick = [this]() {
+        _showCapture = true;
+        resized();
+    };
+    addAndMakeVisible(_generalTab);
+    addAndMakeVisible(_captureTab);
+    addChildComponent(_capturePanel);
+
     _titleLabel.setText("Settings", juce::dontSendNotification);
     _titleLabel.setJustificationType(juce::Justification::centred);
     _titleLabel.setFont(ProfilerStyle::Fonts::bold(24.0f));
@@ -113,7 +127,26 @@ void SettingsView::paint(juce::Graphics& g) {
 }
 
 void SettingsView::resized() {
-    auto area = getLocalBounds().reduced(40);
+    auto area = getLocalBounds().reduced(24, 16);
+    auto tabs = area.removeFromTop(32);
+    _generalTab.setBounds(tabs.removeFromLeft(120));
+    tabs.removeFromLeft(8);
+    _captureTab.setBounds(tabs.removeFromLeft(120));
+    area.removeFromTop(12);
+
+    const auto showGeneral = !_showCapture;
+    _titleLabel.setVisible(showGeneral);
+    _backgroundLabel.setVisible(showGeneral);
+    _backgroundMenu.setVisible(showGeneral);
+    _troubleshootingLabel.setVisible(showGeneral);
+    _troubleshootingMenu.setVisible(showGeneral);
+    _hardwareInfoLabel.setVisible(showGeneral);
+    _hardwareInfoMenu.setVisible(showGeneral);
+    _capturePanel.setVisible(_showCapture);
+    _capturePanel.setBounds(area);
+    if (_showCapture) {
+        _capturePanel.toFront(false);
+    }
 
     _titleLabel.setBounds(area.removeFromTop(50));
 

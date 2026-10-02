@@ -94,6 +94,7 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Views/MarketplaceAccountPanel.cpp
     Src/Views/PlayView.cpp
     Src/Views/ProfilView.cpp
+    Src/Views/IrCapturePanel.cpp
     Src/Views/SettingsView.cpp
     Src/ProfileManager.cpp
     Src/UiSettings.cpp

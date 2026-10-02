@@ -3,10 +3,13 @@
 #include <JuceHeader.h>
 
 #include "Components/CustomComboBox.h"
+#include "Views/IrCapturePanel.h"
+
+class ProfilerAudioProcessor;
 
 class SettingsView : public juce::Component {
    public:
-    SettingsView();
+    explicit SettingsView(ProfilerAudioProcessor& processor);
 
     static void applySavedBackgroundColour();
 
@@ -14,6 +17,11 @@ class SettingsView : public juce::Component {
     void resized() override;
 
    private:
+    juce::TextButton _generalTab{"General"};
+    juce::TextButton _captureTab{"Clone IR"};
+    bool _showCapture = false;
+    IrCapturePanel _capturePanel;
+
     juce::Label _titleLabel;
     juce::Label _backgroundLabel;
     CustomComboBox _backgroundMenu;

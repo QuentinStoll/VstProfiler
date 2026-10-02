@@ -741,12 +741,12 @@ void CustomLookAndFeel::drawSignalIoNode(juce::Graphics& g,
     g.fillEllipse(led);
 }
 
-void CustomLookAndFeel::drawSignalBus(juce::Graphics& g, float y, float x1, float x2) const {
+void CustomLookAndFeel::drawSignalBus(juce::Graphics& g, juce::Point<float> from, juce::Point<float> to) const {
     const auto colour = juce::Colour(0xffC5C5CE);
     g.setColour(colour.withAlpha(0.16f));
-    g.drawLine(x1, y, x2, y, kSignalBusGlowWidth);
+    g.drawLine(from.x, from.y, to.x, to.y, kSignalBusGlowWidth);
     g.setColour(colour.withAlpha(0.88f));
-    g.drawLine(x1, y, x2, y, kSignalBusCoreWidth);
+    g.drawLine(from.x, from.y, to.x, to.y, kSignalBusCoreWidth);
 }
 
 void CustomLookAndFeel::drawEmptySignalSlot(juce::Graphics& g, juce::Rectangle<float> bounds) const {

@@ -10,13 +10,21 @@
 
 class SignalChainBlock : public juce::Button {
    public:
+    SignalChainBlock();
     SignalChainBlock(juce::Colour categoryColour, CustomLookAndFeel::RigIcon icon);
     ~SignalChainBlock() override = default;
+
+    void setAppearance(juce::Colour categoryColour, CustomLookAndFeel::RigIcon icon);
+
+    enum class FlowMark { None,
+                          Down,
+                          Enter };
 
     void setLedOn(bool shouldBeOn);
     void setIoNode(bool isIoNode);
     void setShowsLed(bool shouldShowLed);
     void setSignalLevel(float level);
+    void setFlowMark(FlowMark mark);
     bool isIoNode() const noexcept { return _isIoNode; }
 
     std::function<void()> onLedClicked;
@@ -40,10 +48,12 @@ class SignalChainBlock : public juce::Button {
     bool _isIoNode = false;
     bool _showsLed = true;
     float _signalLevel = 0.0f;
+    FlowMark _flowMark = FlowMark::None;
 
     juce::Rectangle<float> getLedBounds() const;
     bool isLedHit(juce::Point<int> position) const;
     void paintContents(juce::Graphics& g, bool isMouseOverButton);
+    void paintFlowMark(juce::Graphics& g) const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SignalChainBlock)
 };
@@ -86,28 +96,34 @@ class SignalChainStrip : public juce::Component {
    private:
     class SignalBusLayer : public juce::Component {
        public:
-        void setLine(float y, float x1, float x2);
+        void setRows(juce::Point<float> input,
+                     juce::Point<float> down,
+                     juce::Point<float> join,
+                     juce::Point<float> output);
         void paint(juce::Graphics& g) override;
 
        private:
-        float _y = 0.0f;
-        float _x1 = 0.0f;
-        float _x2 = 0.0f;
+        juce::Point<float> _input;
+        juce::Point<float> _down;
+        juce::Point<float> _join;
+        juce::Point<float> _output;
+        bool _ready = false;
     };
 
     static constexpr int kSlotCount = SignalChain::slotCount;
 
     SignalBusLayer _busLayer;
     SignalChainBlock _inputGate{ProfilerStyle::Colors::rigInput, CustomLookAndFeel::RigIcon::InputJack};
-    SignalChainBlock _ampProfiler{ProfilerStyle::Colors::rigAmp, CustomLookAndFeel::RigIcon::AmpHead};
-    SignalChainBlock _cabinetIr{ProfilerStyle::Colors::rigCab, CustomLookAndFeel::RigIcon::Cabinet};
-    SignalChainBlock _eqPostFx{ProfilerStyle::Colors::rigEq, CustomLookAndFeel::RigIcon::EqFaders};
-    SignalChainBlock _pedalDrive{ProfilerStyle::Colors::rigPedal, CustomLookAndFeel::RigIcon::Pedal};
+    std::array<SignalChainBlock, SignalChain::movableSlotCount> _effects{};
     SignalChainBlock _masterVolume{ProfilerStyle::Colors::rigMaster, CustomLookAndFeel::RigIcon::Speaker};
+    SignalChainBlock _pathDown{juce::Colour(0xffF4F4F5), CustomLookAndFeel::RigIcon::InputJack};
+    SignalChainBlock _pathReturn{juce::Colour(0xffF4F4F5), CustomLookAndFeel::RigIcon::InputJack};
     std::array<juce::Rectangle<int>, kSlotCount> _slotBounds{};
     SignalChain::Layout _layout{};
     BlockId _selected = BlockId::AmpProfiler;
-    BlockId _dragBlock = BlockId::AmpProfiler;
+    int _selectedChainSlot = 2;
+    int _dragMovableIndex = -1;
+    int _dragChainSlot = -1;
     bool _dragTracking = false;
     bool _dragActive = false;
     int _dropSlot = -1;
@@ -117,9 +133,11 @@ class SignalChainStrip : public juce::Component {
     float _outputMeter = 0.0f;
     double _lastMeterMs = 0.0;
 
-    SignalChainBlock& getBlock(BlockId blockId);
-    const SignalChainBlock& getBlock(BlockId blockId) const;
+    SignalChainBlock* effectBlockAtSlot(int chainSlot) noexcept;
+    bool selectBlockInDirection(int columnDelta, int rowDelta);
+    void selectChainSlot(int chainSlot);
     void handleBlockClick(BlockId blockId);
+    void handleEffectClick(int movableIndex);
     bool isOccupiedSlot(int slot) const;
     void updateBusLayer();
     void placeBlocks();
@@ -128,12 +146,13 @@ class SignalChainStrip : public juce::Component {
     static BlockId blockForStage(SignalChain::Stage stage) noexcept;
     int nearestMovableSlot(juce::Point<int> position) const noexcept;
     int slotAtPosition(juce::Point<int> position) const noexcept;
-    void startBlockDrag(BlockId blockId, const juce::MouseEvent& event);
+    juce::Rectangle<int> movableDragArea() const;
+    void startEffectDrag(int movableIndex, const juce::MouseEvent& event);
     void updateBlockDrag(const juce::MouseEvent& event);
     void finishBlockDrag(const juce::MouseEvent& event);
-    void commitDrop(BlockId blockId, int slot);
+    void commitDrop(int fromSlot, int toSlot);
     void requestPicker(int slot);
-    int fillVisualOrder(std::array<BlockId, 8>& order) const noexcept;
+    int fillChainOrder(std::array<int, 16>& order) const noexcept;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SignalChainStrip)
 };

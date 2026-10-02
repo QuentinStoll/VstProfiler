@@ -2,7 +2,10 @@
 
 #include <JuceHeader.h>
 
+#include <array>
+#include <cstddef>
 #include <memory>
+#include <vector>
 
 class SpectraEngine {
    public:
@@ -19,6 +22,13 @@ class SpectraEngine {
 
     bool decryptModel(const void* cipher, size_t size, juce::MemoryBlock& plain) const;
     bool decryptIr(const void* cipher, size_t size, juce::MemoryBlock& plain) const;
+
+    bool prepareIrSweep(double sampleRate, std::vector<float>& sweep, std::size_t& recordFrames);
+    bool sealIr(const float* recorded,
+                std::size_t frames,
+                double sampleRate,
+                std::array<std::uint8_t, 32>& key,
+                juce::MemoryBlock& sealed);
 
    private:
     struct Functions;
