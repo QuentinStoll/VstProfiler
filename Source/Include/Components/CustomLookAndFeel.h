@@ -129,7 +129,7 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
     static juce::Rectangle<float> getSignalChainLedBounds(juce::Rectangle<float> bounds);
     static juce::Rectangle<float> getSignalIoLedBounds(juce::Rectangle<float> bounds);
 
-    void drawSignalBus(juce::Graphics& g, float y, float x1, float x2) const;
+    void drawSignalBus(juce::Graphics& g, juce::Point<float> from, juce::Point<float> to) const;
 
     void drawEmptySignalSlot(juce::Graphics& g, juce::Rectangle<float> bounds) const;
 

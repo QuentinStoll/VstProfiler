@@ -195,6 +195,11 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
     _blockPicker.onBlockChosen = [this](int slot, SignalChain::Stage stage) {
         placeChosenBlock(slot, stage);
     };
+    _blockPicker.onBlockRemoved = [this](int slot) {
+        _audioProcessor.clearChainSlot(slot);
+        _signalChain.setLayout(_audioProcessor.getChainLayout());
+        updateChainStatus();
+    };
     _audioProcessor._apvts.state.addListener(this);
     _signalChain.setLayout(_audioProcessor.getChainLayout());
 
@@ -617,7 +622,7 @@ void ProfilerAudioProcessorEditor::timerCallback() {
 
 void ProfilerAudioProcessorEditor::valueTreePropertyChanged(juce::ValueTree&,
                                                             const juce::Identifier& property) {
-    if (property != juce::Identifier("chainLayout")) {
+    if (property != juce::Identifier("chainLayout") && property != juce::Identifier("chainLayoutHigh")) {
         return;
     }
 

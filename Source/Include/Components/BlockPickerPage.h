@@ -26,6 +26,7 @@ class BlockPickerPage : public juce::Component {
     };
 
     std::function<void(int slot, SignalChain::Stage stage)> onBlockChosen;
+    std::function<void(int slot)> onBlockRemoved;
     std::function<void()> onClosed;
 
    private:
@@ -47,13 +48,14 @@ class BlockPickerPage : public juce::Component {
 
     juce::Label _title;
     juce::TextButton _backButton{"Back"};
+    juce::TextButton _removeButton{"Remove"};
     juce::TextButton _closeButton{"Close"};
     TileButton _ampCategory;
     TileButton _cabCategory;
     TileButton _eqCategory;
     TileButton _pedalCategory;
     TileButton _itemButton;
-    int _targetSlot = SignalChain::firstMovableSlot;
+    int _targetSlot = SignalChain::chainSlotForMovableIndex(0);
     SignalChain::Layout _layout{};
     bool _showingItems = false;
     Category _category = Category::Amp;

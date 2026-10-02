@@ -40,6 +40,7 @@ Reproducing the tone and dynamic behavior of real amplifiers is the project's lo
 - Load cabinet impulse responses through the **Clone** view and process audio with JUCE convolution.
 - Load compatible neural amplifier models through RTNeural.
 - Adjust gain, noise gate, master volume, mute, and a five-band EQ through the **Play** view.
+- Arrange amp, cabinet, EQ, and pedal blocks on a two-row signal chain. The path stays serial, a type can be used more than once, and a block can be removed from the picker.
 - Create, edit, import, export, and delete `.profilerprofile` profiles containing parameter values and external asset paths.
 - Use a JUCE interface with **Clone**, **Play**, **Profil**, and settings views.
 - Build a standalone application and a VST3 plugin on Windows, macOS, and Linux. macOS builds also produce an Audio Unit.

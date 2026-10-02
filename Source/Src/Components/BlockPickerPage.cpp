@@ -86,6 +86,7 @@ BlockPickerPage::BlockPickerPage() {
     _title.setInterceptsMouseClicks(false, false);
     addAndMakeVisible(_title);
     addAndMakeVisible(_backButton);
+    addChildComponent(_removeButton);
     addAndMakeVisible(_closeButton);
     addAndMakeVisible(_ampCategory);
     addAndMakeVisible(_cabCategory);
@@ -94,6 +95,7 @@ BlockPickerPage::BlockPickerPage() {
     addChildComponent(_itemButton);
 
     _backButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
+    _removeButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
     _closeButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
 
     _ampCategory.onClick = [this]() {
@@ -117,6 +119,13 @@ BlockPickerPage::BlockPickerPage() {
     _closeButton.onClick = [this]() {
         close();
     };
+    _removeButton.onClick = [this]() {
+        const auto slot = _targetSlot;
+        if (onBlockRemoved) {
+            onBlockRemoved(slot);
+        }
+        close();
+    };
 
     setOpaque(true);
     setVisible(false);
@@ -133,6 +142,12 @@ void BlockPickerPage::resized() {
     auto header = area.removeFromTop(28);
     _closeButton.setBounds(header.removeFromRight(72).withSizeKeepingCentre(72, 24));
     header.removeFromRight(8);
+    if (_removeButton.isVisible()) {
+        _removeButton.setBounds(header.removeFromRight(88).withSizeKeepingCentre(88, 24));
+        header.removeFromRight(8);
+    } else {
+        _removeButton.setBounds({});
+    }
     _backButton.setBounds(header.removeFromRight(72).withSizeKeepingCentre(72, 24));
     header.removeFromRight(10);
     _title.setBounds(header);
@@ -174,6 +189,7 @@ void BlockPickerPage::close() {
 void BlockPickerPage::showCategories() {
     _showingItems = false;
     _backButton.setEnabled(false);
+    _removeButton.setVisible(_layout.atSlot(_targetSlot) != SignalChain::Stage::Empty);
     _title.setText("CHOOSE A BLOCK", juce::dontSendNotification);
 
     const CategorySpec* specs[] = {&kCategories[0], &kCategories[1], &kCategories[2], &kCategories[3]};

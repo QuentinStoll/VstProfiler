@@ -96,6 +96,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void setChainLayout(const SignalChain::Layout& layout);
     void resetChainLayout();
     void placeChainStage(SignalChain::Stage stage, int slot);
+    void clearChainSlot(int slot);
 
    private:
     enum ChainPositions {
@@ -129,7 +130,9 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
         Filter>;
 
     Chain _chain;
-    EqChain _eqChain;
+    static constexpr int kChainCopies = SignalChain::movableSlotCount;
+
+    std::array<EqChain, kChainCopies> _eqChains{};
     juce::dsp::Gain<float> _inputTrim;
     juce::dsp::Gain<float> _masterVolume;
     juce::dsp::Gain<float> _outputTrim;
@@ -164,10 +167,10 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     std::array<juce::SmoothedValue<float>, EqBands::count> _eqFreqSmoothed{};
     juce::SmoothedValue<float> _cabLowCutSmoothed;
     bool _eqCoeffsDirty{true};
-    std::atomic<std::uint32_t> _chainLayoutPacked{SignalChain::defaultPacked};
+    std::atomic<std::uint64_t> _chainLayoutPacked{SignalChain::defaultPacked};
 
-    Filter _cabLowCut;
-    Filter _pedalToneFilter;
+    std::array<Filter, kChainCopies> _cabLowCuts{};
+    std::array<Filter, kChainCopies> _pedalToneFilters{};
 
     enum class IrCaptureState {
         Idle = 0,
@@ -197,12 +200,17 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void processGateStage(juce::dsp::ProcessContextReplacing<float>& context);
     void processAmpStage(juce::AudioBuffer<float>& buffer,
                          juce::dsp::ProcessContextReplacing<float>& context,
-                         int numSamples);
-    void processCabStage(juce::dsp::ProcessContextReplacing<float>& context);
-    void processEqStage(juce::dsp::ProcessContextReplacing<float>& context);
+                         int numSamples,
+                         int instance);
+    void processCabStage(juce::dsp::ProcessContextReplacing<float>& context, int instance);
+    void processEqStage(juce::dsp::ProcessContextReplacing<float>& context, int instance);
     void processPedalStage(juce::AudioBuffer<float>& buffer,
                            juce::dsp::ProcessContextReplacing<float>& context,
-                           int numSamples);
+                           int numSamples,
+                           int instance);
+    void syncAmpCopies(bool force = false);
+    void setEqBypassed(bool bypassed);
+    void loadIrIntoConvolvers(const void* data, size_t size);
     void updatePedalToneCoefficients();
     static float getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept;
     static bool isCompatibleAmpModel(const RTNeural::Model<float>& model);
@@ -219,13 +227,13 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     // Buffer that contain the ir
     juce::AudioBuffer<float> _irBuffer;
+    juce::MemoryBlock _irBytes;
 
     // Is ir loaded bool
     bool _irLoaded = false;
     juce::File _currentIRFile;
 
-    // Convolver object
-    juce::dsp::Convolution _convolver;
+    std::array<juce::dsp::Convolution, kChainCopies> _cabConvolvers{};
 
     //================================= Amp file load ====================================
     bool _ampFileLoaded = false;
@@ -235,6 +243,8 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     // Declaration of the model type (for example, a generic sequential model)
     // You can adjust the type according to your model architecture (LSTM, Dense, Conv, etc.)
     std::unique_ptr<RTNeural::Model<float>> _neuralAmp;
+    std::vector<std::unique_ptr<RTNeural::Model<float>>> _ampCopies;
+    juce::MemoryBlock _ampModelBytes;
 
     juce::CriticalSection _ampModelLock;
     bool _ampLoaded = false;  // Initialized to false until the JSON is loaded
@@ -242,5 +252,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     // Keep the oversampler if needed, but be careful with the model's training sample rate!
     juce::dsp::Oversampling<float> oversampler{2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true};
 
-    juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> _dcBlocker;
+    std::array<juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>>,
+               kChainCopies>
+        _dcBlockers{};
 };
