@@ -16,7 +16,9 @@ class SignalChainBlock : public juce::Button {
 
     void setAppearance(juce::Colour categoryColour, CustomLookAndFeel::RigIcon icon);
 
-    enum class FlowMark { None, Down, Enter };
+    enum class FlowMark { None,
+                          Down,
+                          Enter };
 
     void setLedOn(bool shouldBeOn);
     void setIoNode(bool isIoNode);

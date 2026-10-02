@@ -1,7 +1,7 @@
+#include <array>
+
 #include "MarketplaceClient.h"
 #include "TestRunner.h"
-
-#include <array>
 
 namespace profiler_tests {
 namespace {

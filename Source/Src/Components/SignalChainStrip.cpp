@@ -372,8 +372,7 @@ void SignalChainStrip::resized() {
     for (int chainSlot = 0; chainSlot < SignalChain::slotCount; ++chainSlot) {
         const auto row = SignalChain::visualRow(chainSlot);
         const auto column = SignalChain::visualColumn(chainSlot);
-        const auto centreX = juce::roundToInt(static_cast<float>(area.getX())
-                                               + slotWidth * (static_cast<float>(column) + 0.5f));
+        const auto centreX = juce::roundToInt(static_cast<float>(area.getX()) + slotWidth * (static_cast<float>(column) + 0.5f));
         const auto y = top + row * (square + kRowGap);
         _slotBounds[static_cast<size_t>(chainSlot)] = {centreX - square / 2, y, square, square};
     }
