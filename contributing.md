@@ -22,15 +22,24 @@ Discuss significant features, breaking changes, and architectural decisions in a
 
 ## Open an issue
 
-Use the forms under [Issues](https://github.com/QuentinStoll/VstProfiler/issues/new/choose). Each issue gets one type badge:
+Use the forms under [Issues](https://github.com/QuentinStoll/VstProfiler/issues/new/choose). Each issue gets a type badge and one area badge.
 
 | Type | Use it for |
 | --- | --- |
 | Bug | A behavior that is wrong and can be reproduced |
 | Feature | A new capability or a change to how the plugin behaves |
 | Task | Implementation, documentation, or maintenance with a clear end |
+| Question | A question about install, usage, or contributing |
 
-Add one extra label only when the type does not already say it: `documentation` or `interface`. Do not also add `bug` or `enhancement` on top of the type badge.
+| Area badge | Use it for |
+| --- | --- |
+| `audio` | Processing, capture, models, and impulse responses |
+| `interface` | The plugin window and controls |
+| `documentation` | README, changelog, and other docs |
+| `build` | Build, tests, and CI |
+| `security` | Private reporting, file loading, and trust boundaries |
+
+The area dropdown on the form sets that badge. Do not also add `bug` or `enhancement` on top of the type badge.
 
 A bug report needs the environment, the steps, and both the expected and actual result. A feature or task needs the outcome and how to tell that it is done.
 

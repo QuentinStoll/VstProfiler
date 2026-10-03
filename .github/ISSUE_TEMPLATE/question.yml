@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        This form is for a question, not a bug or a feature. It gets the question label only.
+        This form is for a question, not a bug or a feature. It gets the question badge plus the area badge you select.
   - type: textarea
     id: question
     attributes:
@@ -25,5 +25,19 @@ body:
     attributes:
       label: What you already checked
       description: README sections, issues, commands, and what they printed.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: This choice adds the matching area badge.
+      options:
+        - Audio
+        - Interface
+        - Documentation
+        - Build and CI
+        - Security
+        - Other
     validations:
       required: true

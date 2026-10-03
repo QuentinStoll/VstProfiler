@@ -28,12 +28,13 @@ body:
     id: area
     attributes:
       label: Area
-      description: Maintainers add the documentation or interface label only when this area is not already obvious from the type.
+      description: This choice adds the matching area badge.
       options:
         - Audio
         - Interface
         - Documentation
         - Build and CI
+        - Security
         - Other
     validations:
       required: true
