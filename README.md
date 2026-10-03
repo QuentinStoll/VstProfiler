@@ -4,6 +4,11 @@
 [![C++20](https://img.shields.io/badge/C++-20-blue)](CMakeLists.txt)
 [![JUCE](https://img.shields.io/badge/JUCE-8.0.12-red)](cmake/dependencies.cmake)
 
+[![CI](https://github.com/QuentinStoll/VstProfiler/actions/workflows/CI.yml/badge.svg?branch=Main)](https://github.com/QuentinStoll/VstProfiler/actions/workflows/CI.yml)
+[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/QuentinStoll/VstProfiler)](https://github.com/QuentinStoll/VstProfiler/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/QuentinStoll/VstProfiler)](https://github.com/QuentinStoll/VstProfiler/pulls)
+
 ![VSTProfiler banner](Source/Assets/png/ProfilerBanner.png)
 
 # VSTProfiler - Guitar Amplifier Simulator
