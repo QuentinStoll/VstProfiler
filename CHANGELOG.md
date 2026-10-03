@@ -15,6 +15,7 @@ Notable changes for every published release are recorded below, newest first. Re
 
 ### Changed
 
+- Issue forms add an area badge: audio, interface, documentation, build, or security.
 - Limited GTK, WebKitGTK, and libcurl to Linux so macOS can configure with the Xcode SDK alone.
 - Plugin formats now follow the selected preset. Audio Unit is requested by the default preset and skipped outside macOS.
 - Documented `install.bat` on Windows and `install.sh` on Linux and macOS as the installation entry points, including preset selection and the Windows build-configuration behavior.

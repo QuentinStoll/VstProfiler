@@ -31,3 +31,17 @@ body:
       description: Nearby work this issue does not cover.
     validations:
       required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: This choice adds the matching area badge.
+      options:
+        - Audio
+        - Interface
+        - Documentation
+        - Build and CI
+        - Security
+        - Other
+    validations:
+      required: true

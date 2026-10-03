@@ -50,3 +50,17 @@ body:
       description: Remove personal data. Share models or audio only if you have the rights.
     validations:
       required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: This choice adds the matching area badge.
+      options:
+        - Audio
+        - Interface
+        - Documentation
+        - Build and CI
+        - Security
+        - Other
+    validations:
+      required: true
