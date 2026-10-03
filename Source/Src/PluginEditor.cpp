@@ -91,6 +91,19 @@ void restyleWindowsHostFrame(HWND pluginHwnd, int editorWidthPx, int editorHeigh
     }
 }
 #endif
+
+juce::Point<int> standaloneMaxSize() {
+    juce::Rectangle<int> area;
+    for (const auto& display : juce::Desktop::getInstance().getDisplays().displays) {
+        area = area.getUnion(display.totalArea);
+    }
+
+    if (area.isEmpty()) {
+        return {8192, 8192};
+    }
+
+    return {juce::jmax(editorWidth, area.getWidth()), juce::jmax(editorHeight, area.getHeight())};
+}
 }  // namespace
 
 ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcessor& p)
@@ -111,9 +124,15 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
     setColour(juce::ResizableWindow::backgroundColourId, juce::Colours::black);
 
     setResizable(true, true);
-    setResizeLimits(editorMinWidth, editorMinHeight, editorWidth, editorHeight);
-    getConstrainer()->setFixedAspectRatio(editorWidth / static_cast<double>(editorHeight));
-    setSize(editorWidth, editorHeight);
+    if (_audioProcessor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
+        const auto maxSize = standaloneMaxSize();
+        setResizeLimits(editorWidth, editorHeight, maxSize.x, maxSize.y);
+        setSize(editorWidth, editorHeight);
+    } else {
+        setResizeLimits(editorMinWidth, editorMinHeight, editorWidth, editorHeight);
+        getConstrainer()->setFixedAspectRatio(editorWidth / static_cast<double>(editorHeight));
+        setSize(editorWidth, editorHeight);
+    }
     setBroughtToFrontOnMouseClick(true);
 
     addAndMakeVisible(_content);
@@ -295,8 +314,10 @@ void ProfilerAudioProcessorEditor::applyHostWindowChrome() {
     applyStandaloneWindowChrome();
 
 #if JUCE_WINDOWS
-    if (auto* peer = getPeer()) {
-        restyleWindowsHostFrame(static_cast<HWND>(peer->getNativeHandle()), getWidth(), getHeight());
+    if (_audioProcessor.wrapperType != juce::AudioProcessor::wrapperType_Standalone) {
+        if (auto* peer = getPeer()) {
+            restyleWindowsHostFrame(static_cast<HWND>(peer->getNativeHandle()), getWidth(), getHeight());
+        }
     }
 #else
     juce::ignoreUnused(juce::Desktop::getInstance().getDisplays());
@@ -317,8 +338,41 @@ void ProfilerAudioProcessorEditor::applyStandaloneWindowChrome() {
     window->setColour(juce::ResizableWindow::backgroundColourId, juce::Colours::black);
     window->setColour(juce::DocumentWindow::backgroundColourId, juce::Colours::black);
     window->setTitleBarHeight(32);
-    window->setTitleBarButtonsRequired(juce::DocumentWindow::minimiseButton | juce::DocumentWindow::closeButton, false);
+    const auto buttons = _audioProcessor.wrapperType == juce::AudioProcessor::wrapperType_Standalone
+                             ? juce::DocumentWindow::minimiseButton | juce::DocumentWindow::maximiseButton | juce::DocumentWindow::closeButton
+                             : juce::DocumentWindow::minimiseButton | juce::DocumentWindow::closeButton;
+    window->setTitleBarButtonsRequired(buttons, false);
     window->repaint();
+
+    if (_audioProcessor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
+        requestStandaloneFullscreen();
+    }
+}
+
+void ProfilerAudioProcessorEditor::requestStandaloneFullscreen() {
+    if (_standaloneFullscreenRequested) {
+        return;
+    }
+
+    _standaloneFullscreenRequested = true;
+    juce::MessageManager::callAsync([safeThis = juce::Component::SafePointer<ProfilerAudioProcessorEditor>(this)]() {
+        if (safeThis != nullptr) {
+            safeThis->openStandaloneFullscreen();
+        }
+    });
+}
+
+void ProfilerAudioProcessorEditor::openStandaloneFullscreen() {
+    auto* window = findParentComponentOfClass<juce::DocumentWindow>();
+    if (window == nullptr || window->getPeer() == nullptr || !window->isShowing()) {
+        _standaloneFullscreenRequested = false;
+        return;
+    }
+
+    const auto maxSize = standaloneMaxSize();
+    setResizeLimits(editorWidth, editorHeight, maxSize.x, maxSize.y);
+    window->setResizable(true, false);
+    window->setFullScreen(true);
 }
 
 void ProfilerAudioProcessorEditor::resized() {

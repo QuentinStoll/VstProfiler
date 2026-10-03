@@ -66,9 +66,12 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     juce::TooltipWindow _tooltipWindow{this, 700};
     OverlayMode _overlayMode = OverlayMode::None;
     int _hostChromePasses = 0;
+    bool _standaloneFullscreenRequested = false;
 
     void applyStandaloneWindowChrome();
     void applyHostWindowChrome();
+    void requestStandaloneFullscreen();
+    void openStandaloneFullscreen();
 
     void showStudio();
     void showOverlay(OverlayMode mode);
