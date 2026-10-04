@@ -171,6 +171,7 @@ add_profiler_audio_processor_test(SilentInputStaysSilent "audio processor silent
 add_profiler_audio_processor_test(PrepareBlockSizes "audio processor handles prepare block sizes")
 add_profiler_audio_processor_test(ReleaseAndReprepare "audio processor release and reprepare")
 add_profiler_audio_processor_test(RejectMissingAssetFiles "audio processor rejects missing asset files")
+add_profiler_audio_processor_test(AmpModelResidualAndBypass "audio processor amp model residual and bypass")
 
 function(add_profiler_profile_processor_integration_test test_name case_name)
     add_test(NAME ProfilerTests.ProfileProcessorIntegration.${test_name}

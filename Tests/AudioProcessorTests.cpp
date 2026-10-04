@@ -1,6 +1,7 @@
 #include <JuceHeader.h>
 
 #include <cmath>
+#include <cstring>
 
 #include "PluginProcessor.h"
 #include "SignalChainLayout.h"
@@ -69,6 +70,10 @@ class AudioProcessorUnitTests : public juce::UnitTest {
 
         runCase("audio processor rejects missing asset files", [this] {
             testMissingAssetFiles();
+        });
+
+        runCase("audio processor amp model residual and bypass", [this] {
+            testAmpModelResidualAndBypass();
         });
     }
 
@@ -526,6 +531,75 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         processor.unloadAmpFile();
         expect(!processor.isIRLoaded(), "Unloaded IR should stay unloaded.");
         expect(!processor.isAmpFileLoaded(), "Unloaded amp should stay unloaded.");
+    }
+
+    void silenceOtherStages(ProfilerAudioProcessor& processor) {
+        setParameterValue(processor, "isEqEnabled", 0.0f);
+        setParameterValue(processor, "isGateEnabled", 0.0f);
+        setParameterValue(processor, "isPedalEnabled", 0.0f);
+        setParameterValue(processor, "isCabEnabled", 0.0f);
+        setParameterValue(processor, "gain", 0.0f);
+        setParameterValue(processor, "master", 50.0f);
+    }
+
+    bool loadAmpJson(ProfilerAudioProcessor& processor, const char* json) {
+        return processor.loadAmpFromMemory(json, std::strlen(json));
+    }
+
+    void testAmpModelResidualAndBypass() {
+        constexpr double sampleRate = 44100.0;
+        constexpr int blockSize = 256;
+        const char* zeroModel =
+            R"({"in_shape":[null,null,1],"in_skip":0,"layers":[{"type":"dense","activation":"","shape":[null,null,1],"weights":[[[0.0]],[0.0]]}]})";
+        const char* residualModel =
+            R"({"in_shape":[null,null,1],"in_skip":1,"layers":[{"type":"dense","activation":"","shape":[null,null,1],"weights":[[[0.0]],[0.0]]}]})";
+        const char* attenuatedModel =
+            R"({"in_shape":[null,null,1],"in_skip":1,"out_gain":-6.0,"layers":[{"type":"dense","activation":"","shape":[null,null,1],"weights":[[[0.0]],[0.0]]}]})";
+
+        ProfilerAudioProcessor dry;
+        silenceOtherStages(dry);
+        prepareProcessor(dry, sampleRate, blockSize);
+        const auto dryRms = processSineAndMeasureRms(dry, blockSize, 32);
+        dry.releaseResources();
+        expect(dryRms > 0.05f, "Dry amp path should pass the test tone.");
+
+        ProfilerAudioProcessor replaced;
+        silenceOtherStages(replaced);
+        expect(loadAmpJson(replaced, zeroModel), "Zero model should load.");
+        prepareProcessor(replaced, sampleRate, blockSize);
+        const auto replacedRms = processSineAndMeasureRms(replaced, blockSize, 8);
+        expect(replacedRms < 0.01f, "A model without in_skip should replace the dry signal.");
+
+        setParameterValue(replaced, "isAmpEnabled", 0.0f);
+        const auto bypassedRms = processSineAndMeasureRms(replaced, blockSize, 32);
+        expect(std::abs(bypassedRms - dryRms) < dryRms * 0.15f,
+               "Disabling the amp should restore the dry signal after the crossfade. dry="
+                   + juce::String(dryRms, 4) + " bypassed=" + juce::String(bypassedRms, 4));
+
+        setParameterValue(replaced, "isAmpEnabled", 1.0f);
+        const auto restoredRms = processSineAndMeasureRms(replaced, blockSize, 8);
+        expect(restoredRms < 0.01f, "Re-enabling the amp should settle back to the model within one crossfade.");
+        replaced.releaseResources();
+
+        ProfilerAudioProcessor residual;
+        silenceOtherStages(residual);
+        expect(loadAmpJson(residual, residualModel), "Residual model should load.");
+        prepareProcessor(residual, sampleRate, blockSize);
+        const auto residualRms = processSineAndMeasureRms(residual, blockSize, 32);
+        expect(std::abs(residualRms - dryRms) < dryRms * 0.15f,
+               "in_skip should add the dry signal back onto a zero network. dry="
+                   + juce::String(dryRms, 4) + " residual=" + juce::String(residualRms, 4));
+        residual.releaseResources();
+
+        ProfilerAudioProcessor attenuated;
+        silenceOtherStages(attenuated);
+        expect(loadAmpJson(attenuated, attenuatedModel), "Attenuated residual model should load.");
+        prepareProcessor(attenuated, sampleRate, blockSize);
+        const auto attenuatedRms = processSineAndMeasureRms(attenuated, blockSize, 32);
+        expect(std::abs(attenuatedRms - dryRms * 0.5f) < dryRms * 0.12f,
+               "out_gain should scale the model output in decibels. expected="
+                   + juce::String(dryRms * 0.5f, 4) + " actual=" + juce::String(attenuatedRms, 4));
+        attenuated.releaseResources();
     }
 };
 

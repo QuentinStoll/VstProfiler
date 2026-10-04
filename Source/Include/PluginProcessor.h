@@ -142,6 +142,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     static constexpr float SHELF_Q{EqBands::shelfQ};
     static constexpr float PEAK_Q{EqBands::peakQ};
     static constexpr double PARAMETER_RAMP_SECONDS{0.05};
+    static constexpr double AMP_BYPASS_CROSSFADE_SECONDS{0.02};
 
     std::atomic<float>* _masterParam{nullptr};
     std::atomic<float>* _gainParam{nullptr};
@@ -212,11 +213,21 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void setEqBypassed(bool bypassed);
     void loadIrIntoConvolvers(const void* data, size_t size);
     void updatePedalToneCoefficients();
+    struct AmpModelMetadata {
+        int inputSkip = 0;
+        float inputGain = 1.0f;
+        float outputGain = 1.0f;
+    };
+
     static float getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept;
     static bool isCompatibleAmpModel(const RTNeural::Model<float>& model);
     static float getMasterGainLinear(float masterPercent) noexcept;
-    std::unique_ptr<RTNeural::Model<float>> parseAmpModel(const void* data, size_t size) const;
-    bool publishAmpModel(std::unique_ptr<RTNeural::Model<float>> model, const juce::File& sourceFile);
+    std::unique_ptr<RTNeural::Model<float>> parseAmpModel(const void* data,
+                                                         size_t size,
+                                                         AmpModelMetadata* metadata) const;
+    bool publishAmpModel(std::unique_ptr<RTNeural::Model<float>> model,
+                         const juce::File& sourceFile,
+                         const AmpModelMetadata& metadata);
 
     //==============================================================================
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
@@ -248,6 +259,10 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
 
     juce::CriticalSection _ampModelLock;
     bool _ampLoaded = false;  // Initialized to false until the JSON is loaded
+    int _ampInputSkip = 0;
+    float _ampInputGain = 1.0f;
+    float _ampOutputGain = 1.0f;
+    juce::SmoothedValue<float> _ampWetMix;
 
     // Keep the oversampler if needed, but be careful with the model's training sample rate!
     juce::dsp::Oversampling<float> oversampler{2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true};

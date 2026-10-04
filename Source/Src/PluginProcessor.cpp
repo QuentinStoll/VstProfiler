@@ -42,6 +42,7 @@ std::uint64_t readChainLayout(const juce::ValueTree& tree) {
     const auto high = static_cast<std::uint32_t>(static_cast<int>(tree.getProperty(kChainLayoutHighId, 0)));
     return (static_cast<std::uint64_t>(high) << 32) | static_cast<std::uint64_t>(low);
 }
+
 }  // namespace
 
 float ProfilerAudioProcessor::getParameterValue(const std::atomic<float>* parameter, float fallback) noexcept {
@@ -114,6 +115,7 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
     _pedalToneParam = _apvts.getRawParameterValue("pedalTone");
     _pedalLevelParam = _apvts.getRawParameterValue("pedalLevel");
     writeChainLayout(_apvts.state, _chainLayoutPacked.load());
+    _ampWetMix.setCurrentAndTargetValue(1.0f);
     _spectra.open();
 }
 
@@ -242,11 +244,19 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
         blocker.reset();
     }
 
+    _ampWetMix.reset(sampleRate, AMP_BYPASS_CROSSFADE_SECONDS);
+    _ampWetMix.setCurrentAndTargetValue(getParameterValue(_isAmpEnabledParam, 1.0f) > 0.5f ? 1.0f : 0.0f);
+
     {
         const juce::ScopedLock ampLock(_ampModelLock);
         if (_neuralAmp != nullptr) {
             _neuralAmp->reset();
             _ampLoaded = true;
+        }
+        for (auto& copy : _ampCopies) {
+            if (copy != nullptr) {
+                copy->reset();
+            }
         }
     }
 }
@@ -355,6 +365,8 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         _eqCoeffsDirty = eqSmoothing;
     }
 
+    _ampWetMix.setTargetValue(getParameterValue(_isAmpEnabledParam, 1.0f) > 0.5f ? 1.0f : 0.0f);
+
     juce::dsp::AudioBlock<float> block(buffer);
     auto monoBlock = block.getSingleChannelBlock(0);
     juce::dsp::ProcessContextReplacing<float> context(monoBlock);
@@ -388,6 +400,7 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
 
     _cabLowCutSmoothed.skip(numSamples);
+    _ampWetMix.skip(numSamples);
     for (auto& smoothed : _eqGainSmoothed) {
         smoothed.skip(numSamples);
     }
@@ -472,7 +485,7 @@ void ProfilerAudioProcessor::syncAmpCopies(bool force) {
     }
 
     for (int index = 0; index < extraAmps; ++index) {
-        auto copy = parseAmpModel(_ampModelBytes.getData(), _ampModelBytes.getSize());
+        auto copy = parseAmpModel(_ampModelBytes.getData(), _ampModelBytes.getSize(), nullptr);
         if (copy != nullptr) {
             _ampCopies.push_back(std::move(copy));
         }
@@ -501,6 +514,9 @@ void ProfilerAudioProcessor::processAmpStage(juce::AudioBuffer<float>& buffer,
                                              int instance) {
     _chain.get<Gain>().process(context);
 
+    // Every amp copy uses the same bypass envelope. The shared smoother advances once per block.
+    auto wetMix = _ampWetMix;
+
     {
         const juce::ScopedLock ampLock(_ampModelLock);
         auto* model = _neuralAmp.get();
@@ -511,21 +527,38 @@ void ProfilerAudioProcessor::processAmpStage(juce::AudioBuffer<float>& buffer,
             }
         }
 
-        if (_ampLoaded && model != nullptr && getParameterValue(_isAmpEnabledParam, 1.0f) > 0.5f) {
+        if (_ampLoaded && model != nullptr) {
+            const auto inputSkip = _ampInputSkip;
+            const auto inputGain = _ampInputGain;
+            const auto outputGain = _ampOutputGain;
             auto* channel0Data = buffer.getWritePointer(0);
 
+            // Keep the recurrent state tracking the input while the block is bypassed.
+            // Freezing it makes the amp take seconds to recover when it is switched back on.
             for (int i = 0; i < numSamples; ++i) {
-                float input = juce::jlimit(-1.0f, 1.0f, channel0Data[i]);
-                float inputSample[] = {input};
+                const float dry = channel0Data[i];
+                const float driven = dry * inputGain;
+                const float inputSample[] = {driven};
                 model->forward(inputSample);
-                float output = model->getOutputs()[0];
+                float wet = model->getOutputs()[0];
 
-                if (std::isnan(output) || std::isinf(output)) {
+                if (!std::isfinite(wet)) {
                     model->reset();
-                    output = 0.0f;
+                    wet = 0.0f;
                 }
 
-                channel0Data[i] = juce::jlimit(-1.0f, 1.0f, output);
+                // CoreAudioML / AIDA models store a residual in in_skip: the network
+                // predicts the difference, and the input channels are added back.
+                if (inputSkip > 0) {
+                    wet += driven;
+                }
+                wet *= outputGain;
+                if (!std::isfinite(wet)) {
+                    wet = dry;
+                }
+
+                const float mix = wetMix.getNextValue();
+                channel0Data[i] = dry + (wet - dry) * mix;
             }
         }
     }
@@ -795,7 +828,12 @@ void ProfilerAudioProcessor::unloadIRFile() {
     }
 }
 
-std::unique_ptr<RTNeural::Model<float>> ProfilerAudioProcessor::parseAmpModel(const void* data, size_t size) const {
+std::unique_ptr<RTNeural::Model<float>> ProfilerAudioProcessor::parseAmpModel(const void* data,
+                                                                               size_t size,
+                                                                               AmpModelMetadata* metadata) const {
+    if (metadata != nullptr) {
+        *metadata = {};
+    }
     if (data == nullptr || size == 0) {
         return nullptr;
     }
@@ -805,6 +843,21 @@ std::unique_ptr<RTNeural::Model<float>> ProfilerAudioProcessor::parseAmpModel(co
     std::unique_ptr<RTNeural::Model<float>> loadedAmp;
     try {
         const auto parsed = nlohmann::json::parse(std::string(bytes.data(), bytes.size()));
+        if (metadata != nullptr) {
+            auto gainFromDecibels = [&parsed](const char* key) {
+                if (!parsed.contains(key) || !parsed.at(key).is_number()) {
+                    return 1.0f;
+                }
+                return juce::Decibels::decibelsToGain(static_cast<float>(parsed.at(key).get<double>()));
+            };
+
+            metadata->inputSkip = 0;
+            if (parsed.contains("in_skip") && parsed.at("in_skip").is_number()) {
+                metadata->inputSkip = juce::jmax(0, juce::roundToInt(parsed.at("in_skip").get<double>()));
+            }
+            metadata->inputGain = gainFromDecibels("in_gain");
+            metadata->outputGain = gainFromDecibels("out_gain");
+        }
         loadedAmp = RTNeural::json_parser::parseJson<float>(parsed);
     } catch (const std::exception& e) {
         juce::Logger::writeToLog("RTNeural Load Error: " + juce::String(e.what()));
@@ -826,13 +879,17 @@ std::unique_ptr<RTNeural::Model<float>> ProfilerAudioProcessor::parseAmpModel(co
 }
 
 bool ProfilerAudioProcessor::publishAmpModel(std::unique_ptr<RTNeural::Model<float>> model,
-                                             const juce::File& sourceFile) {
+                                             const juce::File& sourceFile,
+                                             const AmpModelMetadata& metadata) {
     if (model == nullptr) {
         return false;
     }
 
     const juce::ScopedLock ampLock(_ampModelLock);
     _neuralAmp = std::move(model);
+    _ampInputSkip = metadata.inputSkip;
+    _ampInputGain = metadata.inputGain;
+    _ampOutputGain = metadata.outputGain;
     _ampLoaded = true;
     _currentAmpFile = sourceFile;
     _ampFileLoaded = sourceFile.existsAsFile();
@@ -845,7 +902,8 @@ bool ProfilerAudioProcessor::loadAmpFromMemory(const void* data, size_t size) {
     }
 
     _ampModelBytes.replaceAll(data, static_cast<size_t>(size));
-    const auto loaded = publishAmpModel(parseAmpModel(data, size), {});
+    AmpModelMetadata metadata;
+    const auto loaded = publishAmpModel(parseAmpModel(data, size, &metadata), {}, metadata);
     if (loaded) {
         syncAmpCopies(true);
     } else {
@@ -865,9 +923,10 @@ bool ProfilerAudioProcessor::loadAmpFile(const juce::File& file) {
     }
 
     _ampModelBytes = bytes;
-    auto loadedAmp = parseAmpModel(bytes.getData(), bytes.getSize());
+    AmpModelMetadata metadata;
+    auto loadedAmp = parseAmpModel(bytes.getData(), bytes.getSize(), &metadata);
     bytes.fillWith(0);
-    const auto loaded = publishAmpModel(std::move(loadedAmp), file);
+    const auto loaded = publishAmpModel(std::move(loadedAmp), file, metadata);
     if (loaded) {
         syncAmpCopies(true);
     } else {
@@ -883,9 +942,10 @@ bool ProfilerAudioProcessor::loadProtectedAmp(const void* data, size_t size) {
     }
 
     _ampModelBytes = plain;
-    auto loadedAmp = parseAmpModel(plain.getData(), plain.getSize());
+    AmpModelMetadata metadata;
+    auto loadedAmp = parseAmpModel(plain.getData(), plain.getSize(), &metadata);
     plain.fillWith(0);
-    const auto loaded = publishAmpModel(std::move(loadedAmp), {});
+    const auto loaded = publishAmpModel(std::move(loadedAmp), {}, metadata);
     if (loaded) {
         syncAmpCopies(true);
     } else {
@@ -1022,6 +1082,9 @@ bool ProfilerAudioProcessor::renderIrCapture(juce::AudioBuffer<float>& buffer) {
 void ProfilerAudioProcessor::unloadAmpFile() {
     const juce::ScopedLock ampLock(_ampModelLock);
     _ampLoaded = false;
+    _ampInputSkip = 0;
+    _ampInputGain = 1.0f;
+    _ampOutputGain = 1.0f;
     _neuralAmp = nullptr;
     _ampCopies.clear();
     _ampModelBytes.reset();
