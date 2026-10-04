@@ -24,6 +24,7 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
         return installMarketplacePack(profileFile, irFile, hasIntegratedIr, errorMessage);
     };
     _accountPanel.start();
+    _audioProcessor.getProfileManager().addChangeListener(this);
 
     _createProfilModule.onCreateClicked = [this](const juce::NamedValueSet& values) {
         juce::String errorMessage;
@@ -91,6 +92,7 @@ ProfilView::ProfilView(ProfilerAudioProcessor& p)
 }
 
 ProfilView::~ProfilView() {
+    _audioProcessor.getProfileManager().removeChangeListener(this);
 }
 
 void ProfilView::paint(juce::Graphics& g) {
@@ -313,6 +315,12 @@ bool ProfilView::installMarketplacePack(const juce::File& profileFile, const juc
                                     NotificationBanner::Type::Success,
                                     5000);
     return true;
+}
+
+void ProfilView::changeListenerCallback(juce::ChangeBroadcaster* source) {
+    if (source == &_audioProcessor.getProfileManager() && _contentMode == ContentMode::ProfileGrid) {
+        refreshProfileGrid();
+    }
 }
 
 void ProfilView::refreshProfileGrid() {

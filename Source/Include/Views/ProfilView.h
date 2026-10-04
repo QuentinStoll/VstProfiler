@@ -10,7 +10,8 @@
 #include "PluginProcessor.h"
 #include "Views/MarketplaceAccountPanel.h"
 
-class ProfilView : public juce::Component {
+class ProfilView : public juce::Component,
+                   private juce::ChangeListener {
    public:
     ProfilView(ProfilerAudioProcessor& p);
     ~ProfilView();
@@ -46,4 +47,5 @@ class ProfilView : public juce::Component {
     void importProfil();
     void refreshProfileGrid();
     bool installMarketplacePack(const juce::File& profileFile, const juce::File& irFile, bool hasIntegratedIr, juce::String* errorMessage);
+    void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 };

@@ -76,7 +76,7 @@ void IrCapturePanel::refreshAccountState() {
         return;
     }
 
-    _body.setText("The sweep stays in memory. The sealed IR is sent to your marketplace account and is not written to disk.",
+    _body.setText("The sweep is saved as a profile in this app. The sealed copy is also sent to My creations on profiler.audio.",
                   juce::dontSendNotification);
     _cloneButton.setEnabled(signedIn && !_busy);
     if (!signedIn) {
@@ -140,6 +140,8 @@ void IrCapturePanel::sealAndUpload() {
     std::array<std::uint8_t, 32> key{};
     juce::String error;
     const auto sealedOk = _processor.sealIrCapture(sealed, key, &error);
+    juce::String localError;
+    const auto storedLocally = sealedOk && _processor.storeCapturedIr(_nameEditor.getText().trim(), key, sealed, &localError);
     _processor.lockSpectraSession();
     if (!sealedOk) {
         wipeKey(key);
@@ -152,18 +154,20 @@ void IrCapturePanel::sealAndUpload() {
 
     const auto title = _nameEditor.getText().trim();
     const auto token = session.accessToken;
+    const auto localMessage = storedLocally ? "Profile \"" + title + "\" added. Open Library to use it. "
+                                            : localError + " ";
     juce::Component::SafePointer<IrCapturePanel> safeThis(this);
-    _jobs.addJob([safeThis, title, token, sealed, key]() mutable {
+    _jobs.addJob([safeThis, title, token, sealed, key, localMessage]() mutable {
         Marketplace::Client client;
         const auto result = client.submitIrCapture(token, title, key, sealed);
         wipeKey(key);
         sealed.fillWith(0);
-        juce::MessageManager::callAsync([safeThis, result]() {
+        juce::MessageManager::callAsync([safeThis, result, localMessage]() {
             if (safeThis == nullptr) {
                 return;
             }
             safeThis->_busy = false;
-            safeThis->_status.setText(result.message, juce::dontSendNotification);
+            safeThis->_status.setText(localMessage + result.message, juce::dontSendNotification);
             safeThis->refreshAccountState();
         });
     });
