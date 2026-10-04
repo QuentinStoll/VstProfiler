@@ -223,8 +223,8 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     static bool isCompatibleAmpModel(const RTNeural::Model<float>& model);
     static float getMasterGainLinear(float masterPercent) noexcept;
     std::unique_ptr<RTNeural::Model<float>> parseAmpModel(const void* data,
-                                                         size_t size,
-                                                         AmpModelMetadata* metadata) const;
+                                                          size_t size,
+                                                          AmpModelMetadata* metadata) const;
     bool publishAmpModel(std::unique_ptr<RTNeural::Model<float>> model,
                          const juce::File& sourceFile,
                          const AmpModelMetadata& metadata);

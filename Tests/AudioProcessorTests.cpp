@@ -574,7 +574,7 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         const auto bypassedRms = processSineAndMeasureRms(replaced, blockSize, 32);
         expect(std::abs(bypassedRms - dryRms) < dryRms * 0.15f,
                "Disabling the amp should restore the dry signal after the crossfade. dry="
-                   + juce::String(dryRms, 4) + " bypassed=" + juce::String(bypassedRms, 4));
+               + juce::String(dryRms, 4) + " bypassed=" + juce::String(bypassedRms, 4));
 
         setParameterValue(replaced, "isAmpEnabled", 1.0f);
         const auto restoredRms = processSineAndMeasureRms(replaced, blockSize, 8);
@@ -588,7 +588,7 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         const auto residualRms = processSineAndMeasureRms(residual, blockSize, 32);
         expect(std::abs(residualRms - dryRms) < dryRms * 0.15f,
                "in_skip should add the dry signal back onto a zero network. dry="
-                   + juce::String(dryRms, 4) + " residual=" + juce::String(residualRms, 4));
+               + juce::String(dryRms, 4) + " residual=" + juce::String(residualRms, 4));
         residual.releaseResources();
 
         ProfilerAudioProcessor attenuated;
@@ -598,7 +598,7 @@ class AudioProcessorUnitTests : public juce::UnitTest {
         const auto attenuatedRms = processSineAndMeasureRms(attenuated, blockSize, 32);
         expect(std::abs(attenuatedRms - dryRms * 0.5f) < dryRms * 0.12f,
                "out_gain should scale the model output in decibels. expected="
-                   + juce::String(dryRms * 0.5f, 4) + " actual=" + juce::String(attenuatedRms, 4));
+               + juce::String(dryRms * 0.5f, 4) + " actual=" + juce::String(attenuatedRms, 4));
         attenuated.releaseResources();
     }
 };

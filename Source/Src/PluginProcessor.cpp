@@ -829,8 +829,8 @@ void ProfilerAudioProcessor::unloadIRFile() {
 }
 
 std::unique_ptr<RTNeural::Model<float>> ProfilerAudioProcessor::parseAmpModel(const void* data,
-                                                                               size_t size,
-                                                                               AmpModelMetadata* metadata) const {
+                                                                              size_t size,
+                                                                              AmpModelMetadata* metadata) const {
     if (metadata != nullptr) {
         *metadata = {};
     }
