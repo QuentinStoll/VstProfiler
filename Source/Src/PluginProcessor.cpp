@@ -18,6 +18,7 @@
 #include <tracy/Tracy.hpp>
 
 #include "Logging.h"
+#include "SettingsPath.h"
 #if !(defined(PROFILER_HEADLESS_TESTS) && PROFILER_HEADLESS_TESTS)
 #include "PluginEditor.h"
 #endif
@@ -1041,6 +1042,52 @@ bool ProfilerAudioProcessor::sealIrCapture(juce::MemoryBlock& sealed, std::array
         return false;
     }
     return true;
+}
+
+bool ProfilerAudioProcessor::storeCapturedIr(const juce::String& title,
+                                             const std::array<std::uint8_t, 32>& key,
+                                             const juce::MemoryBlock& sealed,
+                                             juce::String* errorMessage) {
+    juce::MemoryBlock wav;
+    if (!_spectra.openIr(key.data(), key.size(), sealed.getData(), sealed.getSize(), wav)) {
+        if (errorMessage != nullptr) {
+            *errorMessage = "Could not open the captured IR.";
+        }
+        return false;
+    }
+
+    auto stem = title.retainCharacters("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ ");
+    stem = stem.trim();
+    if (stem.isEmpty()) {
+        stem = "Captured IR";
+    }
+
+    const auto directory = getSettingsFolder().getChildFile("Marketplace");
+    if (!directory.isDirectory() && !directory.createDirectory().wasOk()) {
+        wav.fillWith(0);
+        if (errorMessage != nullptr) {
+            *errorMessage = "Could not create the capture folder.";
+        }
+        return false;
+    }
+
+    auto file = directory.getChildFile(stem + ".wav");
+    for (int suffix = 2; file.existsAsFile(); ++suffix) {
+        file = directory.getChildFile(stem + " " + juce::String(suffix) + ".wav");
+    }
+    if (!file.replaceWithData(wav.getData(), wav.getSize())) {
+        wav.fillWith(0);
+        if (errorMessage != nullptr) {
+            *errorMessage = "Could not write the impulse response.";
+        }
+        return false;
+    }
+    wav.fillWith(0);
+
+    juce::NamedValueSet values;
+    values.set("profileName", title.trim().isNotEmpty() ? title.trim() : stem);
+    values.set("irPath", file.getFullPathName());
+    return _profileManager.createProfile(values, errorMessage);
 }
 
 bool ProfilerAudioProcessor::renderIrCapture(juce::AudioBuffer<float>& buffer) {

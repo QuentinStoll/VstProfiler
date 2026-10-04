@@ -260,3 +260,27 @@ bool SpectraEngine::sealIr(const float* recorded,
     _functions->bufferFree(&buffer);
     return sealed.getSize() > 0;
 }
+
+bool SpectraEngine::openIr(const uint8_t* key,
+                           size_t keySize,
+                           const void* sealed,
+                           size_t sealedSize,
+                           juce::MemoryBlock& plain) {
+    SpectraBuffer buffer{};
+    plain.reset();
+    if (!isLoaded() || key == nullptr || keySize == 0 || sealed == nullptr || sealedSize == 0) {
+        return false;
+    }
+
+    if (_functions->irOpen(key, keySize, static_cast<const uint8_t*>(sealed), sealedSize, &buffer) != SPECTRA_OK ||
+        buffer.data == nullptr || buffer.size == 0) {
+        if (_functions->bufferFree != nullptr) {
+            _functions->bufferFree(&buffer);
+        }
+        return false;
+    }
+
+    plain.replaceWith(buffer.data, buffer.size);
+    _functions->bufferFree(&buffer);
+    return plain.getSize() > 0;
+}

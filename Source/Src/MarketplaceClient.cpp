@@ -395,7 +395,7 @@ CaptureResult Client::submitIrCapture(const juce::String& accessToken,
         result.message = "The capture response was invalid.";
         return result;
     }
-    result.message = "Saved to your private marketplace creations.";
+    result.message = "Saved under My creations on profiler.audio, not in purchased packs.";
     return result;
 }
 

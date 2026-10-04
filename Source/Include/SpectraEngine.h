@@ -29,6 +29,11 @@ class SpectraEngine {
                 double sampleRate,
                 std::array<std::uint8_t, 32>& key,
                 juce::MemoryBlock& sealed);
+    bool openIr(const uint8_t* key,
+                size_t keySize,
+                const void* sealed,
+                size_t sealedSize,
+                juce::MemoryBlock& plain);
 
    private:
     struct Functions;

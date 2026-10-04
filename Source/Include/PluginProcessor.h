@@ -79,6 +79,10 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     bool beginIrCapture(juce::String* errorMessage);
     bool irCaptureFinished() const noexcept;
     bool sealIrCapture(juce::MemoryBlock& sealed, std::array<std::uint8_t, 32>& key, juce::String* errorMessage);
+    bool storeCapturedIr(const juce::String& title,
+                         const std::array<std::uint8_t, 32>& key,
+                         const juce::MemoryBlock& sealed,
+                         juce::String* errorMessage);
     void unloadAmpFile();
     bool isIRLoaded() const noexcept;
     bool isAmpFileLoaded() const noexcept;
