@@ -597,18 +597,57 @@ class AudioProcessorUnitTests : public juce::UnitTest {
             setParameterValue(processor, "master", 50.0f);
             prepareProcessor(processor, sampleRate, blockSize);
 
-            juce::AudioBuffer<float> buffer(2, blockSize);
-            juce::MidiBuffer midi;
-            bool finite = true;
-            for (int block = 0; block < 8 && finite; ++block) {
-                for (int sample = 0; sample < blockSize; ++sample) {
-                    const auto value = 0.2f * std::sin(2.0f * juce::MathConstants<float>::pi * 220.0f *
-                                                       static_cast<float>(block * blockSize + sample) / static_cast<float>(sampleRate));
-                    buffer.setSample(0, sample, value);
-                    buffer.setSample(1, sample, 0.0f);
+            auto renderSine = [&](int blocks) {
+                juce::AudioBuffer<float> buffer(2, blockSize);
+                juce::MidiBuffer midi;
+                for (int block = 0; block < blocks; ++block) {
+                    for (int sample = 0; sample < blockSize; ++sample) {
+                        const auto value = 0.2f * std::sin(2.0f * juce::MathConstants<float>::pi * 220.0f *
+                                                           static_cast<float>(block * blockSize + sample) /
+                                                           static_cast<float>(sampleRate));
+                        buffer.setSample(0, sample, value);
+                        buffer.setSample(1, sample, 0.0f);
+                    }
+                    processor.processBlock(buffer, midi);
+                    if (!samplesAreFinite(buffer)) {
+                        return false;
+                    }
                 }
-                processor.processBlock(buffer, midi);
-                finite = samplesAreFinite(buffer);
+                return true;
+            };
+
+            bool finite = renderSine(8);
+            if (const auto* module = Fx::moduleFor(stage)) {
+                for (int param = 1; param < module->paramCount; ++param) {
+                    const auto& spec = module->params[param];
+                    if (spec.type == Fx::ParamType::Bool) {
+                        setParameterValue(processor, spec.id, 0.0f);
+                    } else if (spec.type == Fx::ParamType::Choice) {
+                        setParameterValue(processor, spec.id, 0.0f);
+                    } else {
+                        setParameterValue(processor, spec.id, spec.minimum);
+                    }
+                }
+                finite = finite && renderSine(4);
+                for (int param = 1; param < module->paramCount; ++param) {
+                    const auto& spec = module->params[param];
+                    if (spec.type == Fx::ParamType::Bool) {
+                        setParameterValue(processor, spec.id, 1.0f);
+                    } else if (spec.type == Fx::ParamType::Choice) {
+                        int lastIndex = 0;
+                        if (spec.choices != nullptr) {
+                            for (const char* cursor = spec.choices; *cursor != '\0'; ++cursor) {
+                                if (*cursor == '|') {
+                                    ++lastIndex;
+                                }
+                            }
+                        }
+                        setParameterValue(processor, spec.id, static_cast<float>(lastIndex));
+                    } else {
+                        setParameterValue(processor, spec.id, spec.maximum);
+                    }
+                }
+                finite = finite && renderSine(8);
             }
             processor.releaseResources();
             expect(finite, "Effect stage " + juce::String(stageValue) + " should stay finite.");
