@@ -15,6 +15,9 @@ add_executable(ProfilerTests EXCLUDE_FROM_ALL
     ../Source/Src/Components/NotificationBanner.cpp
     ../Source/Src/Logging.cpp
     ../Source/Src/PluginProcessor.cpp
+    ../Source/Src/Fx/FxCatalog.cpp
+    ../Source/Src/Fx/FxDsp.cpp
+    ../Source/Src/Fx/FxRack.cpp
     ../Source/Src/ProfileManager.cpp
     ../Source/Src/UiSettings.cpp
     ../Source/Src/MarketplaceClient.cpp

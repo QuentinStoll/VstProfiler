@@ -2,6 +2,9 @@
 
 #include <JuceHeader.h>
 
+#include <array>
+#include <vector>
+
 #include "Components/CustomLookAndFeel.h"
 #include "SignalChainLayout.h"
 
@@ -17,13 +20,6 @@ class BlockPickerPage : public juce::Component {
     void close();
     bool isOpen() const noexcept { return isVisible(); }
     int targetSlot() const noexcept { return _targetSlot; }
-
-    enum class Category {
-        Amp,
-        Cab,
-        Eq,
-        Pedal
-    };
 
     std::function<void(int slot, SignalChain::Stage stage)> onBlockChosen;
     std::function<void(int slot)> onBlockRemoved;
@@ -50,18 +46,14 @@ class BlockPickerPage : public juce::Component {
     juce::TextButton _backButton{"Back"};
     juce::TextButton _removeButton{"Remove"};
     juce::TextButton _closeButton{"Close"};
-    TileButton _ampCategory;
-    TileButton _cabCategory;
-    TileButton _eqCategory;
-    TileButton _pedalCategory;
-    TileButton _itemButton;
+    std::array<TileButton, 10> _tiles;
     int _targetSlot = SignalChain::chainSlotForMovableIndex(0);
     SignalChain::Layout _layout{};
     bool _showingItems = false;
-    Category _category = Category::Amp;
+    int _category = 0;
 
     void showCategories();
-    void showItems(Category category);
+    void showItems(int category);
     void chooseStage(SignalChain::Stage stage);
     void layoutTiles(juce::Rectangle<int> area, const std::vector<TileButton*>& tiles);
 

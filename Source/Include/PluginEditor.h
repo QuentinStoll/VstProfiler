@@ -7,6 +7,7 @@
 #include "Components/NotificationBanner.h"
 #include "Components/SignalChainStrip.h"
 #include "Modules/ExportProfilModule.h"
+#include "Modules/FxEditPanel.h"
 #include "Modules/StudioEditPanels.h"
 #include "Modules/StudioTopBar.h"
 #include "PluginProcessor.h"
@@ -51,6 +52,7 @@ class ProfilerAudioProcessorEditor : public juce::AudioProcessorEditor,
     EqPostFxPanel _eqPanel;
     PedalDrivePanel _pedalPanel;
     MasterVolumePanel _masterPanel;
+    FxEditPanel _fxPanel;
     BlockPickerPage _blockPicker;
 
     SettingsView _settingsView;

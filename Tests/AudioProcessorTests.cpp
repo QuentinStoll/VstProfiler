@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstring>
 
+#include "Fx/FxCatalog.h"
 #include "PluginProcessor.h"
 #include "SignalChainLayout.h"
 #include "TestRunner.h"
@@ -74,6 +75,10 @@ class AudioProcessorUnitTests : public juce::UnitTest {
 
         runCase("audio processor amp model residual and bypass", [this] {
             testAmpModelResidualAndBypass();
+        });
+
+        runCase("audio processor effect chain", [this] {
+            testEffectChain();
         });
     }
 
@@ -214,7 +219,8 @@ class AudioProcessorUnitTests : public juce::UnitTest {
     void testParameterDefaults() {
         ProfilerAudioProcessor processor;
 
-        expect(processor.getParameters().size() == 27, "Unexpected processor parameter count.");
+        expect(processor.getParameters().size() == 27 + Fx::parameterCount(),
+               "Unexpected processor parameter count.");
         expectClose(getParameterValue(processor, "master"), 50.0f, "master default");
         expectClose(getParameterValue(processor, "gain"), 0.0f, "gain default");
         expectClose(getParameterValue(processor, "noise"), 10.0f, "noise default");
@@ -544,6 +550,158 @@ class AudioProcessorUnitTests : public juce::UnitTest {
 
     bool loadAmpJson(ProfilerAudioProcessor& processor, const char* json) {
         return processor.loadAmpFromMemory(json, std::strlen(json));
+    }
+
+    void clearMovableSlots(SignalChain::Layout& layout) {
+        for (int index = 0; index < SignalChain::movableSlotCount; ++index) {
+            layout.clear(SignalChain::chainSlotForMovableIndex(index));
+        }
+    }
+
+    bool samplesAreFinite(const juce::AudioBuffer<float>& buffer) {
+        for (int channel = 0; channel < buffer.getNumChannels(); ++channel) {
+            const auto* samples = buffer.getReadPointer(channel);
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample) {
+                if (!std::isfinite(samples[sample]) || std::abs(samples[sample]) > 8.0f) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    void testEffectChain() {
+        expect(Fx::parameterCount() > 100, "Effect catalog should expose the studio modules.");
+        expect(Fx::moduleFor(SignalChain::Stage::ReverbShimmer) != nullptr, "Shimmer module should exist.");
+        expect(Fx::moduleFor(SignalChain::Stage::Amp) == nullptr, "Amp stays outside the effect catalog.");
+
+        SignalChain::Layout shimmer;
+        clearMovableSlots(shimmer);
+        shimmer.place(SignalChain::Stage::ReverbShimmer, 9);
+        const auto restored = SignalChain::Layout::fromPacked(shimmer.packed());
+        expect(restored.slotFor(SignalChain::Stage::ReverbShimmer) == 9, "Shimmer should round-trip in slot 9.");
+        expect(restored.atSlot(2) == SignalChain::Stage::Empty, "Cleared amp slot should stay empty.");
+
+        constexpr double sampleRate = 44100.0;
+        constexpr int blockSize = 256;
+        for (int stageValue = static_cast<int>(SignalChain::Stage::PitchHarmonizer);
+             stageValue <= static_cast<int>(SignalChain::Stage::Tuner);
+             ++stageValue) {
+            const auto stage = static_cast<SignalChain::Stage>(stageValue);
+            ProfilerAudioProcessor processor;
+            SignalChain::Layout layout;
+            clearMovableSlots(layout);
+            layout.place(stage, 1);
+            processor.setChainLayout(layout);
+            setParameterValue(processor, "isGateEnabled", 0.0f);
+            setParameterValue(processor, "master", 50.0f);
+            prepareProcessor(processor, sampleRate, blockSize);
+
+            juce::AudioBuffer<float> buffer(2, blockSize);
+            juce::MidiBuffer midi;
+            bool finite = true;
+            for (int block = 0; block < 8 && finite; ++block) {
+                for (int sample = 0; sample < blockSize; ++sample) {
+                    const auto value = 0.2f * std::sin(2.0f * juce::MathConstants<float>::pi * 220.0f *
+                                                       static_cast<float>(block * blockSize + sample) / static_cast<float>(sampleRate));
+                    buffer.setSample(0, sample, value);
+                    buffer.setSample(1, sample, 0.0f);
+                }
+                processor.processBlock(buffer, midi);
+                finite = samplesAreFinite(buffer);
+            }
+            processor.releaseResources();
+            expect(finite, "Effect stage " + juce::String(stageValue) + " should stay finite.");
+        }
+
+        ProfilerAudioProcessor delay;
+        SignalChain::Layout delayLayout;
+        clearMovableSlots(delayLayout);
+        delayLayout.place(SignalChain::Stage::DelayTape, 1);
+        delay.setChainLayout(delayLayout);
+        setParameterValue(delay, "isGateEnabled", 0.0f);
+        setParameterValue(delay, "master", 50.0f);
+        setParameterValue(delay, "tapeTime", 80.0f);
+        setParameterValue(delay, "tapeFb", 0.0f);
+        setParameterValue(delay, "tapeMix", 100.0f);
+        setParameterValue(delay, "tapeWow", 0.0f);
+        setParameterValue(delay, "tapeSat", 0.0f);
+        prepareProcessor(delay, sampleRate, blockSize);
+
+        juce::MidiBuffer midi;
+        for (int block = 0; block < 16; ++block) {
+            juce::AudioBuffer<float> buffer(2, blockSize);
+            buffer.clear();
+            delay.processBlock(buffer, midi);
+        }
+
+        int peakSample = -1;
+        float peak = 0.0f;
+        float earlyPeak = 0.0f;
+        for (int block = 0; block < 24; ++block) {
+            juce::AudioBuffer<float> buffer(2, blockSize);
+            buffer.clear();
+            if (block == 0) {
+                buffer.setSample(0, 0, 1.0f);
+            }
+            delay.processBlock(buffer, midi);
+            for (int sample = 0; sample < blockSize; ++sample) {
+                const auto time = block * blockSize + sample;
+                const auto magnitude = std::abs(buffer.getSample(0, sample));
+                if (time < static_cast<int>(0.02 * sampleRate)) {
+                    earlyPeak = std::max(earlyPeak, magnitude);
+                }
+                if (magnitude > peak) {
+                    peak = magnitude;
+                    peakSample = time;
+                }
+            }
+        }
+        delay.releaseResources();
+        expect(earlyPeak < 0.05f, "Wet tape delay should not return the impulse immediately.");
+        expect(peak > 0.05f, "Wet tape delay should return the impulse (peak " + juce::String(peak, 4) + ").");
+        expect(std::abs(peakSample - static_cast<int>(0.08 * sampleRate)) < static_cast<int>(0.015 * sampleRate),
+               "Tape delay peak should land near 80 ms.");
+
+        ProfilerAudioProcessor wet;
+        ProfilerAudioProcessor dry;
+        SignalChain::Layout plateLayout;
+        clearMovableSlots(plateLayout);
+        plateLayout.place(SignalChain::Stage::ReverbPlate, 1);
+        wet.setChainLayout(plateLayout);
+        SignalChain::Layout dryLayout;
+        clearMovableSlots(dryLayout);
+        dry.setChainLayout(dryLayout);
+        for (auto* processor : {&wet, &dry}) {
+            setParameterValue(*processor, "isGateEnabled", 0.0f);
+            setParameterValue(*processor, "master", 50.0f);
+            prepareProcessor(*processor, sampleRate, blockSize);
+        }
+        setParameterValue(wet, "plateMix", 100.0f);
+        setParameterValue(wet, "plateOn", 0.0f);
+
+        float worst = 0.0f;
+        for (int block = 0; block < 6; ++block) {
+            juce::AudioBuffer<float> wetBuffer(2, blockSize);
+            juce::AudioBuffer<float> dryBuffer(2, blockSize);
+            for (int sample = 0; sample < blockSize; ++sample) {
+                const auto value = 0.15f * std::sin(2.0f * juce::MathConstants<float>::pi * 440.0f *
+                                                    static_cast<float>(block * blockSize + sample) / static_cast<float>(sampleRate));
+                wetBuffer.setSample(0, sample, value);
+                dryBuffer.setSample(0, sample, value);
+            }
+            wet.processBlock(wetBuffer, midi);
+            dry.processBlock(dryBuffer, midi);
+            if (block < 2) {
+                continue;
+            }
+            for (int sample = 0; sample < blockSize; ++sample) {
+                worst = std::max(worst, std::abs(wetBuffer.getSample(0, sample) - dryBuffer.getSample(0, sample)));
+            }
+        }
+        wet.releaseResources();
+        dry.releaseResources();
+        expect(worst < 0.002f, "Bypassed plate should match the dry chain after the crossfade.");
     }
 
     void testAmpModelResidualAndBypass() {

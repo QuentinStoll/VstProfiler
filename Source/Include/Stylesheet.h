@@ -31,6 +31,14 @@ inline const juce::Colour rigCab = juce::Colour(0xff3B82F6);
 inline const juce::Colour rigEq = juce::Colour(0xffA855F7);
 inline const juce::Colour rigPedal = juce::Colour(0xffE11D48);
 inline const juce::Colour rigMaster = juce::Colour(0xffF4F4F5);
+inline const juce::Colour rigPitch = juce::Colour(0xff22D3EE);
+inline const juce::Colour rigReverb = juce::Colour(0xff818CF8);
+inline const juce::Colour rigDelay = juce::Colour(0xffF59E0B);
+inline const juce::Colour rigChorus = juce::Colour(0xff34D399);
+inline const juce::Colour rigPhaser = juce::Colour(0xffA3E635);
+inline const juce::Colour rigFlanger = juce::Colour(0xff2DD4BF);
+inline const juce::Colour rigDynamics = juce::Colour(0xffFB7185);
+inline const juce::Colour rigTuner = juce::Colour(0xffE4E4E7);
 
 inline const juce::Colour white = text;
 inline const juce::Colour lightestGrey = juce::Colour(0xff5C5C64);
