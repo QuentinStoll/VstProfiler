@@ -841,6 +841,72 @@ void CustomLookAndFeel::drawRigIcon(juce::Graphics& g, juce::Rectangle<float> bo
             g.drawEllipse(ring, juce::jmax(1.8f, strokeW * 1.6f));
             break;
         }
+        case RigIcon::Pitch: {
+            auto left = bounds.reduced(bounds.getWidth() * 0.18f, 1.0f);
+            auto stem = left.removeFromLeft(left.getWidth() * 0.42f);
+            g.drawLine(stem.getCentreX(), stem.getBottom(), stem.getCentreX(), stem.getY() + stem.getHeight() * 0.2f, strokeW);
+            g.drawLine(stem.getCentreX(), stem.getY() + stem.getHeight() * 0.2f,
+                       bounds.getRight() - bounds.getWidth() * 0.22f, bounds.getY() + bounds.getHeight() * 0.08f, strokeW);
+            g.drawEllipse(stem.getCentreX() - stem.getWidth() * 0.28f, stem.getBottom() - stem.getHeight() * 0.28f,
+                          stem.getWidth() * 0.56f, stem.getHeight() * 0.22f, strokeW);
+            break;
+        }
+        case RigIcon::Reverb: {
+            auto centre = bounds.getCentre();
+            for (int arc = 0; arc < 3; ++arc) {
+                const auto radius = bounds.getWidth() * (0.16f + 0.16f * static_cast<float>(arc));
+                juce::Path path;
+                path.addCentredArc(centre.x, centre.y + bounds.getHeight() * 0.12f, radius, radius,
+                                   0.0f, -2.4f, -0.75f, true);
+                g.strokePath(path, stroke);
+            }
+            break;
+        }
+        case RigIcon::Delay: {
+            auto box = bounds.reduced(bounds.getWidth() * 0.12f, bounds.getHeight() * 0.22f);
+            juce::Path path;
+            path.startNewSubPath(box.getX(), box.getCentreY());
+            path.lineTo(box.getCentreX() - box.getWidth() * 0.08f, box.getY());
+            path.lineTo(box.getCentreX() - box.getWidth() * 0.08f, box.getBottom());
+            path.closeSubPath();
+            path.startNewSubPath(box.getRight(), box.getCentreY());
+            path.lineTo(box.getCentreX() + box.getWidth() * 0.08f, box.getY());
+            path.lineTo(box.getCentreX() + box.getWidth() * 0.08f, box.getBottom());
+            path.closeSubPath();
+            g.strokePath(path, stroke);
+            break;
+        }
+        case RigIcon::Mod: {
+            juce::Path path;
+            const auto left = bounds.getX() + bounds.getWidth() * 0.08f;
+            const auto right = bounds.getRight() - bounds.getWidth() * 0.08f;
+            const auto mid = bounds.getCentreY();
+            const auto amp = bounds.getHeight() * 0.32f;
+            path.startNewSubPath(left, mid);
+            path.cubicTo(left + (right - left) * 0.25f, mid - amp,
+                         left + (right - left) * 0.25f, mid - amp,
+                         bounds.getCentreX(), mid);
+            path.cubicTo(left + (right - left) * 0.75f, mid + amp,
+                         left + (right - left) * 0.75f, mid + amp,
+                         right, mid);
+            g.strokePath(path, stroke);
+            break;
+        }
+        case RigIcon::Dynamics: {
+            juce::Path path;
+            path.startNewSubPath(bounds.getX() + bounds.getWidth() * 0.16f, bounds.getBottom() - bounds.getHeight() * 0.18f);
+            path.lineTo(bounds.getCentreX(), bounds.getCentreY());
+            path.lineTo(bounds.getRight() - bounds.getWidth() * 0.12f, bounds.getY() + bounds.getHeight() * 0.28f);
+            g.strokePath(path, stroke);
+            break;
+        }
+        case RigIcon::Tuner: {
+            auto dial = bounds.withSizeKeepingCentre(bounds.getWidth() * 0.72f, bounds.getHeight() * 0.72f);
+            g.drawEllipse(dial, strokeW);
+            g.drawLine(dial.getCentreX(), dial.getCentreY(),
+                       dial.getCentreX() + dial.getWidth() * 0.08f, dial.getY() + dial.getHeight() * 0.22f, strokeW);
+            break;
+        }
     }
 }
 

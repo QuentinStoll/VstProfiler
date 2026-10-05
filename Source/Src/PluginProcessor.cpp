@@ -17,6 +17,7 @@
 
 #include <tracy/Tracy.hpp>
 
+#include "Fx/FxCatalog.h"
 #include "Logging.h"
 #include "SettingsPath.h"
 #if !(defined(PROFILER_HEADLESS_TESTS) && PROFILER_HEADLESS_TESTS)
@@ -83,9 +84,11 @@ ProfilerAudioProcessor::ProfilerAudioProcessor(juce::File profileDirectory,
               .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
               ),
+      _fx(_apvts),
       _profileManager(_apvts, std::move(profileDirectory), std::move(playViewSettingsFile))
 #else
-    : _profileManager(_apvts, std::move(profileDirectory), std::move(playViewSettingsFile))
+    : _fx(_apvts),
+      _profileManager(_apvts, std::move(profileDirectory), std::move(playViewSettingsFile))
 #endif
 {
     Log::logSystemInfoOnFileStart = (bool)(UiSettings::loadHardwareInfoSetting() - 1);
@@ -151,7 +154,14 @@ bool ProfilerAudioProcessor::isMidiEffect() const {
 #endif
 }
 
-double ProfilerAudioProcessor::getTailLengthSeconds() const { return 0.0; }
+double ProfilerAudioProcessor::getTailLengthSeconds() const {
+    const auto layout = getChainLayout();
+    double tail = 0.0;
+    for (int index = 0; index < SignalChain::movableSlotCount; ++index) {
+        tail = juce::jmax(tail, _fx.tailSecondsFor(layout.atSlot(SignalChain::chainSlotForMovableIndex(index))));
+    }
+    return tail;
+}
 int ProfilerAudioProcessor::getNumPrograms() { return 1; }
 int ProfilerAudioProcessor::getCurrentProgram() { return 0; }
 void ProfilerAudioProcessor::setCurrentProgram(int /*index*/) {}
@@ -247,6 +257,8 @@ void ProfilerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
     _ampWetMix.reset(sampleRate, AMP_BYPASS_CROSSFADE_SECONDS);
     _ampWetMix.setCurrentAndTargetValue(getParameterValue(_isAmpEnabledParam, 1.0f) > 0.5f ? 1.0f : 0.0f);
+    _fx.prepare(sampleRate, samplesPerBlock);
+    updateReportedLatency();
 
     {
         const juce::ScopedLock ampLock(_ampModelLock);
@@ -276,6 +288,7 @@ void ProfilerAudioProcessor::releaseResources() {
     _inputTrim.reset();
     _masterVolume.reset();
     _outputTrim.reset();
+    _fx.reset();
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -374,29 +387,74 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     _inputTrim.process(context);
     processGateStage(context);
 
+    float* left = buffer.getWritePointer(0);
+    float* right = numChannels > 1 ? buffer.getWritePointer(1) : nullptr;
+    auto mirror = [&]() {
+        if (right != nullptr) {
+            juce::FloatVectorOperations::copy(right, left, numSamples);
+        }
+    };
+    auto foldToMono = [&]() {
+        if (right == nullptr) {
+            return;
+        }
+        for (int sample = 0; sample < numSamples; ++sample) {
+            left[sample] = 0.5f * (left[sample] + right[sample]);
+        }
+        mirror();
+    };
+    mirror();
+
+    double bpm = 120.0;
+    if (auto* hostPlayHead = getPlayHead()) {
+        if (auto position = hostPlayHead->getPosition()) {
+            if (auto value = position->getBpm()) {
+                if (*value > 1.0) {
+                    bpm = *value;
+                }
+            }
+        }
+    }
+    _fx.setTempo(bpm);
+
     _cabLowCutSmoothed.setTargetValue(getParameterValue(_cabLowCutParam, 80.0f));
     const auto layout = SignalChain::Layout::fromPacked(_chainLayoutPacked.load(std::memory_order_relaxed));
     int ampInstance = 0;
     int cabInstance = 0;
     int eqInstance = 0;
     int pedalInstance = 0;
+    std::array<int, 32> fxInstance{};
     for (int index = 0; index < SignalChain::movableSlotCount; ++index) {
-        switch (layout.atSlot(SignalChain::chainSlotForMovableIndex(index))) {
+        const auto stage = layout.atSlot(SignalChain::chainSlotForMovableIndex(index));
+        switch (stage) {
             case SignalChain::Stage::Cab:
+                foldToMono();
                 processCabStage(context, cabInstance++);
+                mirror();
                 break;
             case SignalChain::Stage::Eq:
+                foldToMono();
                 processEqStage(context, eqInstance++);
+                mirror();
                 break;
             case SignalChain::Stage::Pedal:
+                foldToMono();
                 processPedalStage(buffer, context, numSamples, pedalInstance++);
+                mirror();
                 break;
             case SignalChain::Stage::Amp:
+                foldToMono();
                 processAmpStage(buffer, context, numSamples, ampInstance++);
+                mirror();
                 break;
             case SignalChain::Stage::Empty:
-            default:
                 break;
+            default: {
+                const auto stageIndex = static_cast<size_t>(static_cast<int>(stage));
+                const int instance = stageIndex < fxInstance.size() ? fxInstance[stageIndex]++ : 0;
+                _fx.process(stage, instance, left, right != nullptr ? right : left, numSamples);
+                break;
+            }
         }
     }
 
@@ -410,13 +468,14 @@ void ProfilerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
 
     _masterVolume.setGainLinear(getMasterGainLinear(getParameterValue(_masterParam, 50.0f)));
-    _masterVolume.process(context);
     _outputTrim.setGainDecibels(getParameterValue(_outputParam, 0.0f));
-    _outputTrim.process(context);
-
-    if (numChannels > 1) {
-        juce::FloatVectorOperations::copy(buffer.getWritePointer(1), buffer.getReadPointer(0), numSamples);
+    {
+        juce::dsp::AudioBlock<float> outputBlock(buffer);
+        juce::dsp::ProcessContextReplacing<float> outputContext(outputBlock);
+        _masterVolume.process(outputContext);
+        _outputTrim.process(outputContext);
     }
+    updateReportedLatency();
 
     _rmsLevelOutput.store(juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, numSamples), -60.0f),
                           std::memory_order_relaxed);
@@ -428,6 +487,22 @@ float ProfilerAudioProcessor::getRmsLevelInput() const noexcept {
 
 float ProfilerAudioProcessor::getRmsLevelOutput() const noexcept {
     return _rmsLevelOutput.load(std::memory_order_relaxed);
+}
+
+bool ProfilerAudioProcessor::readTuner(Fx::TunerSnapshot& snapshot) const {
+    return _fx.readTuner(snapshot);
+}
+
+void ProfilerAudioProcessor::updateReportedLatency() {
+    const auto layout = getChainLayout();
+    int latency = 0;
+    for (int index = 0; index < SignalChain::movableSlotCount; ++index) {
+        latency += _fx.latencySamplesFor(layout.atSlot(SignalChain::chainSlotForMovableIndex(index)));
+    }
+    if (latency != _reportedLatency) {
+        _reportedLatency = latency;
+        setLatencySamples(latency);
+    }
 }
 
 SignalChain::Layout ProfilerAudioProcessor::getChainLayout() const noexcept {
@@ -768,6 +843,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout ProfilerAudioProcessor::crea
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{"pedalLevel", 1}, "Pedal Level", juce::NormalisableRange<float>(-12.0f, 12.0f, 0.1f), 0.0f));
 
+    Fx::addParameters(layout);
     return layout;
 }
 

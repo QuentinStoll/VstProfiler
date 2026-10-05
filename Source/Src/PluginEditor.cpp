@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 
+#include "Fx/FxCatalog.h"
 #include "ProfileManager.h"
 #include "ProfilerConstantValues.h"
 #include "Stylesheet.h"
@@ -116,6 +117,7 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
       _eqPanel(p._apvts),
       _pedalPanel(p._apvts),
       _masterPanel(p),
+      _fxPanel(p),
       _libraryView(p),
       _settingsView(p) {
     SettingsView::applySavedBackgroundColour();
@@ -146,6 +148,7 @@ ProfilerAudioProcessorEditor::ProfilerAudioProcessorEditor(ProfilerAudioProcesso
     _editHost.addAndMakeVisible(_eqPanel);
     _editHost.addAndMakeVisible(_pedalPanel);
     _editHost.addAndMakeVisible(_masterPanel);
+    _editHost.addAndMakeVisible(_fxPanel);
     _editHost.addChildComponent(_blockPicker);
 
     _settingsHost.addAndMakeVisible(_settingsView);
@@ -383,7 +386,7 @@ void ProfilerAudioProcessorEditor::resized() {
     _topBar.setBounds(area.removeFromTop(48));
 
     if (_overlayMode == OverlayMode::None) {
-        constexpr int editHeight = 198;
+        constexpr int editHeight = 228;
         _editHost.setBounds(area.removeFromBottom(juce::jmin(editHeight, juce::jmax(0, area.getHeight() - 160))));
         _signalChain.setBounds(area);
 
@@ -394,6 +397,7 @@ void ProfilerAudioProcessorEditor::resized() {
         _eqPanel.setBounds(panelBounds);
         _pedalPanel.setBounds(panelBounds);
         _masterPanel.setBounds(panelBounds);
+        _fxPanel.setBounds(panelBounds);
         _blockPicker.setBounds(panelBounds);
         _closeOverlayButton.setBounds({});
     } else {
@@ -477,6 +481,11 @@ void ProfilerAudioProcessorEditor::showEditPanel(SignalChainStrip::BlockId block
     _eqPanel.setVisible(blockId == SignalChainStrip::BlockId::EqPostFx);
     _pedalPanel.setVisible(blockId == SignalChainStrip::BlockId::PedalDrive);
     _masterPanel.setVisible(blockId == SignalChainStrip::BlockId::MasterVolume);
+    const bool fx = blockId == SignalChainStrip::BlockId::Fx;
+    _fxPanel.setVisible(fx);
+    if (fx) {
+        _fxPanel.setStage(_signalChain.getLayout().atSlot(_signalChain.getSelectedChainSlot()));
+    }
 }
 
 void ProfilerAudioProcessorEditor::openBlockPicker(int slot) {
@@ -496,24 +505,7 @@ void ProfilerAudioProcessorEditor::closeBlockPicker() {
 void ProfilerAudioProcessorEditor::placeChosenBlock(int slot, SignalChain::Stage stage) {
     _audioProcessor.placeChainStage(stage, slot);
     _signalChain.setLayout(_audioProcessor.getChainLayout());
-    SignalChainStrip::BlockId blockId = SignalChainStrip::BlockId::AmpProfiler;
-    switch (stage) {
-        case SignalChain::Stage::Cab:
-            blockId = SignalChainStrip::BlockId::CabinetIr;
-            break;
-        case SignalChain::Stage::Eq:
-            blockId = SignalChainStrip::BlockId::EqPostFx;
-            break;
-        case SignalChain::Stage::Pedal:
-            blockId = SignalChainStrip::BlockId::PedalDrive;
-            break;
-        case SignalChain::Stage::Amp:
-        default:
-            blockId = SignalChainStrip::BlockId::AmpProfiler;
-            break;
-    }
-    _signalChain.setSelectedBlock(blockId);
-    showEditPanel(blockId);
+    _signalChain.selectSlot(slot);
     updateChainStatus();
 }
 
@@ -537,6 +529,16 @@ void ProfilerAudioProcessorEditor::updateChainStatus() {
     _signalChain.setBlockLed(SignalChainStrip::BlockId::EqPostFx, eqOn);
     _signalChain.setBlockLed(SignalChainStrip::BlockId::PedalDrive, pedalOn);
     _signalChain.setBlockLed(SignalChainStrip::BlockId::MasterVolume, true);
+
+    const auto layout = _audioProcessor.getChainLayout();
+    for (int index = 0; index < SignalChain::movableSlotCount; ++index) {
+        const auto slot = SignalChain::chainSlotForMovableIndex(index);
+        const auto stage = layout.atSlot(slot);
+        if (const auto* module = Fx::moduleFor(stage)) {
+            const auto* value = _audioProcessor._apvts.getRawParameterValue(module->bypassId());
+            _signalChain.setSlotLed(slot, value == nullptr || value->load() > 0.5f);
+        }
+    }
 }
 
 void ProfilerAudioProcessorEditor::toggleBlockBypass(SignalChainStrip::BlockId blockId) {
@@ -575,6 +577,11 @@ void ProfilerAudioProcessorEditor::toggleBlockBypass(SignalChainStrip::BlockId b
         case SignalChainStrip::BlockId::PedalDrive:
             toggle("isPedalEnabled");
             _pedalPanel.refreshBypassState();
+            break;
+        case SignalChainStrip::BlockId::Fx:
+            if (const auto* module = Fx::moduleFor(_signalChain.getLayout().atSlot(_signalChain.getSelectedChainSlot()))) {
+                toggle(module->bypassId());
+            }
             break;
         case SignalChainStrip::BlockId::MasterVolume:
             break;
@@ -668,6 +675,7 @@ void ProfilerAudioProcessorEditor::parameterChanged(const juce::String& paramete
 
 void ProfilerAudioProcessorEditor::timerCallback() {
     _signalChain.setIoMeterLevels(_audioProcessor.getRmsLevelInput(), _audioProcessor.getRmsLevelOutput());
+    updateChainStatus();
     if (_hostChromePasses < kHostChromeRetryLimit) {
         applyHostWindowChrome();
         ++_hostChromePasses;

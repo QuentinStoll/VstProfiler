@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "EqBandLayout.h"
+#include "Fx/FxRack.h"
 #include "ProfileManager.h"
 #include "SignalChainLayout.h"
 #include "SpectraEngine.h"
@@ -96,6 +97,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     const ProfileManager& getProfileManager() const noexcept;
     float getRmsLevelInput() const noexcept;
     float getRmsLevelOutput() const noexcept;
+    bool readTuner(Fx::TunerSnapshot& snapshot) const;
     SignalChain::Layout getChainLayout() const noexcept;
     void setChainLayout(const SignalChain::Layout& layout);
     void resetChainLayout();
@@ -173,6 +175,8 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     juce::SmoothedValue<float> _cabLowCutSmoothed;
     bool _eqCoeffsDirty{true};
     std::atomic<std::uint64_t> _chainLayoutPacked{SignalChain::defaultPacked};
+    Fx::FxRack _fx;
+    int _reportedLatency = 0;
 
     std::array<Filter, kChainCopies> _cabLowCuts{};
     std::array<Filter, kChainCopies> _pedalToneFilters{};
@@ -217,6 +221,7 @@ class ProfilerAudioProcessor : public juce::AudioProcessor {
     void setEqBypassed(bool bypassed);
     void loadIrIntoConvolvers(const void* data, size_t size);
     void updatePedalToneCoefficients();
+    void updateReportedLatency();
     struct AmpModelMetadata {
         int inputSkip = 0;
         float inputGain = 1.0f;

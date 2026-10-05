@@ -5,32 +5,81 @@
 #include "Stylesheet.h"
 
 namespace {
-struct CategorySpec {
-    BlockPickerPage::Category category;
+struct TileSpec {
     const char* title;
     CustomLookAndFeel::RigIcon icon;
     juce::Colour colour;
     SignalChain::Stage stage;
-    const char* itemTitle;
 };
 
-const CategorySpec kCategories[] = {
-    {BlockPickerPage::Category::Amp, "Ampli", CustomLookAndFeel::RigIcon::AmpHead, ProfilerStyle::Colors::rigAmp,
-     SignalChain::Stage::Amp, "Amp"},
-    {BlockPickerPage::Category::Cab, "Cab", CustomLookAndFeel::RigIcon::Cabinet, ProfilerStyle::Colors::rigCab,
-     SignalChain::Stage::Cab, "Cab"},
-    {BlockPickerPage::Category::Eq, "EQ", CustomLookAndFeel::RigIcon::EqFaders, ProfilerStyle::Colors::rigEq,
-     SignalChain::Stage::Eq, "EQ"},
-    {BlockPickerPage::Category::Pedal, "Pedals", CustomLookAndFeel::RigIcon::Pedal, ProfilerStyle::Colors::rigPedal,
-     SignalChain::Stage::Pedal, "Overdrive"}};
+struct CategorySpec {
+    const char* title;
+    CustomLookAndFeel::RigIcon icon;
+    juce::Colour colour;
+    const TileSpec* items;
+    int itemCount;
+};
 
-const CategorySpec& specFor(BlockPickerPage::Category category) {
-    for (const auto& spec : kCategories) {
-        if (spec.category == category) {
-            return spec;
+const TileSpec kAmp[] = {
+    {"Amp", CustomLookAndFeel::RigIcon::AmpHead, ProfilerStyle::Colors::rigAmp, SignalChain::Stage::Amp}};
+const TileSpec kCab[] = {
+    {"Cab", CustomLookAndFeel::RigIcon::Cabinet, ProfilerStyle::Colors::rigCab, SignalChain::Stage::Cab}};
+const TileSpec kEq[] = {
+    {"EQ", CustomLookAndFeel::RigIcon::EqFaders, ProfilerStyle::Colors::rigEq, SignalChain::Stage::Eq},
+    {"Parametric", CustomLookAndFeel::RigIcon::EqFaders, ProfilerStyle::Colors::rigEq, SignalChain::Stage::EqParametric},
+    {"Tone", CustomLookAndFeel::RigIcon::EqFaders, ProfilerStyle::Colors::rigEq, SignalChain::Stage::EqTone},
+    {"Dynamic", CustomLookAndFeel::RigIcon::EqFaders, ProfilerStyle::Colors::rigEq, SignalChain::Stage::EqDynamic}};
+const TileSpec kPedal[] = {
+    {"Overdrive", CustomLookAndFeel::RigIcon::Pedal, ProfilerStyle::Colors::rigPedal, SignalChain::Stage::Pedal}};
+const TileSpec kPitch[] = {
+    {"Harmonizer", CustomLookAndFeel::RigIcon::Pitch, ProfilerStyle::Colors::rigPitch, SignalChain::Stage::PitchHarmonizer},
+    {"Octaver", CustomLookAndFeel::RigIcon::Pitch, ProfilerStyle::Colors::rigPitch, SignalChain::Stage::PitchOctaver}};
+const TileSpec kReverb[] = {
+    {"Plate", CustomLookAndFeel::RigIcon::Reverb, ProfilerStyle::Colors::rigReverb, SignalChain::Stage::ReverbPlate},
+    {"Hall", CustomLookAndFeel::RigIcon::Reverb, ProfilerStyle::Colors::rigReverb, SignalChain::Stage::ReverbHall},
+    {"Shimmer", CustomLookAndFeel::RigIcon::Reverb, ProfilerStyle::Colors::rigReverb, SignalChain::Stage::ReverbShimmer},
+    {"Spring", CustomLookAndFeel::RigIcon::Reverb, ProfilerStyle::Colors::rigReverb, SignalChain::Stage::ReverbSpring},
+    {"Granular", CustomLookAndFeel::RigIcon::Reverb, ProfilerStyle::Colors::rigReverb, SignalChain::Stage::ReverbGranular}};
+const TileSpec kDelay[] = {
+    {"Tape", CustomLookAndFeel::RigIcon::Delay, ProfilerStyle::Colors::rigDelay, SignalChain::Stage::DelayTape},
+    {"Ping-Pong", CustomLookAndFeel::RigIcon::Delay, ProfilerStyle::Colors::rigDelay, SignalChain::Stage::DelayPingPong},
+    {"Dark", CustomLookAndFeel::RigIcon::Delay, ProfilerStyle::Colors::rigDelay, SignalChain::Stage::DelayDark},
+    {"Tape Sat", CustomLookAndFeel::RigIcon::Delay, ProfilerStyle::Colors::rigDelay, SignalChain::Stage::DelayTapeExtreme},
+    {"Reverse", CustomLookAndFeel::RigIcon::Delay, ProfilerStyle::Colors::rigDelay, SignalChain::Stage::DelayReverse}};
+const TileSpec kMod[] = {
+    {"Ensemble", CustomLookAndFeel::RigIcon::Mod, ProfilerStyle::Colors::rigChorus, SignalChain::Stage::ChorusEnsemble},
+    {"Mod Lead", CustomLookAndFeel::RigIcon::Mod, ProfilerStyle::Colors::rigChorus, SignalChain::Stage::ChorusLead},
+    {"Phaser 4", CustomLookAndFeel::RigIcon::Mod, ProfilerStyle::Colors::rigPhaser, SignalChain::Stage::Phaser4},
+    {"Phaser 8", CustomLookAndFeel::RigIcon::Mod, ProfilerStyle::Colors::rigPhaser, SignalChain::Stage::Phaser8},
+    {"Flanger", CustomLookAndFeel::RigIcon::Mod, ProfilerStyle::Colors::rigFlanger, SignalChain::Stage::FlangerSubtle},
+    {"Flanger Hard", CustomLookAndFeel::RigIcon::Mod, ProfilerStyle::Colors::rigFlanger, SignalChain::Stage::FlangerHard}};
+const TileSpec kDynamics[] = {
+    {"Tight", CustomLookAndFeel::RigIcon::Dynamics, ProfilerStyle::Colors::rigDynamics, SignalChain::Stage::CompBlack},
+    {"Pump", CustomLookAndFeel::RigIcon::Dynamics, ProfilerStyle::Colors::rigDynamics, SignalChain::Stage::CompBrutal},
+    {"Comp", CustomLookAndFeel::RigIcon::Dynamics, ProfilerStyle::Colors::rigDynamics, SignalChain::Stage::CompClear},
+    {"Gate", CustomLookAndFeel::RigIcon::Dynamics, ProfilerStyle::Colors::rigDynamics, SignalChain::Stage::NoiseGate}};
+const TileSpec kTools[] = {
+    {"Tuner", CustomLookAndFeel::RigIcon::Tuner, ProfilerStyle::Colors::rigTuner, SignalChain::Stage::Tuner}};
+
+const CategorySpec kCategories[] = {
+    {"Ampli", CustomLookAndFeel::RigIcon::AmpHead, ProfilerStyle::Colors::rigAmp, kAmp, 1},
+    {"Cab", CustomLookAndFeel::RigIcon::Cabinet, ProfilerStyle::Colors::rigCab, kCab, 1},
+    {"EQ", CustomLookAndFeel::RigIcon::EqFaders, ProfilerStyle::Colors::rigEq, kEq, 4},
+    {"Pedals", CustomLookAndFeel::RigIcon::Pedal, ProfilerStyle::Colors::rigPedal, kPedal, 1},
+    {"Pitch", CustomLookAndFeel::RigIcon::Pitch, ProfilerStyle::Colors::rigPitch, kPitch, 2},
+    {"Reverb", CustomLookAndFeel::RigIcon::Reverb, ProfilerStyle::Colors::rigReverb, kReverb, 5},
+    {"Delay", CustomLookAndFeel::RigIcon::Delay, ProfilerStyle::Colors::rigDelay, kDelay, 5},
+    {"Modulation", CustomLookAndFeel::RigIcon::Mod, ProfilerStyle::Colors::rigChorus, kMod, 6},
+    {"Dynamics", CustomLookAndFeel::RigIcon::Dynamics, ProfilerStyle::Colors::rigDynamics, kDynamics, 4},
+    {"Tools", CustomLookAndFeel::RigIcon::Tuner, ProfilerStyle::Colors::rigTuner, kTools, 1}};
+
+bool categoryInUse(const CategorySpec& category, const SignalChain::Layout& layout) {
+    for (int index = 0; index < category.itemCount; ++index) {
+        if (layout.contains(category.items[index].stage)) {
+            return true;
         }
     }
-    return kCategories[0];
+    return false;
 }
 }  // namespace
 
@@ -88,31 +137,15 @@ BlockPickerPage::BlockPickerPage() {
     addAndMakeVisible(_backButton);
     addChildComponent(_removeButton);
     addAndMakeVisible(_closeButton);
-    addAndMakeVisible(_ampCategory);
-    addAndMakeVisible(_cabCategory);
-    addAndMakeVisible(_eqCategory);
-    addAndMakeVisible(_pedalCategory);
-    addChildComponent(_itemButton);
+
+    for (auto& tile : _tiles) {
+        addChildComponent(tile);
+    }
 
     _backButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
     _removeButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
     _closeButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
 
-    _ampCategory.onClick = [this]() {
-        showItems(Category::Amp);
-    };
-    _cabCategory.onClick = [this]() {
-        showItems(Category::Cab);
-    };
-    _eqCategory.onClick = [this]() {
-        showItems(Category::Eq);
-    };
-    _pedalCategory.onClick = [this]() {
-        showItems(Category::Pedal);
-    };
-    _itemButton.onClick = [this]() {
-        chooseStage(specFor(_category).stage);
-    };
     _backButton.onClick = [this]() {
         showCategories();
     };
@@ -153,22 +186,13 @@ void BlockPickerPage::resized() {
     _title.setBounds(header);
     area.removeFromTop(10);
 
-    if (_showingItems) {
-        _ampCategory.setVisible(false);
-        _cabCategory.setVisible(false);
-        _eqCategory.setVisible(false);
-        _pedalCategory.setVisible(false);
-        _itemButton.setVisible(true);
-        layoutTiles(area, {&_itemButton});
-        return;
+    std::vector<TileButton*> visible;
+    for (auto& tile : _tiles) {
+        if (tile.isVisible()) {
+            visible.push_back(&tile);
+        }
     }
-
-    _itemButton.setVisible(false);
-    _ampCategory.setVisible(true);
-    _cabCategory.setVisible(true);
-    _eqCategory.setVisible(true);
-    _pedalCategory.setVisible(true);
-    layoutTiles(area, {&_ampCategory, &_cabCategory, &_eqCategory, &_pedalCategory});
+    layoutTiles(area, visible);
 }
 
 void BlockPickerPage::open(int chainSlot, const SignalChain::Layout& layout) {
@@ -192,24 +216,49 @@ void BlockPickerPage::showCategories() {
     _removeButton.setVisible(_layout.atSlot(_targetSlot) != SignalChain::Stage::Empty);
     _title.setText("CHOOSE A BLOCK", juce::dontSendNotification);
 
-    const CategorySpec* specs[] = {&kCategories[0], &kCategories[1], &kCategories[2], &kCategories[3]};
-    TileButton* tiles[] = {&_ampCategory, &_cabCategory, &_eqCategory, &_pedalCategory};
-    for (int index = 0; index < 4; ++index) {
-        tiles[index]->setTile(specs[index]->title,
-                              specs[index]->icon,
-                              specs[index]->colour,
-                              _layout.contains(specs[index]->stage));
+    const auto count = static_cast<int>(std::size(kCategories));
+    for (int index = 0; index < static_cast<int>(_tiles.size()); ++index) {
+        auto& tile = _tiles[static_cast<size_t>(index)];
+        if (index >= count) {
+            tile.setVisible(false);
+            tile.onClick = nullptr;
+            continue;
+        }
+        const auto& category = kCategories[index];
+        tile.setTile(category.title, category.icon, category.colour, categoryInUse(category, _layout));
+        tile.setVisible(true);
+        tile.onClick = [this, index]() {
+            showItems(index);
+        };
     }
     resized();
 }
 
-void BlockPickerPage::showItems(Category category) {
+void BlockPickerPage::showItems(int category) {
+    if (category < 0 || category >= static_cast<int>(std::size(kCategories))) {
+        return;
+    }
     _category = category;
     _showingItems = true;
     _backButton.setEnabled(true);
-    const auto& spec = specFor(category);
+    const auto& spec = kCategories[category];
     _title.setText(juce::String(spec.title).toUpperCase(), juce::dontSendNotification);
-    _itemButton.setTile(spec.itemTitle, spec.icon, spec.colour, _layout.contains(spec.stage));
+
+    for (int index = 0; index < static_cast<int>(_tiles.size()); ++index) {
+        auto& tile = _tiles[static_cast<size_t>(index)];
+        if (index >= spec.itemCount) {
+            tile.setVisible(false);
+            tile.onClick = nullptr;
+            continue;
+        }
+        const auto& item = spec.items[index];
+        tile.setTile(item.title, item.icon, item.colour, _layout.contains(item.stage));
+        tile.setVisible(true);
+        const auto stage = item.stage;
+        tile.onClick = [this, stage]() {
+            chooseStage(stage);
+        };
+    }
     resized();
 }
 
@@ -227,14 +276,20 @@ void BlockPickerPage::layoutTiles(juce::Rectangle<int> area, const std::vector<T
     }
 
     const auto count = static_cast<int>(tiles.size());
+    const auto columns = count > 5 ? 5 : count;
+    const auto rows = (count + columns - 1) / columns;
     const auto gap = 10;
-    const auto tileW = juce::jlimit(96, 168, (area.getWidth() - gap * (count - 1)) / count);
-    const auto tileH = juce::jlimit(88, 120, area.getHeight());
-    auto row = juce::Rectangle<int>(tileW * count + gap * (count - 1), tileH).withCentre(area.getCentre());
+    const auto tileW = juce::jlimit(88, 150, (area.getWidth() - gap * (columns - 1)) / columns);
+    const auto tileH = juce::jlimit(72, 110, (area.getHeight() - gap * (rows - 1)) / juce::jmax(1, rows));
+    const auto gridW = tileW * columns + gap * (columns - 1);
+    const auto gridH = tileH * rows + gap * (rows - 1);
+    const auto origin = area.getCentre() - juce::Point<int>(gridW / 2, gridH / 2);
     for (int index = 0; index < count; ++index) {
-        tiles[static_cast<size_t>(index)]->setBounds(row.removeFromLeft(tileW));
-        if (index + 1 < count) {
-            row.removeFromLeft(gap);
-        }
+        const auto column = index % columns;
+        const auto row = index / columns;
+        tiles[static_cast<size_t>(index)]->setBounds(origin.x + column * (tileW + gap),
+                                                     origin.y + row * (tileH + gap),
+                                                     tileW,
+                                                     tileH);
     }
 }

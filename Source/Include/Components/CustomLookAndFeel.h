@@ -99,7 +99,13 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4 {
         Cabinet,
         EqFaders,
         Pedal,
-        Speaker
+        Speaker,
+        Pitch,
+        Reverb,
+        Delay,
+        Mod,
+        Dynamics,
+        Tuner
     };
 
     void drawRaisedPanel(juce::Graphics& g,

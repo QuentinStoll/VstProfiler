@@ -83,6 +83,10 @@ target_sources(${PLUGIN_NAME} PRIVATE
     Src/Modules/DeleteProfileConfirmationModule.cpp
     Src/Modules/EditProfilModule.cpp
     Src/Modules/ExportProfilModule.cpp
+    Src/Modules/FxEditPanel.cpp
+    Src/Fx/FxCatalog.cpp
+    Src/Fx/FxDsp.cpp
+    Src/Fx/FxRack.cpp
     Src/Modules/FileAssetsModule.cpp
     Src/Modules/MasterSlidersModule.cpp
     Src/Modules/StudioEditPanels.cpp

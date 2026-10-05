@@ -15,6 +15,7 @@ class SignalChainBlock : public juce::Button {
     ~SignalChainBlock() override = default;
 
     void setAppearance(juce::Colour categoryColour, CustomLookAndFeel::RigIcon icon);
+    void setCaption(const juce::String& caption);
 
     enum class FlowMark { None,
                           Down,
@@ -44,6 +45,7 @@ class SignalChainBlock : public juce::Button {
    private:
     juce::Colour _categoryColour;
     CustomLookAndFeel::RigIcon _icon;
+    juce::String _caption;
     bool _ledOn = true;
     bool _isIoNode = false;
     bool _showsLed = true;
@@ -66,7 +68,8 @@ class SignalChainStrip : public juce::Component {
         CabinetIr,
         EqPostFx,
         PedalDrive,
-        MasterVolume
+        MasterVolume,
+        Fx
     };
 
     SignalChainStrip();
@@ -77,6 +80,9 @@ class SignalChainStrip : public juce::Component {
     void mouseUp(const juce::MouseEvent& event) override;
 
     void setSelectedBlock(BlockId blockId);
+    void selectSlot(int chainSlot);
+    int getSelectedChainSlot() const noexcept { return _selectedChainSlot; }
+    void setSlotLed(int chainSlot, bool isOn);
     BlockId getSelectedBlock() const noexcept { return _selected; }
     bool selectAdjacentBlock(int delta);
 

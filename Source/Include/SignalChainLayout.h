@@ -73,13 +73,45 @@ enum class Stage : int {
     Amp = 1,
     Cab = 2,
     Eq = 3,
-    Pedal = 4
+    Pedal = 4,
+    PitchHarmonizer = 5,
+    PitchOctaver = 6,
+    ReverbPlate = 7,
+    ReverbHall = 8,
+    ReverbShimmer = 9,
+    ReverbSpring = 10,
+    ReverbGranular = 11,
+    DelayTape = 12,
+    DelayPingPong = 13,
+    DelayDark = 14,
+    DelayTapeExtreme = 15,
+    DelayReverse = 16,
+    ChorusEnsemble = 17,
+    ChorusLead = 18,
+    Phaser4 = 19,
+    Phaser8 = 20,
+    FlangerSubtle = 21,
+    FlangerHard = 22,
+    CompBlack = 23,
+    CompBrutal = 24,
+    CompClear = 25,
+    EqParametric = 26,
+    EqTone = 27,
+    EqDynamic = 28,
+    NoiseGate = 29,
+    Tuner = 30
 };
 
-constexpr int uniqueStageCount = 4;
+constexpr int effectStageCount = static_cast<int>(Stage::Tuner);
+
+inline constexpr bool isKnownStage(Stage stage) noexcept {
+    const auto value = static_cast<int>(stage);
+    return value >= static_cast<int>(Stage::Empty) && value <= static_cast<int>(Stage::Tuner);
+}
 
 inline constexpr bool isEffectStage(Stage stage) noexcept {
-    return stage == Stage::Amp || stage == Stage::Cab || stage == Stage::Eq || stage == Stage::Pedal;
+    const auto value = static_cast<int>(stage);
+    return value >= static_cast<int>(Stage::Amp) && value <= static_cast<int>(Stage::Tuner);
 }
 
 struct Layout {
@@ -96,7 +128,7 @@ struct Layout {
                                                Stage::Empty,
                                                Stage::Empty}};
 
-    Stage atSlot(int chainSlot) const noexcept {
+    constexpr Stage atSlot(int chainSlot) const noexcept {
         const auto index = movableIndexForSlot(chainSlot);
         if (index < 0) {
             return Stage::Empty;
@@ -104,7 +136,7 @@ struct Layout {
         return slots[static_cast<size_t>(index)];
     }
 
-    int slotFor(Stage stage) const noexcept {
+    constexpr int slotFor(Stage stage) const noexcept {
         if (!isEffectStage(stage)) {
             return -1;
         }
@@ -167,9 +199,9 @@ struct Layout {
         slots[static_cast<size_t>(from)] = displaced;
     }
 
-    bool isValid() const noexcept {
+    constexpr bool isValid() const noexcept {
         for (const auto stage : slots) {
-            if (stage != Stage::Empty && !isEffectStage(stage)) {
+            if (!isKnownStage(stage)) {
                 return false;
             }
         }
@@ -197,24 +229,50 @@ struct Layout {
         return count;
     }
 
+    // Five bits per slot (bits 0-59) plus a version nibble (bits 60-63).
+    // Version 0 is the legacy 4-bit layout used by older sessions.
     constexpr std::uint64_t packed() const noexcept {
-        std::uint64_t value = 0;
+        constexpr int bitsPerSlot = 5;
+        constexpr std::uint64_t version = 1;
+        std::uint64_t value = version << 60;
         for (int index = 0; index < movableSlotCount; ++index) {
-            value |= (static_cast<std::uint64_t>(slots[static_cast<size_t>(index)]) & 0x0F)
-                     << (4 * index);
+            value |= (static_cast<std::uint64_t>(slots[static_cast<size_t>(index)]) & 0x1F)
+                     << (bitsPerSlot * index);
         }
         return value;
     }
 
-    static Layout fromPacked(std::uint64_t packed) noexcept {
+    static constexpr Layout fromPacked(std::uint64_t packed) noexcept {
+        constexpr int bitsPerSlot = 5;
         Layout layout;
+        const auto version = packed >> 60;
+        if (version == 0) {
+            for (int index = 0; index < movableSlotCount; ++index) {
+                const auto nibble = (packed >> (4 * index)) & 0x0F;
+                if (nibble > static_cast<std::uint64_t>(Stage::Pedal)) {
+                    return Layout{};
+                }
+                layout.slots[static_cast<size_t>(index)] = static_cast<Stage>(nibble);
+            }
+            return layout.isValid() ? layout : Layout{};
+        }
+
+        if (version != 1) {
+            return Layout{};
+        }
+
         for (int index = 0; index < movableSlotCount; ++index) {
             layout.slots[static_cast<size_t>(index)] =
-                static_cast<Stage>((packed >> (4 * index)) & 0x0F);
+                static_cast<Stage>((packed >> (bitsPerSlot * index)) & 0x1F);
         }
         return layout.isValid() ? layout : Layout{};
     }
 };
 
 inline constexpr std::uint64_t defaultPacked = Layout{}.packed();
+
+static_assert(Layout::fromPacked(Layout{}.packed()).slotFor(Stage::Amp) == 2);
+static_assert(Layout::fromPacked(Layout{}.packed()).slotFor(Stage::Cab) == 4);
+static_assert(Layout::fromPacked(Layout{}.packed()).slotFor(Stage::Eq) == 6);
+static_assert(Layout::fromPacked(0xFFFFFFFFu).slotFor(Stage::Amp) == 2);
 }  // namespace SignalChain

@@ -3,6 +3,8 @@
 #include <cmath>
 #include <limits>
 
+#include "Fx/FxAppearance.h"
+
 namespace {
 constexpr int kSignalChainRadioGroup = 0x50524F46;  // "PROF"
 constexpr float kMeterFloorDb = -54.0f;
@@ -29,18 +31,8 @@ struct EffectAppearance {
 };
 
 EffectAppearance appearanceFor(SignalChain::Stage stage) {
-    switch (stage) {
-        case SignalChain::Stage::Cab:
-            return {ProfilerStyle::Colors::rigCab, CustomLookAndFeel::RigIcon::Cabinet};
-        case SignalChain::Stage::Eq:
-            return {ProfilerStyle::Colors::rigEq, CustomLookAndFeel::RigIcon::EqFaders};
-        case SignalChain::Stage::Pedal:
-            return {ProfilerStyle::Colors::rigPedal, CustomLookAndFeel::RigIcon::Pedal};
-        case SignalChain::Stage::Amp:
-        case SignalChain::Stage::Empty:
-        default:
-            return {ProfilerStyle::Colors::rigAmp, CustomLookAndFeel::RigIcon::AmpHead};
-    }
+    const auto appearance = Fx::appearanceFor(stage);
+    return {appearance.colour, appearance.icon};
 }
 }  // namespace
 
@@ -64,6 +56,14 @@ void SignalChainBlock::setAppearance(juce::Colour categoryColour, CustomLookAndF
 
     _categoryColour = categoryColour;
     _icon = icon;
+    repaint();
+}
+
+void SignalChainBlock::setCaption(const juce::String& caption) {
+    if (_caption == caption) {
+        return;
+    }
+    _caption = caption;
     repaint();
 }
 
@@ -209,6 +209,11 @@ void SignalChainBlock::paintContents(juce::Graphics& g, bool isMouseOverButton) 
                                   getToggleState(),
                                   isMouseOverButton,
                                   _ledOn);
+        if (_caption.isNotEmpty()) {
+            g.setFont(ProfilerStyle::Fonts::micro());
+            g.setColour(_categoryColour.withAlpha(_ledOn ? 0.95f : 0.45f));
+            g.drawFittedText(_caption, getLocalBounds().removeFromBottom(13).reduced(2, 0), juce::Justification::centred, 1);
+        }
         return;
     }
 
@@ -421,6 +426,7 @@ void SignalChainStrip::placeBlocks() {
 
         const auto appearance = appearanceFor(stage);
         block.setAppearance(appearance.colour, appearance.icon);
+        block.setCaption(Fx::captionFor(stage));
         block.setBounds(_slotBounds[static_cast<size_t>(slot)]);
     }
 }
@@ -440,6 +446,16 @@ void SignalChainStrip::updateBusLayer() {
     }
 
     _busLayer.setRows(input, down, join, output);
+}
+
+void SignalChainStrip::selectSlot(int chainSlot) {
+    selectChainSlot(chainSlot);
+}
+
+void SignalChainStrip::setSlotLed(int chainSlot, bool isOn) {
+    if (auto* block = effectBlockAtSlot(chainSlot)) {
+        block->setLedOn(isOn);
+    }
 }
 
 void SignalChainStrip::setSelectedBlock(BlockId blockId) {
@@ -674,8 +690,12 @@ SignalChain::Stage SignalChainStrip::stageForBlock(BlockId blockId) noexcept {
         case BlockId::PedalDrive:
             return SignalChain::Stage::Pedal;
         case BlockId::AmpProfiler:
-        default:
             return SignalChain::Stage::Amp;
+        case BlockId::Fx:
+        case BlockId::InputGate:
+        case BlockId::MasterVolume:
+        default:
+            return SignalChain::Stage::Empty;
     }
 }
 
@@ -688,8 +708,11 @@ SignalChainStrip::BlockId SignalChainStrip::blockForStage(SignalChain::Stage sta
         case SignalChain::Stage::Pedal:
             return BlockId::PedalDrive;
         case SignalChain::Stage::Amp:
-        default:
             return BlockId::AmpProfiler;
+        case SignalChain::Stage::Empty:
+            return BlockId::AmpProfiler;
+        default:
+            return BlockId::Fx;
     }
 }
 
