@@ -144,7 +144,13 @@ struct Biquad {
     float b0 = 1.0f, b1 = 0.0f, b2 = 0.0f, a1 = 0.0f, a2 = 0.0f;
 
    private:
-    enum class Kind { Lowpass, Highpass, Bandpass, Peak, LowShelf, HighShelf, Allpass };
+    enum class Kind { Lowpass,
+                      Highpass,
+                      Bandpass,
+                      Peak,
+                      LowShelf,
+                      HighShelf,
+                      Allpass };
 
     void setCommon(double sampleRate, float frequency, float q, Kind kind) noexcept {
         const float hz = juce::jlimit(20.0f, (float)(sampleRate * 0.45), frequency);

@@ -5,7 +5,9 @@
 #include "SignalChainLayout.h"
 
 namespace Fx {
-enum class ParamType { Float, Bool, Choice };
+enum class ParamType { Float,
+                       Bool,
+                       Choice };
 
 struct ParamSpec {
     const char* id;

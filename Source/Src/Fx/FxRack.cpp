@@ -243,111 +243,111 @@ void FxRack::process(SignalChain::Stage stage, int instance, float* left, float*
         switch (stage) {
             case SignalChain::Stage::PitchHarmonizer:
                 fx.harmonizer.process(instance, sliceL, sliceR, count,
-                                      { (int)fx.get("harmMode", 1.0f), fx.get("harmInterval", 0.0f), fx.get("harmMix", 50.0f),
-                                        fx.get("harmLatency", 4.0f), fx.enabled("harmFormant") });
+                                      {(int)fx.get("harmMode", 1.0f), fx.get("harmInterval", 0.0f), fx.get("harmMix", 50.0f),
+                                       fx.get("harmLatency", 4.0f), fx.enabled("harmFormant")});
                 break;
             case SignalChain::Stage::PitchOctaver:
                 fx.octaver.process(instance, sliceL, sliceR, count,
-                                   { (int)fx.get("octMode", 2.0f), fx.get("octMix1", 55.0f), fx.get("octMix2", 30.0f),
-                                     fx.get("octHp", 90.0f), fx.get("octTrigger", 35.0f) });
+                                   {(int)fx.get("octMode", 2.0f), fx.get("octMix1", 55.0f), fx.get("octMix2", 30.0f),
+                                    fx.get("octHp", 90.0f), fx.get("octTrigger", 35.0f)});
                 break;
             case SignalChain::Stage::ReverbPlate:
                 fx.plate.process(instance, sliceL, sliceR, count,
-                                 { fx.get("plateDecay", 1.4f), fx.get("platePre", 8.0f), fx.get("plateMix", 22.0f),
-                                   fx.get("plateDamp", 35.0f), fx.get("plateTone", 62.0f) });
+                                 {fx.get("plateDecay", 1.4f), fx.get("platePre", 8.0f), fx.get("plateMix", 22.0f),
+                                  fx.get("plateDamp", 35.0f), fx.get("plateTone", 62.0f)});
                 break;
             case SignalChain::Stage::ReverbHall:
                 fx.hall.process(instance, sliceL, sliceR, count,
-                                { fx.get("hallDecay", 3.6f), fx.get("hallPre", 18.0f), fx.get("hallWidth", 70.0f),
-                                  fx.get("hallSize", 55.0f), fx.get("hallTone", 48.0f), fx.get("hallMix", 24.0f) });
+                                {fx.get("hallDecay", 3.6f), fx.get("hallPre", 18.0f), fx.get("hallWidth", 70.0f),
+                                 fx.get("hallSize", 55.0f), fx.get("hallTone", 48.0f), fx.get("hallMix", 24.0f)});
                 break;
             case SignalChain::Stage::ReverbShimmer:
                 fx.shimmer.process(instance, sliceL, sliceR, count,
-                                   { fx.get("shimDecay", 4.5f), fx.get("shimMix", 28.0f), (int)fx.get("shimPitch", 0.0f),
-                                     fx.get("shimAmount", 45.0f), fx.get("shimDamp", 40.0f) });
+                                   {fx.get("shimDecay", 4.5f), fx.get("shimMix", 28.0f), (int)fx.get("shimPitch", 0.0f),
+                                    fx.get("shimAmount", 45.0f), fx.get("shimDamp", 40.0f)});
                 break;
             case SignalChain::Stage::ReverbSpring:
                 fx.spring.process(instance, sliceL, sliceR, count,
-                                  { fx.get("springDecay", 1.1f), fx.get("springMix", 28.0f), fx.get("springBoing", 45.0f),
-                                    fx.get("springDamp", 55.0f) });
+                                  {fx.get("springDecay", 1.1f), fx.get("springMix", 28.0f), fx.get("springBoing", 45.0f),
+                                   fx.get("springDamp", 55.0f)});
                 break;
             case SignalChain::Stage::ReverbGranular:
                 fx.granular.process(instance, sliceL, sliceR, count,
-                                    { fx.get("grainSize", 140.0f), fx.get("grainDensity", 12.0f), fx.get("grainFeedback", 62.0f),
-                                      fx.get("grainDiffuse", 70.0f), fx.get("grainTone", 40.0f), fx.get("grainMix", 30.0f) });
+                                    {fx.get("grainSize", 140.0f), fx.get("grainDensity", 12.0f), fx.get("grainFeedback", 62.0f),
+                                     fx.get("grainDiffuse", 70.0f), fx.get("grainTone", 40.0f), fx.get("grainMix", 30.0f)});
                 break;
             case SignalChain::Stage::DelayTape:
                 fx.tape.process(instance, sliceL, sliceR, count,
-                                { fx.get("tapeTime", 120.0f), fx.get("tapeFb", 35.0f), fx.get("tapeMix", 28.0f),
-                                  fx.get("tapeWow", 30.0f), fx.get("tapeSat", 28.0f), fx.get("tapeTone", 45.0f) });
+                                {fx.get("tapeTime", 120.0f), fx.get("tapeFb", 35.0f), fx.get("tapeMix", 28.0f),
+                                 fx.get("tapeWow", 30.0f), fx.get("tapeSat", 28.0f), fx.get("tapeTone", 45.0f)});
                 break;
             case SignalChain::Stage::DelayPingPong:
                 fx.ping.process(instance, sliceL, sliceR, count,
-                                { fx.get("pingTime", 375.0f), fx.enabled("pingSync"), (int)fx.get("pingDiv", 3.0f),
-                                  fx.get("pingFb", 35.0f), fx.get("pingMix", 28.0f), fx.get("pingDepth", 100.0f),
-                                  fx.get("pingHp", 80.0f), fx.get("pingLp", 9000.0f), fx.bpm });
+                                {fx.get("pingTime", 375.0f), fx.enabled("pingSync"), (int)fx.get("pingDiv", 3.0f),
+                                 fx.get("pingFb", 35.0f), fx.get("pingMix", 28.0f), fx.get("pingDepth", 100.0f),
+                                 fx.get("pingHp", 80.0f), fx.get("pingLp", 9000.0f), fx.bpm});
                 break;
             case SignalChain::Stage::DelayDark:
                 fx.dark.process(instance, sliceL, sliceR, count,
-                                { fx.get("darkTime", 480.0f), fx.get("darkFb", 72.0f), fx.get("darkAmount", 65.0f),
-                                  fx.get("darkMix", 30.0f), fx.get("darkTone", 35.0f) });
+                                {fx.get("darkTime", 480.0f), fx.get("darkFb", 72.0f), fx.get("darkAmount", 65.0f),
+                                 fx.get("darkMix", 30.0f), fx.get("darkTone", 35.0f)});
                 break;
             case SignalChain::Stage::DelayTapeExtreme:
                 fx.tapeExtreme.process(instance, sliceL, sliceR, count,
-                                       { fx.get("tapxTime", 280.0f), fx.get("tapxFb", 48.0f), fx.get("tapxSat", 70.0f),
-                                         fx.get("tapxWow", 55.0f), fx.get("tapxSpeed", 12.0f), fx.get("tapxMix", 32.0f) });
+                                       {fx.get("tapxTime", 280.0f), fx.get("tapxFb", 48.0f), fx.get("tapxSat", 70.0f),
+                                        fx.get("tapxWow", 55.0f), fx.get("tapxSpeed", 12.0f), fx.get("tapxMix", 32.0f)});
                 break;
             case SignalChain::Stage::DelayReverse:
                 fx.reverse.process(instance, sliceL, sliceR, count,
-                                   { fx.get("revdTime", 600.0f), (int)fx.get("revdMode", 1.0f), fx.get("revdFb", 45.0f),
-                                     fx.get("revdMix", 40.0f), fx.get("revdTone", 50.0f) });
+                                   {fx.get("revdTime", 600.0f), (int)fx.get("revdMode", 1.0f), fx.get("revdFb", 45.0f),
+                                    fx.get("revdMix", 40.0f), fx.get("revdTone", 50.0f)});
                 break;
             case SignalChain::Stage::ChorusEnsemble:
                 fx.ensemble.process(instance, sliceL, sliceR, count,
-                                    { fx.get("ensRate", 0.6f), fx.get("ensDepth", 35.0f), fx.get("ensMix", 40.0f),
-                                      fx.get("ensWidth", 75.0f) });
+                                    {fx.get("ensRate", 0.6f), fx.get("ensDepth", 35.0f), fx.get("ensMix", 40.0f),
+                                     fx.get("ensWidth", 75.0f)});
                 break;
             case SignalChain::Stage::ChorusLead:
                 fx.lead.process(instance, sliceL, sliceR, count,
-                                { fx.get("cmodRate", 2.4f), fx.get("cmodDepth", 55.0f), fx.get("cmodMix", 45.0f),
-                                  fx.get("cmodVibe", 30.0f) });
+                                {fx.get("cmodRate", 2.4f), fx.get("cmodDepth", 55.0f), fx.get("cmodMix", 45.0f),
+                                 fx.get("cmodVibe", 30.0f)});
                 break;
             case SignalChain::Stage::Phaser4:
                 fx.phaser4.process(instance, sliceL, sliceR, count,
-                                   { fx.get("ph4Rate", 0.4f), fx.get("ph4Depth", 60.0f), fx.get("ph4Mix", 50.0f),
-                                     fx.get("ph4Center", 900.0f) });
+                                   {fx.get("ph4Rate", 0.4f), fx.get("ph4Depth", 60.0f), fx.get("ph4Mix", 50.0f),
+                                    fx.get("ph4Center", 900.0f)});
                 break;
             case SignalChain::Stage::Phaser8:
                 fx.phaser8.process(instance, sliceL, sliceR, count,
-                                   { fx.get("ph8Rate", 1.2f), fx.get("ph8Depth", 70.0f), fx.get("ph8Mix", 55.0f),
-                                     fx.get("ph8Q", 2.8f), fx.get("ph8Sweep", 65.0f) });
+                                   {fx.get("ph8Rate", 1.2f), fx.get("ph8Depth", 70.0f), fx.get("ph8Mix", 55.0f),
+                                    fx.get("ph8Q", 2.8f), fx.get("ph8Sweep", 65.0f)});
                 break;
             case SignalChain::Stage::FlangerSubtle:
                 fx.flangerSubtle.process(instance, sliceL, sliceR, count,
-                                         { fx.get("flsRate", 0.35f), fx.get("flsDepth", 45.0f), fx.get("flsMix", 35.0f),
-                                           fx.get("flsFb", 18.0f), 0.0f, false });
+                                         {fx.get("flsRate", 0.35f), fx.get("flsDepth", 45.0f), fx.get("flsMix", 35.0f),
+                                          fx.get("flsFb", 18.0f), 0.0f, false});
                 break;
             case SignalChain::Stage::FlangerHard:
                 fx.flangerHard.process(instance, sliceL, sliceR, count,
-                                       { fx.get("flhRate", 2.8f), fx.get("flhDepth", 70.0f), fx.get("flhMix", 45.0f),
-                                         fx.get("flhFb", 62.0f), fx.get("flhRing", 40.0f), true });
+                                       {fx.get("flhRate", 2.8f), fx.get("flhDepth", 70.0f), fx.get("flhMix", 45.0f),
+                                        fx.get("flhFb", 62.0f), fx.get("flhRing", 40.0f), true});
                 break;
             case SignalChain::Stage::CompBlack:
                 fx.compBlack.process(instance, sliceL, sliceR, count,
-                                     { fx.get("cbmThr", -18.0f), fx.get("cbmAtk", 3.0f), fx.get("cbmRel", 90.0f),
-                                       fx.get("cbmRatio", 6.0f), fx.get("cbmKnee", 1.0f), fx.get("cbmMake", 0.0f),
-                                       fx.get("cbmSc", 100.0f), true, true });
+                                     {fx.get("cbmThr", -18.0f), fx.get("cbmAtk", 3.0f), fx.get("cbmRel", 90.0f),
+                                      fx.get("cbmRatio", 6.0f), fx.get("cbmKnee", 1.0f), fx.get("cbmMake", 0.0f),
+                                      fx.get("cbmSc", 100.0f), true, true});
                 break;
             case SignalChain::Stage::CompBrutal:
                 fx.compBrutal.process(instance, sliceL, sliceR, count,
-                                      { fx.get("cbrThr", -16.0f), fx.get("cbrAtk", 22.0f), fx.get("cbrRel", 45.0f),
-                                        fx.get("cbrRatio", 12.0f), 0.0f, fx.get("cbrMake", 0.0f), 100.0f, false, true });
+                                      {fx.get("cbrThr", -16.0f), fx.get("cbrAtk", 22.0f), fx.get("cbrRel", 45.0f),
+                                       fx.get("cbrRatio", 12.0f), 0.0f, fx.get("cbrMake", 0.0f), 100.0f, false, true});
                 break;
             case SignalChain::Stage::CompClear:
                 fx.compClear.process(instance, sliceL, sliceR, count,
-                                     { fx.get("cgnThr", -20.0f), fx.get("cgnAtk", 15.0f), fx.get("cgnRel", 160.0f),
-                                       fx.get("cgnRatio", 2.5f), fx.get("cgnKnee", 10.0f), fx.get("cgnMake", 0.0f),
-                                       100.0f, false, false });
+                                     {fx.get("cgnThr", -20.0f), fx.get("cgnAtk", 15.0f), fx.get("cgnRel", 160.0f),
+                                      fx.get("cgnRatio", 2.5f), fx.get("cgnKnee", 10.0f), fx.get("cgnMake", 0.0f),
+                                      100.0f, false, false});
                 break;
             case SignalChain::Stage::EqParametric: {
                 FxDsp::ParametricEqSettings eq;
@@ -364,7 +364,7 @@ void FxRack::process(SignalChain::Stage stage, int instance, float* left, float*
             }
             case SignalChain::Stage::EqTone:
                 fx.tone.process(instance, sliceL, sliceR, count,
-                                { fx.get("eqtLow", 0.0f), fx.get("eqtMid", 0.0f), fx.get("eqtHigh", 0.0f) });
+                                {fx.get("eqtLow", 0.0f), fx.get("eqtMid", 0.0f), fx.get("eqtHigh", 0.0f)});
                 break;
             case SignalChain::Stage::EqDynamic: {
                 FxDsp::DynamicEqSettings eq;
@@ -383,13 +383,13 @@ void FxRack::process(SignalChain::Stage stage, int instance, float* left, float*
             }
             case SignalChain::Stage::NoiseGate:
                 fx.gate.process(instance, sliceL, sliceR, count,
-                                { fx.get("ngtThr", -45.0f), fx.get("ngtAtk", 2.0f), fx.get("ngtRel", 80.0f),
-                                  fx.get("ngtRange", -60.0f), fx.get("ngtHold", 25.0f), fx.get("ngtLook", 8.0f),
-                                  fx.enabled("ngtScOn"), fx.get("ngtSc", 100.0f) });
+                                {fx.get("ngtThr", -45.0f), fx.get("ngtAtk", 2.0f), fx.get("ngtRel", 80.0f),
+                                 fx.get("ngtRange", -60.0f), fx.get("ngtHold", 25.0f), fx.get("ngtLook", 8.0f),
+                                 fx.enabled("ngtScOn"), fx.get("ngtSc", 100.0f)});
                 break;
             case SignalChain::Stage::Tuner: {
                 TunerSnapshot snapshot;
-                fx.tuner.process(instance, sliceL, sliceR, count, { (int)fx.get("tunMode", 0.0f), true }, snapshot);
+                fx.tuner.process(instance, sliceL, sliceR, count, {(int)fx.get("tunMode", 0.0f), true}, snapshot);
                 fx.tunerLock.publish(snapshot);
                 break;
             }
